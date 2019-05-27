@@ -1,0 +1,6 @@
+Multiple Iterations of PeakfqSA Instructions
+
+1. Create a folder on the C drive and create a folder named "Batch", or rename the directory in the batch file to whatever works best for you
+2. All of the .spc files (Flow Peaks Data) has to be in the same folder (in this case "Batch" Folder)
+3. Open the "Multiple Iterations of PeakfqS.bat" and the analysis will run
+4. Output files will be saved in the same folder ("Batch")

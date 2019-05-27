@@ -1,0 +1,630 @@
+3 s good river no BIN
+5 cb VT 7th is close by weird BIN, 556833
+6 s
+7 vl has two 304720 and 304723 (and overflows) but e/w so same loc
+12 cb needed extra,  2nd only consistent, 285718 by route TT, BIN doesn't match. prev: no match
+26 has two possible 3rd/4th 583542 583543
+28 vl 6th, 583354, sub-cr
+30 vl has 6 by stream and cr main--but WV adds /2 for sub, so good?* no gage on fork
+31 vl 583381 (right county, fork, part of ITEM8, county road 21 matches part of BIN), but year built 2 years before year fail (year built in FDF not given)
+32 has two poss crk and road, 11th and 8th, 585597 585658*
+36 prob extra stream misspelled, 113th, 583175 might be possible or suggest match confirmed misspelled
+42 s river with need to pre-process*
+44 is 7th 582787 mill and bin, but could be others?* seems like not gaged in state. needs back-check
+45 s bad unless WV renames
+46 s has several consistent
+47 s cb several 1,2,9 585277 585278 585316
+48 has two possible 585317 585318
+50 is 585770 (matches route from BIN, type)
+54 s cb 7th, bin and fork 581608, do back. When looking back, no others in right county, correct stream spelling, but fork is still a little off. Seems no misspelling of kanawha. SR 16, many CR, would need to be w fork of little kanawha
+55 is 5th, 582429 by  route/bin
+57 is 586174 (matches route from BIN ,type)
+58 has 7th and 4th both potentia matches 586825 586867
+67 two poss by rte and stream 570841 565603
+68 s none with right feature under, 3 potential on route
+69 is 29th as match only route with stream, 571541
+71 has 3 stream no rte 1080*
+74 cb has 3 pot matches stream and rte, 559788 571282 571329*
+75 cb but 2nd also failed, so good!
+77 cb should take the 3rd match - X
+81 is NY with BIN, all good: 351548
+89 s RR?
+91 s looks do-able but mistake because only looking in cass co whereas should be "west of"*
+93 s RR
+114 is 338504
+121 s
+122 sno match both road stream but seems findable*
+130 is 8th, 572292. almost perfect match so why so low?
+133 s has 5 matches
+134 s maybe typo*
+135 is 7th, 572227, prev by trib of cedar is 7th (same NBI_ROW)
+143 s
+146 s mis-spell, diff types, county, BIN no help*
+150 s no road match but 1tem9 might explain ia format? prev: no match. Bushy creek gage but in AR.
+156 s cb 4, right county, vague stream, some bin/route and cr match 301212. no gage.
+163 s no match seems very findable by BIN*
+167 s nm but seems possible* off because of city? prev: no match, 
+170 is 5th, 301643 only consistent but bin doesn't match
+175 is NBI row 485461
+179 is 2nd 488297 exact BIN except case*
+181 is 6th by BIN perfect, sr.,m,. is gobbledygook 494667
+184 is 1st, 485631
+185 is 5th, 490042, full ITEM8
+186 s one route but stream different, no match, stream specific haynes pond?*
+187 is 18th, rte and stream 572398
+188 cb 7th, 570857, not br, prev: is 7th but branch disagree 570857
+191 s no route match, vague
+192 is 26th only rte stream 570914
+203 is 348921 from NY state ID coded in bridgehunter, from http://bridgehunter.com/ny/rockland/1050430/, said damaged by Irene +41.16167, -74.18861   (decimal degrees) 
+206 cb 2nd or 3rd 41662 or 41678 need extra *
+209 s prob not matchable
+210 s seems like maybe enough data, second creek match?
+212 s no middle fork american
+214 s cb 4th/5th nb/sb based on ITEM9 descript rio dell-check? 38425 38424 No gauges on stream
+215 s 7 possible
+216 has two matches, no way to confirm 38793 38874
+231 cb 2nd 51000 but hard to confirm, no other s br tule r?
+250 is http://bridgehunter.com/ny/chenango/3350830/ +42.53639, -75.53611
+253 s no perfect matches but seems like should be able to find
+254 is 351527 from BIN
+272 s should be able to find GM john pass bridge, clearwater, can't tell if match w/o more work *
+281 s no stream matches
+284 ss eems possible no matching county road
+289 cb 8th 96030 if typo cr 25 for cr 23*
+290 s no trib of murder crk no cr
+293 s has match but seems iffy, HI
+294 is 105807 with more sorting
+297 s 6 poss
+315 s
+341 s 10 pot matches
+352 s seems like good data, not a match
+354 s
+355 s same, skip
+377 prob 237978 (seneca vs great seneca
+380 is 236904
+382 probably no longer exists and redeveloped, but likely at 39.449821 -76.786796
+386 is 236419 with BIN as tie-breaker
+390 is 237312
+395 is 237423, with help from http://uglybridges.com/1243278
+396 is 237518
+397 cb 20th, sim stream name, same rd 237954
+399 s seems findable, didn't get right road, and is 2nd county (double-fips worked, though)* prev: no match
+400 is 236827
+402 s
+404 misspelling tobacco, 237664*
+405 is 237673
+410 s has 12 on correct creek, no carters mill road*
+411 s has 14 with right stream, no road, but seems findalbe*
+418 is 4th, typo in nbi creek, bin match 236532 prev: is 236532, "deep creek" is actually "deer creek" (or vv)
+419 s nm but 24th and 25th mention correct 236679 236688*
+421 is 236559
+422 s seems like should find, 236678 236679 mention 0.4m s of timonium*
+451 s no
+452 vl 195th, confused city/county baltimore? 236824
+458 is 237494
+460 is 1st, bh BI could be 232023
+461 is 3rd by bin 232089
+463 has 3 pot, no BIN match, "union mills bridge" gone bc collapse?*
+472 is 3rd 231359
+475 is 3rd 232050. prev: could be 232948 - note that a truss bridge was also destroyed by flooding in 1987 http://bridgehunter.com/me/franklin/mec---sandy-river/ could also be 232050, several others
+477 is 1st, 232220
+479 s cass good bin
+481 is 233200 (2nd) prev: is 2nd, 233200 by BIN
+485 s has two with plays on stream, right route, no BIN* prev: no match. no gage.
+493 is only one bridge on kehrs mill and caulks creek, and caulks creek only crosses kehrs mill once, 288887
+495 vl 8th if (15) is bridge number 312553
+500 cb 4th, if 3 m se rather than 3 m s dupuyer 313446. no others match so looks pretty good
+501 vl 314215, fail year match, descrip is 4km off )(from yellowstone)
+502 is 9th by 5m n dutton 312957
+505 is 3rd by montano loc-item9 313450
+506 is 314287
+509 has two 8th and 19th both match, 1 m s choteau* 313438 313586. 2 gages on Teton but in Idaho. worth back-check.
+525 s
+528 s no bin match, several close, bridge gone?*
+529 s has 6 poss but diff bin
+533 cb 123rd only 4 e gretna 329437
+534 has 2 potential but NE loc doesn't match, need to check* many salt creek gages, not in NE.
+435 is 2nd, 237690, should be cosner, not cobner
+539 cb 380725 ~
+540 s another ND wrong counties
+541 s diff BIN update in MN?
+542 s
+543 s none correct cty
+544 s prev: has 2
+545 s maybe  both*
+546 s BIN close
+547 s BIN kinda
+548 s none in cty
+549 s none in right cty
+550 s no
+551 s no
+552 cb first if bin bad
+553 s
+554 s no
+555 s none in cty
+556 s
+557 s no
+558 s no
+559 s no bin/cty
+560 s no
+561 s no
+562 s
+563 s no good
+564 s
+565 s
+566 s no
+567 s no unless fips issue
+568 s no unless fips issue
+569 s no unless fips issue
+570 s no unless fips issue
+571 s no bin match
+572 s no bin match
+573 s
+576 cb 4th by BIN-route, 384923,
+577 s no bad fips
+578 s
+579 s ng, if foster only
+580 s no bad fips
+581 s no unless fips issue
+582 s
+583 s
+584 s 
+585 s no match
+586 s no match
+587 s
+588 s no good
+589 s no
+590 s no
+591 s ng
+592 s ng
+595 s no unless fips issue
+596 s
+597 s no
+598 s no
+600 s no unless fips
+601 s no bad fips
+602 s no unless fips issue
+603 s no unless fips issue
+604 s no unless fips issue
+605 s no unless fips issue
+606 s no unless fips issue
+607 s no unless fips issue
+608 s no bad fips
+609 s no unless fips issue
+610 s no unless fips issue
+611 s may be same as 576
+612 s no unless fips issue
+613 s no unless fips issue
+614 s no unless fips issue
+615 s no unless fips issue
+616 s no unless fips issue
+617 s no unless fips issue
+618 s no unless fips issue
+619 s no unless fips issue
+620 s no unless fips issue
+621 s no unless fips issue
+622 s
+623 s no bin match
+624 s no bin match
+625 s poss if only in Walsh, BIN close
+626 s matched to same
+627 s
+628 s
+629 s mercer again
+632 s mb stark county BIN kinda
+633 s same as prev
+635 s no
+637 s right counties no bin
+639 cb 13th, only pembinda and 18 384136
+640 s
+641 s walsh, BIN kinda
+642 s
+643 s ward
+644 s ward, BIN maybe
+645 s ward, BIN maybe
+647 s none in cty
+648 s
+649 s
+650 s too many
+652 s no bin
+653 s
+654 s foster, BIN kinda
+656 s
+658 s walsh, bin kinda
+661 s too many
+666 s nbs
+667 s
+668 s
+669 s no
+670 s
+671 s samve prev
+672 s too many
+673 s
+674 s
+675 s no
+676 s Richland, bin a little
+677 s richland, BIN maybe
+678 s
+679 s
+680 s no good bin
+681 s mult good bin
+684 s is rr?
+687 s no fips
+688 cb 1st, 381950
+689 s none right county ND
+690 s no bin
+691 s cass bin kida
+692 s
+693 cb 1 382210
+694 cb either 382385 382386
+695 s
+696 s cass, bin pretty good*
+697 cb 3rd 382923
+698 s
+699 s barnes, bin pretty good*
+700 s has three plausible
+701 cb 383234
+702 cb 380628
+703 s barnes, bin pretty good  * these really seem like they could be it
+704 s burleigh, BIN decent
+705 s burleigh, BIN decent
+706 s burleigh, BIN decent
+707 s burleigh, BIN decent
+708 s seems wrong
+709 cb 381013 seems close cass
+710 cb 381056 seems close cass
+712 s seems close cass
+714 s no bin
+715 s could be several
+716 cb mchenry seems close
+717 cb bin mclean *
+718 s mountrail seems close
+719 s mountrail seems close
+720 s no
+721 s no
+722 s ng bin
+723 s nelson seems close
+724 vg bin pembina , vg bin*
+726 vg bin Pembina , vg bin*
+727 s ramsey seems close
+728 vg bin ramsey , vg bin*
+729 s steele seems close
+730 s steele seems close
+731 s steele seems close
+732 cb 383118
+733 s steele seems close
+734 s steele seems close
+735 s steele, decent bin
+736 s steele, good bin
+737 s steele good bin
+738 s steele good bin
+739 s no bin
+740 s traill good bin
+741 s traill good bin
+742 s no good
+743 s no bin but one close culvert?
+744 s ward, pretty good bin
+745 s walsh good bin
+746 cb 383513
+747 s bottineau good
+748 cb either 380904 380905 matter?
+749 cb 380996
+750 s divide good bin
+752 cb 383106
+753 s divide good bin
+755 cb 381824
+756 cb 1st 381834 by bin
+757 s
+758 s neither good
+759 cb grant decent chance 4th 381772*
+760 cb 381784
+761 cb 380623
+762 s a zillion
+763 s ng bin
+796 is not in NBI but Albany Ave changes name to River Road, crosses Saco, 44.083744 71.285340* gage on Saco, in ME.
+807 cb malarky should be melarkey, 40.975374 117.739409 from GM, should be in BIN, can't find on ugly bridges either* no gage match.
+808 s none match raod but seems findable*, none on chemung in county. no gage.
+811 is 352537
+813 s not identifiable, 3 matches
+823 poss findable, no chemung* and is gage on chemung.
+826 is 355246
+831 poss chemung fitch st no match* also worth as gage
+836 prob 6th, 356415, descriptor non-exact
+840 is 351979
+849 cb likely typ haselton*
+852 is 5th, 346557
+856 cb 7th but wrong st, seems finable*
+861 s no NY-bin in set but many creek*
+865 is 44th, 355433
+868 is 7th by far best match 356243
+871 s no matches but seems identifiable add space normans kill still no mtch road. no gage.
+872 s another poor in both, need space kill* add to pre-process
+874 is 11th, by BIN, 355196
+875 cb 3rd by BIN, diff stream listed 355198*
+877 vl 4th BIN, route # matches florence rd? 358715 yes
+883 vl 14th 345853 only rte feat
+884 is 2nd, misspelled creek, 350943*
+902 is 356695
+919 is 353146, first
+925 is 4th, 606841 PR
+932 s none of 4, can't parse hoc-33-1364 OH coding
+947 cb 2nd 412318 mentions calvin in item9 1pS
+948 cb several, john day river bridge?* rufus
+953 s PA many matches
+958 is 10th, 606486 but PR
+959 is 2nd, 606606, but in PR
+960 is 5th by route 606458, pr
+961 is 4th, 606365, PR
+962 is 5th, 606693, PR
+964 is 4th, PR, msp stream 606492
+965 cb 2nd or 7th pr
+966 is 7th, 606598, PR
+967 has two potential, PR
+968 is 3rd, diff order river, pr 606597
+969 is 3rd 606596, PR, diff order stream
+970 is 2nd, 607122, PR
+971 is 6th, 606571
+972 s PR several channel matches
+973 is 6th 606570 pr
+974 is 10th, 606949 PR
+975 is 2nd 606464, PR
+976 is 1st, 606961, but PR
+978 is 2nd, 606667, PR 
+979 is 2nd, 607337, PR
+980 is 9th, 606757, PR
+981 is 4th, 607486 PR
+982 is 4th 606841 PR
+983 is 2bdm 605839, but PR
+985 is 3rd 607240, but PR
+986 is 5th, route 606803
+987 is 6th, 607305 PR
+988 is first 605595 PR
+989 prob 13th, route no differs but item9 agrees, 606862
+995 has 2 matches, 16th and 18th, 472260 473236
+999 is 497088
+1048 is 17th, only rte stream 560479
+1053 is 19th 560717 by lack of trim
+1057 s rail
+1070 is 3rd only stream match psh16 is sr 20. 576396 was 1fS. Also on list and near Methow river with several other collapses same flood date. Confirm that SR 20 is PSH 16 in thar region. Checks out! https://en.wikipedia.org/wiki/List_of_Washington_state_bridge_failures
+1071 s can't tell of 3, 573875 575828, 576306, BIN no help
+1072 prob 573869, built 2 years after total collapse,but several other possible matches
+1073 is 573875 with help from google maps (in winthrop)
+1074 s can't tell exactly
+1076 s psh 16
+1078 s many on creek, one on sr12
+1082 cb 3rd if SR 12/US 12 the same (as in prev entry) 574850
+1087 has 4, BIN no help
+1088 prob 575521 - right road, river, year build, no good match on BIN
+1089 s not immed * but seems like can use? multiple collapsed
+1090 s not immed *
+1101 s check from prev, "PSH 1 followed the route of U.S. Route 99 (now Interstate 5) from Vancouver to Blaine. It also served U.S. Route 99 Alternate (now SR 11) in Skagit and Whatcom counties." Maybe looking at wrong type of route? For I-5, 576345 576346. 577408 has 11 in route, hungry highway. 580799 has ne hwy 99. 
+1114 s no stream
+1117 is 2nd, by county route 587753 prev: is probably 587753 (matches 51-26/1, but built date 19 years after failure), or   587755 (better match to build year)* no gage in state
+1120 is first 582735 by bin and CR #
+1121 is 20th rte-sub stream 582938
+1124 cb any of 5* could be gage across state line
+1125 cb same as 1124 so maybe worth checking* also 1117 same creek so big event?
+1127 vl 584326 (matches 23-16/6, built 3 years after fail)
+1128 vl 584376 - should be 16/9, but nbi is 16/10, built in fail year, though
+1140 vl 585365 - matches 30/49, tug fork, built 14 years after failure
+1147 cb 11th if typo 20/9 to 20/19*
+1160 s some decent info can't confirm: prev according to USGS in WV, Nov4-5, 1985, remains of Hurricane Juan took out 500 bridges, so even if this is not the perfect match I think it's acceptable. should take 7th match, but 10 on fork, 11 on same branch, {12,13,14,15,16,17} on main, so presumably upstream
+1161 cb 2nd or 3rd, matters? 582790, 582797*
+1162 s seems possible
+1163 s another with several consistent
+1164 vl 582905 - built 4 years after fail, could also be 582909, built 7 years after fail
+1165 s seems mixed between two prev: one that seems mixed up, could be any, no match
+1166 vl 585770 - matches CR from BIN, type, built in 1936, ?? in year 1985
+1168 vl 586034 - matches CR/# from BIN, built 3 years after fail
+1169 s has first 8 full match
+1172 is 9th by sub-route creek 585444
+1176 vl 2nd, 586174, bin good but cr 2nd?
+1177 vl 586183 - matches CR/# from BIN, built 1 year after fail
+1178 cb fourth has creek match but bin off
+1179 is 2nd 586773 by rte
+1180 s on same stream, 4 potential, none match route*
+1181 has 3 possible*
+1182 is on same of 3*
+1184 is 7th by crsub and stream 586804
+1186 s 8 pot match
+1187 is 586055
+1188 has two pot 586057 586096 try check other stuff* prev: any of 586056, 586057, 586135. could have gage across state line, worth checking*
+1189 is 7th by cr and stream, back-check 586058*, no gage
+1191 is 586109
+1192 is 1st 586165 1pS
+1193 s no rte match
+1195 is 5th by strm/rte 586841
+1196 is 4th by rte/1 586839
+1206 s none unless stream msp
+1207 s maybe no longer exist
+1208 cb 255870, bin typo
+1209 has two, possible BIN typos, 2 263633 263648
+1210 cb first, bin not perfect 256846
+1211 s none right county
+1212 s no
+1213 s no, MN BIN L2096?
+1214 s diff BIN update in MN?
+1215 prob 268192
+1216 s bin leads astray county
+1218 s diff BIN update in MN?
+1220 s no
+1221 s no matches
+1222 s could be first if typo item 8
+1223 s bin leads astray county (MN!)
+1225 prob 261307, check FIPS*
+1231 vl 326451 unnamed stream and 3ne ashland vs 3m ne ashland
+1238 s
+1241 prob 499884 - exact BIN and stream match, road descriptors a bit off
+1246 s may be findable no bin match check item9*
+1247 is 24th by route and stream, but fork 570250
+1249 has 3 possible by road and stream
+1250 is same as 1249, so 2 of 3?*
+1251 cb visual confirmation in google map that only 1 crossing of rte 649 by little dan river, NBI bridge built in 1951 but has same type/material*
+1252 is 6th, 570238, roa abrev bi
+1256 s seems decent, none on correct creek
+1257 is 3rd, 570119
+1259 is 34d, 581604
+1260 is third 587776
+1263 cb one of 2. check from prev seems likely to be   234145 - year build matches year build, SR off by 2 - also SR23 does not cross Jones Falls, whereas 25 (aka falls rd) does. Now has 3 on md 25, 1st-3rd, 234144 234145 234146. All concrete, culvert T T. Built 73 32 30. Original was concrete girder, 32-72, Agnes. prev: 234145 - year build matches year build, SR off by 2 - also SR23 does not cross Jones Falls, whereas 25 (aka falls rd) does
+1269 is 234408
+1277 cb 154th, mill branch road, diff creek? 236973
+1286 s no good road or stream, although decent data*
+1293 s is good at #1, but 2 is close, and 3,4,6,8 all on same stream
+1297 s could be many
+1298 is 2nd 413714
+1300 is 3rd 420428
+1325 cb 5 would need to check warren twp*
+1345 s no good
+1347 poss in IA seems plaus but no match* has possible 2  gauges on nodaway*
+1352 poss same, rename sr as ia rte?* also nodaway*
+1363 s ia
+1364 s IA 4 possible but note sr#*
+1365 s nothing matches IA s24...
+1366 s has some on sr/ia 25 and some on w branch 102 river, none with both
+1368 s ia again
+1370 s crazy IA again, 6 pot
+1371 s no creek
+1373 s IA has several stream/county, no s24
+1374 s IA 15 adn 16 match stream, not s13*
+1380 cb 16th or 17th if put in wrong stream nbi 49645 49646*
+1384 s unmatchable (2, try extras )
+1386 s has 2 poss 5th 6th 564967 564968 no gage (match but wrong state/type)
+1387 has 2 also collapsed!* no gage, but could be big event
+1388 cb has correct mentioned in 570702 but not in set
+1389 s unmatchable
+1391 s 5 pot match
+1393 is 21st, only rte stream 570897
+1398 s none with route number agree, decent data
+1403 s only one in right cty doesn't match stream, decent data. gage in diff state.
+1404 s not matched, tried to find on GM, didn't
+1405 s no match, seems possible
+1407 is 5th another kill but varies space match bin 5th 353413 1fB
+1408 is 4th BIN, add space temper kill 4th, 359671*
+1409 is 3rd by BIN 359795, typo on street
+1411 is 17th by BIN, why match so late? th59 confuses? 360114
+1416 s has 4 potential
+1418 s wash poss unnamed, seemed like could find*
+1419 s br number doesn't help
+1438 s unmatchable
+1439 s cb 6, need to check e rogers. gauge on main river, not trib
+1443 s unless us56 also k45? cb 202065 if k-77 is really us-77, again no county*
+1445 s no county sb 73 none in there? decent data* **need to check order al these
+1451 cb any of 4 by mention n axtell* also two possible gauges*
+1453 no county sb 145?
+1456 cb 9th, only true kansis river, check s. ogden 199202
+1457 cb 1 or 3 by mention e salina 183680 183684
+1458 s prob not matchable
+1459 cb 9th or 10th, check valencia, 201955 201963
+1462 is 199561 typo on k-270 sb k-27.  No such thing K-270 confirmed. Can't find bear creek, proper on gmaps. No other reasonable "bear" bridge in the county. current bridge built 1953, 1-19 concrete culvert. Fail is concrete slab partial collapse 1951, so consistent. No gage.
+1463 has 2 poss 35-37th, 200533 200534 200535* many gages on arkansas river, worth looking*
+1465 cb why no county?* spelled correct sb 197. allendorph also has gnis 2 match br mill creek k99 202473 202479. a few mill creek gages in MO so worth looking more.*
+1479 cb 17th 233742 if north branch is correct (not creek)*
+1480 s extra misspell, 71st by road and straem, BIN doesn't match 236273
+1482 prob 237598  based on BIN
+1484 is found at  39.722164 -78.086966° but can't find in NBI*
+1486 s not matchable
+1495 s too many possible
+1496 s same as prev
+1498 cb 28th by item9 kidd in mt, 311263
+1499 has two mention white sulpher, match strm 312245 212246
+1500 cb 2nd, 311855
+1501 has 2 mention ovando, right river 312534 312535
+1502 s two mention town in item9
+1516 is BIN 355627, rd name diff
+1517 is 355654, should be bouquet river (sp?) bogurt/boquet
+1521 has road under, not in nib? good data*
+1523 s prob not matchable  
+1548 is 233203
+1552 cb bin typo* gives rd as feat under, not in NBI subset?* another IL with road beneath*. no gage.
+1553 s has BIN but no match*
+1560 is first, check mill bridge bc route is unclear 557273
+1563 s is rail
+1570 is 45th by BIN, no route no in NBI 360930
+1577 is 25th by BIN, 358683, stream weird
+1586 vl 5th, 243939, only horn pond and right county
+1589 is 160th by BIN, add space bush kill 352080
+1598 s cb first two if sr 161 same as us 61*
+1605 s BIN confirm only, bridge name
+1608 s named bridge? 8 possible, some revised, 
+1609 cb 3rd, 576644 matches route, not /14 "carbon river bridge"
+1617 is 2nd only route stream 575755 was 1fS
+1626 vl 4th, though seems like others possible 272361
+1634 is 486983
+1638 is second by bin 357856
+1639 is 86th by BIN, trip, no route no, 358068
+1652 prob 574380 - matched 12 to US-12 and also concrete t-beam (dates don't match, but was partial collapse)
+1653 s msp creek?*
+1655 s v strange data, many, BIN no help
+1656 s has 11 possible after checking psh another psh, this time psh 2 peshastin "psh 2 e route of U.S. Route 10 (now Interstate 90) from Seattle to near Ellensburg, then U.S. Route 97 to Peshastin, then U.S. Route 2 to Spokane, then US 10/I-90 from Spokane to the Idaho state line. A southern branch of PSH 2 followed the route of Washington State Route 18 from Snoqualmie to Tacoma."
+1657 is probably 580799 - see: http://en.wikipedia.org/wiki/Salmon_Creek_(Clark_County,_Washington)Klineline Bridge carrying Highway 99 over Salmon Creek was first built in 1927. After the creek eroded the bridge supports and part of the bridge collapsed, it was closed in 2007 while a new bridge was built.[6] Ostrander Rock and Construction of Longview won the construction contract with a bid that included completing the bridge within 160 days from start to finish. Work started in April 2008 and was completed on September 19, 2008, a week earlier than the contract deadline. The new span has four travel lanes, a center median, bicycle lanes, curb/gutter, sidewalks and two pedestrian overlooks with views of Salmon Creek. The county restored more than 650 feet (200 m) of stream channel west of the bridge, which has improved salmon and steelhead passage.[7] http://bridgehunter.com/wa/clark/klineline/ - said collapsed in 2007 and also partial collapse in mid-50s Klineline Bridge, also known as Salmon Creek Bridge, on Highway 99
+1660 s mult potential if translate psh16 anyway
+1662 s has 8 pot methow
+1675 cb Hickahala, could be 1 of 3, but one built the year after failure - not the one currently listed, so need to update df - we want the one that ends in "31", row "283656"
+1677 seems close, rd below not in nbi?* why  no county found? 1pR
+1683 s
+1694 s seems like should find, no match
+1702 has 3 on creek, no bin and rd very specific seems match*
+1707 is was replacement of bridge from 1910, replace 1992, then collapsed 2002 http://bridgehunter.com/mo/macon/0210006/ Approximate latitude, longitude 40.00333, -92.71333   (decimal degrees)
+1709 s another IA with FHWA #
+1710 s all possible, has fhwa #?
+1721 s has 3 potential
+1722 s unless typo 707 to 707
+1723 is 5th, 563388
+1724 is 3rd, 571821 had creek v swamp and milady to my lady's
+1725 s 3 poss
+1727 is 9th if NBI-BIN has typo (seems likely)* 567161 could be gage in neighbor state
+1734 vl 82nd 300284 only on plain blackwater river and cr 800. Only problem is bin non-match prev: no match (and checked map + bridgehunter)
+1738 s vpoor matches, no cr or creek (and checked map + bridgehunter)
+1740 is at 38.369722 -91.986017 from map was located by hand by checking for a branch of Maries river in Osage county - could check to see if can find replacement since failed in 2005 
+1763 cb 20th or 29th 295527 300680 by stream and cr*
+1772 has 3 possible, rte typo?*
+1868 cb not in nbi rod below?*
+1870 prob 37585, replaced in fail year
+1873 s would have to be wrong rte
+1927 is 31021 needed add'l sorting, first same NBI_ROW when ex creek + route
+1936 s unless black is woods canyon
+1937 s would need to be only i-10 in phoenix
+1941 is first, 37941 bt brk/rte
+1942 is 38556, nb or sb, after extra sort (sb would be same NBI_ROW+1)
+1982 s prob not matchable
+1983 s way too many matches
+2738 vl match for 485448
+2740 is 6th back check, BIN vg 488297* no gage
+2742 is 497088
+2988 s seems like should be able
+3470 s not with ditch on cr 290
+3474 s only 1 creek match, no road but seems findable*
+3475 s cb AR potential match 11th 32587 only stream but route wrong. No gauge, anyway.
+3501 s no road
+3504 s no match (and checked map + bridgehunter)
+3506 s bridge gone?
+3515 cb 29419, only on 43 with name just creek, bin doesn't match
+3516 cb 36947 right creek if type cr 43 is 45, has 3.84 in item9*, no others do
+3518 is the only double match, built 2 years after failure - 27029 (was in prev set, loc now ok)
+3519 s no
+3520 cb should be #2 - X*
+3524 s no stream, other bins
+3527 s no stream, would need rte 0006* seems like poss misspell stream
+3528 is 27026 built in 2011 after 2011 total collapse and BIN matches exactly 
+3535 cb first is good, but #4 is 80km upstream
+3536 prob 6th 33108 but bin doesn't match
+3542 vl #2, #4 is upstream 58km - X
+3547 s no state and creek together
+3552 no, seems good*
+3557 s bridge gone?
+3563 s BIN no help, route #. "creek"
+3571 s all bad, seems possible
+3574 s
+3578 s no cr 25
+3580 s another AR good data no matchj*
+3581 s no longer in nbi?
+3585 s no cr match and bin-match wrong river prev: no match (and checked map + bridgehunter), might be one of http://bridgehunter.com/ar/montgomery/oden/ http://bridgehunter.com/ar/montgomery/ouachita-27/ http://bridgehunter.com/ar/polk/bh61308/ http://bridgehunter.com/ar/hot-spring/witherspoon/
+3599 poss 4 possible ks cimarron* worth checking many gages
+3612 is 50th, 354851, space kill issue
+3615 is 359295
+3617 is 359348 FIPS_FROM_CITY should be 111 for Hardenburgh 
+3622 is 355696
+3623 is 12th by BIN, 355686, of several plausible
+3625 is 1st, 355570
+3631 is 2nd 346909 , of several plausible
+3637 s ped bridge?

@@ -1,0 +1,178 @@
+# 2018-12-17 notes on new match process
+# looking at 17 IDs where < 5 possible matches and at least one had multiple match types
+1438 unmatchable
+460 is 1st, bh BI could be 232023
+481 matches to 233200 (2nd)
+807 malarky should be melarkey, 40.975374 117.739409 from GM
+should be in BIN, can't find on ugly bridges either
+919 is 353146, first
+1517 is 355654, should be bouquet river (sp?)
+3625 is 1st, 355570
+959 is 2nd, 606606, but in PR
+976 is 1st, 606961, but PR
+978 is 2nd, 606667, PR
+979 is 2nd, 607337, PR
+983 is 2bdm 605839, but PR
+985 is 3rd 607240 "
+184 is 1st, 485631
+1257 is 3rd, 570119
+1404 not matched, tried to find on GM, didn't
+1724 is 3rd, 571821 had creek v swamp and milady to my lady's
+(that's it first 17: matched 13, 5 in PR, 1 GM)
+---
+now up to 7 potential matches, still requires 2 matches
+209 pr. not matchable
+1982 "
+1523 "
+1458 "
+435 is 2nd, 237690, should be cosner, not cobner
+477 is 1st, 232220
+836 probably 6th, 356415, descriptor non-exact
+875 matches to 3rd on BIN, feat und diff 355198
+877 matches 4th BIN, route # matches florence rd? 358715 yes
+884 2nd, 350943
+1408 4th, 359671
+1516 by BIN 355627, rd name diff
+961 4th, 606365, PR
+962 prob 5th, 606693, PR
+969 3rd 606596, PR, diff order stream
+970 2nd, 607122, PR
+975 2nd 606464, PR
+981 4th, 607486 PR
+982 4th 606841 PR
+987 6th, 607305 PR
+135 7th, 572227
+188, maybe 7th, 570857, not br
+1252 is 6th, 570238, roa abren bi
+1384 unmatchable (2, try extras )
+1389 "
+1723 is 5th, 563388
+1655 v strange data
+(done: 19 more, many PR
+
+# now try single match, few options
+352 seems like good data, not a match
+1937 would need to be only i-10 in phoenix
+272 should be able to find GM john pass bridge, clearwater, can't tell if match w/o more work
+1214 diff BIN update in MN?
+1218 "
+541 "
+546 if only in mercer, BIN close
+547 if only i revile, BIN kinda
+563 no good
+579 "
+592 "
+625 poss if only in Walsh, BIN close
+626 matched to same
+629 mercer again
+632 stark county BIN kinda
+641 walsh, BIN kinda
+643 ward
+644 ward, BIN maybe
+645 "
+654 foster, BIN kinda
+658 walsh, bin kinda
+676 Richland, bin a little
+677 "
+691 cass bin kida
+693 cass, bin pretty good
+696 "
+699 " barnes
+702 " barnes
+703 " barnes * these really seem like they could be it
+704 burleigh, BIN decent
+705 "
+706 "
+707 "
+708 seems wrong
+709 seems close cass
+710 "
+712 "
+716 mchenry seems close
+717 mclean seems close
+718 mountrail "
+719 "
+723 nelson "
+724 pembina "
+726 "
+727 ramsey "
+728 "
+729 steele "
+730 "
+731 "
+733 "
+734 "
+735 steele, decent bin
+736 steele, good bin
+737 "
+738 "
+740 traill "
+741 "
+742 no good
+744 ward, pretty good bin
+745 walsh good bin
+747 bottineau good
+479 cass "
+750 divide "
+752 steele "
+753 divide "
+755 hettinger decent
+1517 355654 bogurt/boquet
+45 bad unless WV renames
+
+# now maybe if have 1f and 3+ matches, 43 of those
+1927 needed add'l sorting, first 31020 when ex creek + route
+1942 38556 or 38557, nb or sb, after extra sort
+1345 no good
+294 105807 with more sorting
+1486 not matchable
+377 prob 237978 (seneca vs great seneca
+386 236419 with BIN as tie-breaker
+404 misspelling tobacco, 237664
+796 not in NBI but Albany Ave changes name to River Road, crosses Saco, 44.083744 71.285340
+114 is 338504
+254 is 351527 from BIN
+813 not identifiable, 3 matches
+852 is 5th, 346557
+874 is 11th, by BIN, 355196
+875 is 3rd by BIN, diff stream listed 355198
+884 is 2nd, misspelled creek, 350943
+1408 BIN, add space temper kill 4th, 359671
+1411 is 17th by BIN, why match so late? th59 confuses?
+ 360114
+1570 is 45th by BIN, no route no in NBI 360930
+1589 is 160th by BIN, add space bush kill 352080
+1639 is 86th by BIN, trip, no route no, 358068
+3623 is 12th by BIN, 355686, ov several plausible
+3631 is 2nd 346909 "
+958 is 10th, 606486 but PR
+962 is 5th, 606693, PR
+966 is 7th, 606598, PR
+974 is 10th, 606949 PR
+975 is 2nd, 606464 PR
+980 is 9th, 606757, PR
+981 is 4th, 606816 PR
+925 is 4th, 606841 PR
+987 is 6th 607305 PR
+989 no match
+995 2 matches, 16th and 18th, 472260 473236
+1053 is 19th 560717 by lack of trim
+1247 is 24th by route and stream, but fork 570250
+1723 is 5th, 563388
+1071 can't tell of 3, 573875 575828, 576306, BIN no help
+1072 " but 9 matches
+1074 " exactly
+1087 4, BIN no help
+1089 * but seems like can use? multiple collapsed
+1090 *
+
+# next try all in state of NY and with BIN
+
+# then other full BIN, short ones, 33
+1927 is 31021 with BIN
+472 is 3rd 231359
+475 is 3rd 232050
+865 is 44th, 355433
+1577 is 25th by BIN, 358683, stream weird
+3612 is50th, 354851, space
+185 is 5th, 490042, full ITEM8
