@@ -1,0 +1,37 @@
+c. 2014-07-01  Madeleine Flint  <mflint@vt.edu>
+
+    * hydraulic.failures (create): Original repository is created and scripts, data, visualizations, etc. are developed
+    
+    * hydraulic.failures (dev): Most code was not written to be interprable by external users
+    
+c. 2016-01-12  Madeleine Flint  <mflint@vt.edu>
+
+    * hydraulic.failures (naming convention): changed naming convention for fields, objects, and saved files for more consistency
+    
+c. 2016-01-01  Madeleine Flint  <mflint@vt.edu>
+
+    * hydraulic.failures/Scripts/Plotting (fork): clean code and data written related to plotting and forked to https://code.vt.edu/mflint/Flint.et.al.2016.Historical.Hydraulic.Bridge.Collapses/
+    
+    * hydraulic.failures/Scripts/Plotting (merge): clean code and data merged back to general repository
+    
+c. 2018-07-01  Madeleine Flint  <mflint@vt.edu>
+
+    * hydraulic.failures (create): start using notebooks to replace main functions
+    
+2018-09-27  Madeleine Flint  <mflint@vt.edu>
+
+    * hydraulic.failures (merge): numerous changes to repository based on changes since 2016
+    
+    * df.Fail.NBI.Gage.Active.RData (format): fixed all of the date columns to true Date character format ("%Y-%m-%d")
+    
+2018-10-05  Madeleine Flint  <mflint@vt.edu>
+
+    * df.Fail.NBI.Gage.Active.RData (edit): include rowsToView and IDsToView
+    
+    * setup.dirsGit (bug): wrote notes to correct bug in script to make directory and reference list
+    
+    * write.mod.watstore (debug): made minimal running version, could use more tests
+    
+2018-10-24  Cristopher Montalvo  <cmontalvo@vt.edu>
+
+    * write.mod.watstore (debug): Script has been updated to match the formatting in PeakfqSA winsdow version 0.998. Version has been tested and produces workable file to be used with PeakfqSA. PeakfqSA can read the file and process and output file
