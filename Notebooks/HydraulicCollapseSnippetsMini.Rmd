@@ -1,0 +1,158 @@
+---
+title: Companion Notebook for Flint et al. 2016 Historical Analysis of Hydraulic Bridge
+  Collapses in the Continental United States
+author: '[Madeleine Flint](http://www.mflint.cee.vt.edu)'
+date: "2019-03-22"
+output: html_document
+runtime: shiny
+---
+
+<!-- Hidden: knitr and R markdown setup. -->
+```{r setup, include=FALSE}
+require(knitr)
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+opts_chunk$set(fig.width=12, fig.height=4, fig.path='../Plots/',message=FALSE)
+```
+<!-- Hidden: check for consistency with cloned git Repo and for presence of necessary folders and files. -->
+```{r directories, include=FALSE, warning=FALSE, message=FALSE}
+gitRepoName <- "Flint.et.al.2016.Historical.Hydraulic.Bridge.Collapses"
+if(grepl(gitRepoName,gsub(paste0("/",gitRepoName),"",getwd()))) warning("Git repository folder name is duplicated, please consider re-cloning.")
+if(!grepl(gitRepoName,getwd()))stop("Notebook only functions with working directory set to original repository.")
+fold.req <- c("Scripts", "Data")
+if (any(!(fold.req %in% list.dirs(path = getwd(), full.names = FALSE, recursive = FALSE)))) stop("Scripts and Data directories and files must be present.")
+files.req <- c(paste0(gitRepoName,".Rproj"), "README.md")
+if (any(!(files.req %in% list.files()))) stop("Seeming mismatch with directories.")
+
+# check for folders and create analysis folders if missing
+fold.req <- c("./Plots")
+dirsCreate <- fold.req[!(fold.req %in% list.dirs(recursive = FALSE))]
+if (length(dirsCreate)) sapply(dirsCreate, function(d) dir.create(d))
+
+# cleanup
+rm(fold.req,files.req,dirsCreate)
+```
+<!-- Hidden: load and install packages. -->
+```{r install.load.packages, include=FALSE, warning=FALSE, message=FALSE}
+packages <- c("ggplot2","plyr","reshape2","grid","gridExtra",
+              "RColorBrewer","scales","rgdal","Hmisc","Kendall","shiny") 
+new.pkg <- packages[!(packages %in% installed.packages())]
+if (length(new.pkg)){
+    repo <- "http://cran.us.r-project.org"
+    install.packages(new.pkg, dependencies = TRUE, repos = repo)
+    sapply(new.pkg, require, character.only = TRUE)
+}
+lapply(packages, require, character.only = TRUE)
+```
+
+<!-- This notebook produces snippets of the statistical analyses published in the [ASCE Journal of Infrastructure Systems](http://ascelibrary.org/doi/10.1061/%28ASCE%29IS.1943-555X.0000354) (and permanently archived in the [Stanford Digital Repository](https://purl.stanford.edu/xq579rb2654)). It serves two purposes:
+
+![](../Plots/Supplemental/Collapses.jpg) -->
+
+
+```{r example.table, echo=FALSE}
+load(file.path("Data","df.Fail.NBI.Gage.RData"))
+# numericInput("rows","How many collapsed bridges?",5)
+# rows.typical <- unique(c("47","103","110","195",rowsToView))
+# # rows <- ,5)
+# renderTable({
+#   head(df.Fail.NBI.Gage, sample(rows.typical,input$rows)) #[,c(1:2,4:14)]
+#   })
+```
+
+
+```{r failed.map, fig.width=8, message=FALSE, warning=FALSE}
+source(file.path("Scripts","Plotting","PlotFailedBridgesMap.R"))
+source(file.path("Scripts","Plotting","SetupEncoding.R"))
+# Modify "controls" list below to make sure all changes are passed to each inset figure
+#     encoding:
+#        fill  = collapse cause {flood, scour, hurricane, other}
+#        shape = filled circle/unfilled circle for known collapse date T/F
+#                "H" for linked hurricane
+#        alpha = known collapse date T/F (if shape not used)
+#        size  = drainage area, see options for size
+#     options:
+#        size       = one of {"scaleLog","continuous","area","none"}
+#        legendPos  = {"RIGHT", "BOTTOM"} = legend position
+#        SHOW_HURR  = TRUE/FALSE = superimpose "H" on hurricane sites
+#        USE_SHAPE  = encode known failure date by filled/unfilled circle shapes (TRUE) or transparency (FALSE)
+#        FOR_INSET  = TRUE/FALSE = controls for showing zoomed-in portions of map (note that only "area" and
+#                                  "continuous" size options have all features for insets)
+#        INSET      = {"MidAtlantic", "NewEngland"} = regions for zoomed-in insets 
+#        outputType = {"PRES","PRINT","NOTE"} = fonts sized for presentation, paper, or notebook
+#        SAVE       = TRUE/FALSE = save file
+#        SIZE       = c(width, height) in inches
+#        EPS        = TRUE/FALSE = save as eps rather than pdf
+controls <- list(size = "area", USE_SHAPE = TRUE, embedFonts = FALSE)
+FailedMap       <- PlotFailedBridgesMap(df.Fail.NBI.Gage[rowsToView,], size = "area", 
+                                        plotSites = "BRIDGE", outputType = "NOTE", USE_SHAPE = controls$USE_SHAPE, 
+                                        LEGEND = TRUE, legendPos = "RIGHT", SHOW_HURR = TRUE, 
+                                        FOR_INSET = FALSE, INSET = NA, 
+                                        SAVE = FALSE, SIZE = c(7,5), EPS = FALSE)
+FailedMap
+```
+
+
+```{r return.hist, echo=FALSE, results=FALSE, fig.width=6}
+# source(file.path("Scripts","Plotting","PlotReturnHist.R"))
+# ReturnHist <- PlotReturnHist(df.Fail.NBI.Gage[rowsToView,], SAVE = FALSE, plotTypes = "D",
+#                              LEGEND = TRUE, outputType = "NOTE")
+# ReturnHist
+```
+
+Failure rate $= Pr(failure | Q > Q_{100})Pr(Q > Q_{100}$ over one year$)= Pr(failure | Q > Q_{100})\frac{1}{100 years}$
+
+```{r failure.prob, echo=FALSE}
+# delta <- seq(from = -0.3, to = 0.3, length.out = 31) # uniform scaling of flood frequency curve
+# 
+# source(file.path("Scripts","Plotting","PlotHazardCurve.R"))
+# source(file.path("Scripts","Plotting","PlotImpactScaling.R"))
+# 
+# # Set up the hazard curve
+# Ts    <- 10^seq(from = 0.1, to = 3, length.out = 50)
+# T.delta <- as.data.frame(sapply(delta, function(d) 1/(Ts*(1+d))))
+# colnames(T.delta) <- as.character(delta)
+# T.delta$T_0 <- Ts
+# T.delta.plot <- T.delta[,c(seq(from=1,to=31,length.out = 11),32)]
+# pT <- PlotHazardCurve(T.delta.plot)
+# 
+# # Set up the reliability calculations
+# T.cols  <- c(D ="T_FAIL_D_HECD_USGS") # which data to use from collapse study
+# # Kernel density from collapse return periods
+# dt <- 1
+# t <- seq(dt,12000,by=dt)
+# T.limits <-c(D=2000,IP=11000) # limits of integration for kernel density
+# T.kernels <- lapply(names(T.cols), function(j) density(df.Fail.NBI.Gage[rowsToView,T.cols[j]]
+#                                                        [!is.na(df.Fail.NBI.Gage[rowsToView,T.cols[j]])], 
+#                                                        adjust = 2, 
+#                                                        from = 0, to = T.limits[j]))
+# 
+# T.kernels.interp <- lapply(1:length(T.kernels), function(j) approxExtrap(T.kernels[[j]]$x, T.kernels[[j]]$y, t))
+# pf.Kernel.delta <- sapply(delta, function(d) apply(sapply(1:length(T.kernels), 
+#                                                           function(j) T.kernels.interp[[j]]$y/(t*(1+d))^2*dt),MARGIN = 2, sum))
+# 
+# # Point estimate (median because data is skewed) from collapse data
+# T.Medians <- sapply(T.cols, function(j) median(df.Fail.NBI.Gage[rowsToView,j],na.rm = T))
+# pf.Medians.delta <- sapply(delta, function(d) 1/(T.Medians*(1+d)))
+# 
+# # Nominal reliability of 1.75 given a 100-year flood event occurs
+# t.F   <- 100  # return period of collapse-causing flood
+# beta  <- 1.75 # nominal reliability given a "100-year" flood
+# pf.Nom.delta     <- sapply(delta, function(d) 1/(t.F*(1+d))*pnorm(-beta))
+# 
+# # Plots (assumes that only one type of return period data has been used, e.g., daily)
+# df.delta <- data.frame(Delta = delta, Median = pf.Medians.delta, Nom = pf.Nom.delta, Kernel = pf.Kernel.delta)
+# df.delta.rat <- df.delta
+# df.delta.rat[,2:4] <- sapply(2:4, function(j) (df.delta[,j]-df.delta[df.delta$Delta==0,j])/(df.delta[df.delta$Delta==0,j]))
+# pP <- PlotImpactScaling(df.delta.rat)
+# pP
+# p <- list(pT, pP)
+# grid.arrange(grobs = p, ncol=2)
+```
+
+
+```{r, echo = FALSE}
+shinyAppDir(
+  file.path("Scripts","Shiny","FailMap"),
+  options = list(width = "100%", height = 700)
+)
+```

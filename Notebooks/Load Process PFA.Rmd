@@ -1,0 +1,156 @@
+---
+title: "Notebook: Hydrologic and Hydraulic Analysis of Bridge Collapses"
+author: "Madeleine Flint"
+output: 
+  html_notebook:
+    toc: TRUE
+    number_sections: true
+---
+
+This is an R Markdown Notebook that performs analyses related to a study of the frequency of hydraulic bridge collapses. After an initial setup, the sections (1) load output real or simulated gage flow data, (2) load the results of hydrologic Peak Flow Analysis (PFA) from external software such as HEC-SSP and PeakFQ, and (3) computes the flow and return period of events of interest (maximum and collapse-related).
+
+This Notebook was created by Madeleine Flint on 2018-06-27, from previous standalone scripts. It was compiled under R version getRversion().
+
+## Setup and Data Flags
+Hidden: If the dirsGit list of directory references is not already present in the Global Environment, create it.
+```{r directory setup, include=FALSE}
+knitr::opts_chunk$set(include = FALSE)
+ if(!("dirsGit" %in% ls())){
+   dirM        <- getwd()
+   gitRepoName <- "hydraulic.failures"
+   if(grepl(gitRepoName,gsub(gitRepoName,"",dirM))){
+     error('Git repository folder name is duplicated, please remove.')
+   }
+   dirM    <- substr(dirM,1,regexpr(gitRepoName,dirM)[[1]][1] + nchar(gitRepoName))
+   dirsGit <- list(dir         = dirM,
+                   Scripts     = file.path(dirM,"Scripts"),
+                   Data        = file.path(dirM,"Data"),
+                   ScriptsPlot = file.path(dirM,"Scripts","Plotting"),
+                   Plots       = file.path(dirM,"Plots"))
+   rm(dirM)
+ }
+```
+User may edit flags to control which data sources are loaded and processed.
+```{r setup flags}
+   # Change DATA_FLAGS and SAVE_FLAGS to control what data is processed
+   DATA_FLAGS <- c(USGS = TRUE,
+                   VICG = TRUE,
+                   NLDAS = FALSE)
+   SAVE_FLAGS <- c(USGS = FALSE,
+                   VICG = FALSE,
+                   NLDAS = FALSE)
+   TYPES      <- names(DATA_FLAGS[DATA_FLAGS])
+   
+```
+## Load and process flow frequency analysis data
+User may comment out lines in the ls.Types assignments in order to only retrieve portions of all available analyses.
+```{r setup which particular analysis to run}
+# Set up lists
+ls.Types       <- list()
+ls.folders.out <- list()
+ls.extensions  <- list()
+ls.colNames    <- list()
+if (DATA_FLAGS["USGS"]){
+  ls.Types[["USGS"]] <- c("PKFQ72_17C_P_USGS",
+                          "HEC_17B_P_USGS",
+                          "HEC_17B_D_USGS",
+                          "PKFQ42_17B_P_USGS",
+                          "PKFQ42_17B_D_USGS",
+                          "PARTDUR_USGS")
+  ls.folders.out[["USGS"]] <- c("PKFQ72_17C_P_USGS" = "/Users/MM/Downloads",
+                               "HEC_17B_P_USGS"    = file.path(dirsGit$DataOrig,"HEC","20160107_Combined_HEC_USGS_Pk"), 
+                               "HEC_17B_D_USGS"    = file.path(dirsGit$DataOrig,"HEC","20151208_USGSmaxAnnualDailyMean_HEC","Table"),
+                               "PKFQ42_17B_P_USGS"      = file.path(dirsGit$DataOrig,"PeakFQ","WithMySkews","USGSp"),
+                               "PKFQ42_17B_D_USGS"      = file.path(dirsGit$DataOrig,"PeakFQ","WithMySkews","USGSd"),
+                               "PARTDUR_USGS" = file.path(dirs$OrigDataDir,"StreamGages","PartialDuration"))
+  ls.extensions[["USGS"]] <- c("PKFQ72_17C_P_USGS" = ".PRT\\>",
+                               "HEC_17B_P_USGS"    = ".tb\\>", 
+                               "HEC_17B_D_USGS"    = ".tb\\>",
+                               "PKFQ42_17B_P_USGS" = ".PRT\\>",
+                               "PKFQ42_17B_D_USGS" = ".PRT\\>",
+                               "PARTDUR_USGS"           = "pg_[[:digit:]]{8}_all.txt")
+  
+}
+if(DATA_FLAGS["VICG"]){
+  ls.Types[["VICG"]] <- c(#"HEC_17B_D_VICG",
+    #"PKFQ42_17B_D_VICG",
+    "PKFQ42_17B_D_VICRG")
+  ls.folders.out[["VICG"]] <- c("HEC_17B_D_VIC"      = file.path(dirs$OrigDataDir,"HEC","20151001-VIC-gauge-Bulletin17Bresults","Tables"),
+                                "PKFQ42_17B_D_VICG"  = file.path(dirs$OrigDataDir,"PeakFQ","WithMySkews","VICg"),
+                                "PKFQ42_17B_D_VICRG" = file.path(dirsGit$DataOrig,"PeakFQ","WithMySkews","VICRg") )
+  ls.extensions[["VICG"]] <- c("HEC_17B_D_VIC"      = ".tb\\>", 
+                               "PKFQ42_17B_D_VICG"  = ".tb\\>",
+                               "PKFQ42_17B_D_VICRG" = ".PRT\\>")
+}
+```
+
+Load flows
+
+Load the data and process it to a reasonable and uniform format using subfunction LoadFFA.
+```{r load and process selected flow frequency analysis data}
+  if(!("LoadFFA" %in% ls())) source(file.path(dirsGit$Scripts,"Load Input","LoadFFA.R"))
+  for(T in TYPES){
+    SAVE <- SAVE_FLAGS[T]
+    Types <- ls.Types[[T]]
+    for(type in Types){
+      folder.out <- ls.folders.out[[TYPE]][type]
+      filenames  <- list.files(path = folder.out, pattern = extensions[[TYPE]][type])
+      STAID      <- sapply(filenames, function(f) substr(f,regexec("[[:digit:]]{8}",f)[[1]][1],regexec("[[:digit:]]{8}",f)[[1]][1]+7))
+      PFA        <- lapply(1:length(filenames), function(i) LoadFFA(filenames[i], TYPE = type, colStandard = TRUE))
+      names(PFA) <- STAID
+      dfname     <- paste0("PFA_",type)
+      assign(dfname,PFA)
+      rm(PFA)
+      if(SAVE){
+        savefile <- paste0(gsub("-","",Sys.Date()),"_",dfname,".RData")
+        save(dfname, file=file.path(dirsGit$Data,savefile))
+        rm(savefile)
+      }
+    }
+  }
+```
+
+## Estimate values and return periods of collapse and maximum flow events
+This section uses data on the date or year of bridge collapses as well as the data from a linked gauge to estimate the return period of the collapse event, as well as other events of interest. Which data is used in the analysis is determined in the first code block.
+
+First, estimate flows of events of interests using subfunction IdentifyFlowEvents.
+```{r identify flows of collapse and maximum events}
+if(!("df.Fail.NBI.Gage" %in% ls())) load(file.path(dirsGit$Data,"df.Fail.NBI.Gage.Active.RData"))
+Q_types <- c("FAIL", "MAX","MAXPREFAIL", "FAILPM","FAILYRMAX")
+Types <- unlist(ls.Types)
+if(any(grepl("USGS",Types))){
+  # ???
+}
+for (type in TYPES){
+  cols <- paste("Q",Q_types,"D",type)
+  
+  if(type == "USGS"){
+    # also do I/P analysis
+  }
+  
+}
+
+```
+
+Now estimate the return periods of those events using subfunctions EstimatePFAReturnPeriods and EstimatePartialDurationReturnPeriods.
+```{r estimate return periods of collapse and maximum events}
+
+
+Types   <- unlist(ls.Types)
+Q_types <- c("FAIL", "MAX","MAXPREFAIL", "FAILPM","FAILYRMAX")
+if(any(grepl("USGS",Types))){
+  
+}
+for (type in Types){
+  PFA    <- assign(paste0("PFA_",type),"PFA")
+  if(grepl("PARTDUR", type)){
+    
+  }
+  else{
+    
+  }
+  # need to get the Q values out and in a named vector, need to get right PFA, need STAID to analyze, need to parcel out PartDur as needed. Actually maybe for PartDur can do that separately?
+
+}
+
+```
