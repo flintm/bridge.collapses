@@ -1,20 +1,20 @@
-# README file for git repository hydraulic.failures
+# README file for git repository bridge.collapses
 
 ## Contents
 1. Raw data from public and private sources related to collapsed bridges in the US
-    - The NYSDOT database of failed (collapsed) bridges
-    - The US Data Atlas 2012 gis version of the US National Bridge Inventory
+    - The NYSDOT database of "failed" (collapsed) bridges
+    - The USDOT 2017 gis version of the US National Bridge Inventory
     - USGS station and streamflow data of various kinds
     - Related data on dams, hurricanes, etc.
 2. Processed data from above in the form of .RData
-3. R scripts compatible through R 3.2.1 and mostly compatible through 3.3.1 for
+3. R scripts compatible through R 3.2.1 and mostly compatible through 3.5.2 for
     - Loading and processing the raw data
     - Creating input and reading output from other software (e.g., software for flood frequency analysis)
     - Performing statistical and other analyses in R
     - Plotting results
 4. R markdown notebooks for running performing a series of analyses
 
-A related  repository is available at https://git.it.vt.edu/mflint/Flint.et.al.2016.Historical.Hydraulic.Bridge.Collapses
+A related  repository is available at https://code.vt.edu/mflint/Flint.et.al.2016.Historical.Hydraulic.Bridge.Collapses
 
 ## Naming convention:
 Derived (analysis) variable names are determined in the order followed, linked by underscores ("_")
