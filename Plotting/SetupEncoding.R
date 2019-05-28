@@ -45,7 +45,7 @@ labelsP$Reg   <- c("REGULATED", "UNREGULATED", "UNKNOWN")
 alphasP$Reg  <- c(REGULATED = 0.5, UNGREGULATED = 1, UNKNOWN = 0.3)
 colorsP$Reg  <- c(COLLAPSE="white",FAIL="white",MAX="black",PARTIAL="white")
 shapesP$Reg  <- c(REGULATED="R", UNREGULATED="U", UNKNOWN="N")
-sizesP$Reg   <- c(PRINT = 2, PRES = 4)
+sizesP$Reg   <- c(PRINT = 2, PRES = 4, SHINY = 2, NOTE = 2)
 # Drainage Area ratios
 legendsP$VICgRat <- "VIC DRAIN AREA /\n USGS DRAIN AREA"
 # NSE
@@ -117,9 +117,9 @@ labelsP$Corrs  <- c("COLLAPSE DAILY MEAN FLOW [cfs]",  "COLLAPSE INST. [cfs]", "
                     "DAYMET-VIC-RAPID MAX DAILY MEAN FLOW [cfs]", "DAYMET-VIC-RAPID MAX PRE-COLLAPSE DAILY MEAN FLOW [cfs]",
                     "DAYMET-VIC-RAPID COLLAPSE DAILY B.17B [yr]", "DAYMET-VIC-RAPID COLLAPSE DAILY B.17B [yr]", "DAYMET-VIC-RAPID MAX COLLAPSE YR. B.17B [yr]",
                     "DAYMET-VIC-RAPID MAX DAILY B.17B [yr]", "DAYMET-VIC-RAPID MAX PRE-C DAILY B.17B [yr]")
-sizesP$FailCorr   <- c(PRINT = 4, PRES = 8)
-sizesP$FailCorrMin   <- c(PRINT = 1, PRES = 2)
-sizesP$FailCorrMax   <- c(PRINT = 4, PRES = 8)
+sizesP$FailCorr   <- c(PRINT = 4, PRES = 8, SHINY = 8, NOTE = 6)
+sizesP$FailCorrMin   <- c(PRINT = 1, PRES = 2, SHINY = 2, NOTE = 2)
+sizesP$FailCorrMax   <- c(PRINT = 4, PRES = 8, SHINY = 8, NOTE = 6)
 
 # HYDROLOGICAL DATA TYPES --------------
 # teal/orange/purple/pink - data (maybe just use teal and orange)
@@ -202,6 +202,12 @@ labelsP$Type     <- c("1" = "slab",
                       "22" = "channel beam", 
                       "0" = "other")
 legendsP$Mat <- "MATERIAL"
+
+# Distribution / analysis type
+colorsP$Dist <- c(nominal = "black", median = "gray", kernel = "gray")
+linesP$Dist <- c(nominal = "solid", median = "dotted",kernel = "dashed")
+labelsP$Dist <- c(nominal = "nominal",median = "median", kernel ="kernel")
+
 # MISCELLANEOUS FOR PLOTS ------------
 # Background grays
 # fillsP$grays          <- gray(seq(0.3,0.8,length.out = 3))
@@ -212,9 +218,9 @@ alphasP$MK   <- c("FALSE" = 0.4, "TRUE" = 0.95)
 colorsP$MK   <- c("POS" = colorsP$BridgeAge9[9], "NEG" = colorsP$BridgeAge9[1])
 labelsP$MK   <- c("POS","NEG")
 # Annotation and header text size
-textP$head <- c(PRINT = 8, PRES = 20)
-textP$reg  <- c(PRINT = 8, PRES = 14)
-textP$sub  <- c(PRINT = 8, PRES = 18)
-textP$labels <- c(PRINT = 8, PRES = 12)
+textP$head <- c(PRINT = 8, PRES = 20, SHINY = 10, NOTE = 10)
+textP$reg  <- c(PRINT = 8, PRES = 14, SHINY = 10, NOTE = 10)
+textP$sub  <- c(PRINT = 8, PRES = 18, SHINY = 10, NOTE = 10)
+textP$labels <- c(PRINT = 8, PRES = 12, SHINY = 10, NOTE = 10)
 textP$labelcex <- 0.7
-textP$annotate <- c(PRINT = 2.8, PRES = 6)
+textP$annotate <- c(PRINT = 2.8, PRES = 6, SHINY = 6, NOTE = 10)
