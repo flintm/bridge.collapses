@@ -14,15 +14,15 @@ shinyUI(fluidPage(
   # Sidebar with a slider input for the number of bins
  fluidRow(
 column(4,
-       plotOutput("haz")#, height = 200)
+       plotOutput("haz", height = 300)
        
 ),
 column(4,
-       plotOutput("histTfail")#, height = 200)
+       plotOutput("histTfail", height = 300)
        
 ),
 column(4,
-       plotOutput("pFail")#, height = 200)
+       plotOutput("pFail", height = 300)
        
 )),
                 # failure
@@ -40,8 +40,8 @@ fluidRow(column(4,
                             choices = list("Scale" = 1, "Shift" = 2), selected = 1)),
                 
 column(8,
-  p("Visualization created by Madeleine Flint, Virginia Tech, 2016."),
-  plotOutput("anFail"),
+  #p("Visualization created by Madeleine Flint, Virginia Tech, 2016."),
+  plotOutput("anFail", height = 150),
   leafletOutput("map") 
   # plotOutput("scatter"),
   

@@ -213,14 +213,15 @@ labelsP$Dist <- c(nominal = "nominal",median = "median", kernel ="kernel")
 # fillsP$grays          <- gray(seq(0.3,0.8,length.out = 3))
 fillsP$grays <- c("white",gray(seq(0.95,0.85,length.out=2)))
 alphasP$grays          <- 0.5
+alphasP$emph <- c(emph = 1, back = 0.2)
 # Significance for trend plot
 alphasP$MK   <- c("FALSE" = 0.4, "TRUE" = 0.95)
 colorsP$MK   <- c("POS" = colorsP$BridgeAge9[9], "NEG" = colorsP$BridgeAge9[1])
 labelsP$MK   <- c("POS","NEG")
 # Annotation and header text size
-textP$head <- c(PRINT = 8, PRES = 20, SHINY = 10, NOTE = 10)
-textP$reg  <- c(PRINT = 8, PRES = 14, SHINY = 10, NOTE = 10)
-textP$sub  <- c(PRINT = 8, PRES = 18, SHINY = 10, NOTE = 10)
-textP$labels <- c(PRINT = 8, PRES = 12, SHINY = 10, NOTE = 10)
+textP$head <- c(PRINT = 8, PRES = 20, SHINY = 14, NOTE = 10)
+textP$reg  <- c(PRINT = 8, PRES = 14, SHINY = 14, NOTE = 10)
+textP$sub  <- c(PRINT = 8, PRES = 18, SHINY = 14, NOTE = 10)
+textP$labels <- c(PRINT = 8, PRES = 12, SHINY = 12, NOTE = 10)
 textP$labelcex <- 0.7
 textP$annotate <- c(PRINT = 2.8, PRES = 6, SHINY = 6, NOTE = 10)

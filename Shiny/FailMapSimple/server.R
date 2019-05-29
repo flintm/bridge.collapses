@@ -7,6 +7,7 @@ source("../../Plotting/PlaceAnnotation.R")
 source("../../Plotting/PlotT1T2corrRegress.R")
 source("../../Plotting/PlotHazardCurve.R")
 source("my.kernel.interp.R")
+source("calc.pF.R")
 load("../../Data/df.Fail.NBI.Gage.Active.RData")
 
 # Augment data frame as necessary--------
@@ -100,13 +101,14 @@ shinyServer(function(input, output) {
 
   #  hazard curve shifting and scaling -----------
   output$haz <- renderPlot({
-    deltas <- sort(c(0, input$hazChange/100))
+    deltas <- seq(-0.2,0.2,length.out=9)
+    d.emph <- as.character(input$hazChange/100)
     T.delta <- switch(as.character(input$hazSelect),
                       "1" = as.data.frame(sapply(deltas, function(d) 1/(Ts*(1-d)))),
                       "2" = as.data.frame(sapply(deltas, function(d) 1/(Ts-Tshift*d))))
     colnames(T.delta) <- as.character(deltas)
     T.delta$T_0 <- Ts 
-    PlotHazardCurve(T.delta, AXES = "LOG")
+    PlotHazardCurve(T.delta, d.emph = d.emph,AXES = "LOG", outputType = "SHINY")
   })
   
   # Histograms of failure return period--------
@@ -130,10 +132,11 @@ shinyServer(function(input, output) {
     data.text <- data.frame(x = c(t.F+25,med + (lims[2]-lims[1])/10,0.6*lims[2]), 
                              y = c(h/1.5, h/2.5,h/10),
                             label = c("nominal = 100 yrs",
-                                      paste("collapse median =", round(med),"years"),
+                                      paste("collapse median =\n", round(med),"years"),
                                       "collapse kernel"),
-                            group = labelsP$Dist)
-    pTheme <- getTheme("SHINY", FALSE) +
+                            group = labelsP$Dist,
+                            hjust = c(0,0,0.5))
+    pTheme <- getTheme(outputType = "SHINY") +
       theme(axis.text.x   = element_text(color = "black", size = textP$reg["SHINY"], 
                                          angle = 90, vjust = 0.5, hjust = 1, margin  = margin(0.16,0,0,0, "cm")),
             axis.text.y = element_blank(),
@@ -146,7 +149,8 @@ shinyServer(function(input, output) {
       geom_vline(xintercept = t.F, linetype = linesP$Dist["nominal"], color = colorsP$Dist["nominal"], size = 1) +
       geom_vline(xintercept = med, linetype = linesP$Dist["median"], color = colorsP$Dist["median"], size = 1) + 
       geom_line(data = kernel.plot, aes(x=x,y=y), linetype = linesP$Dist["kernel"], color = colorsP$Dist["kernel"], size = 1) +
-      geom_text(data = data.text,aes(x=x,y=y,label = label, color = group),hjust=0) + scale_color_manual(values = colorsP$Dist, guide=FALSE)
+      geom_text(data = data.text,aes(x=x,y=y,label = label, color = group, hjust = hjust), size = textP$annotate["SHINY"]) + 
+      scale_color_manual(values = colorsP$Dist, guide=FALSE)
       
   })
  
@@ -177,10 +181,11 @@ shinyServer(function(input, output) {
     ggplot(data = pF0, aes(x=x,ymin=ymin,ymax=ymax, group = group)) + 
       geom_linerange(aes(linetype = group, color = group), size = 1) + scale_linetype_manual(values = linesP$Dist, guide = FALSE) + 
       scale_color_manual(values = colorsP$Dist, guide = FALSE) + ggtitle("Annual probability of collapse") +
-      # ylim(c(0,0.1))+
-      geom_text(aes(y = ymax, label = label), hjust=0) + 
-      coord_flip()+ getTheme("SHINY") +
-      theme(axis.text.x   = element_blank(),
+      ylim(c(0,0.1))+
+      geom_text(aes(y = ymax, label = label), hjust=0, size = textP$annotate["SHINY"]) + 
+       getTheme(outputType = "SHINY") + coord_flip()+
+      theme(axis.text.y = element_text(size = textP$sub["SHINY"]),#14),#
+            axis.text.x   = element_blank(),
             axis.title.x = element_blank(),
             axis.title.y = element_blank(),
             axis.ticks.y = element_blank(),
@@ -210,7 +215,7 @@ shinyServer(function(input, output) {
                      row.names = labelsP$Dist)
     pF$none <- c(1/t.F*pnorm(-beta), 
                     1/pF["median","T"], 
-                    sum(T.kernel.interp$y/(t.int)^2*dt))
+                    sum(T.kernel.interp$y/(T.kernel.interp$x)^2*dt))
     pF[,d] <- c(switch(as.character(input$hazSelect),
                        "1" = 1/(t.F*(1-input$hazChange/100))*pnorm(-beta),
                        "2" = 1/(t.F-Tshift*input$hazChange/100)*pnorm(-beta)),
@@ -219,24 +224,45 @@ shinyServer(function(input, output) {
                        "2" = 1/(pF["median","T"]-Tshift*input$hazChange/100)),
                 switch(as.character(input$hazSelect),
                        "1" = sum(T.kernel.interp$y/(T.kernel.interp$x*(1-input$hazChange/100))^2*dt),
-                       "2" = sum(T.kernel.interp$y/(T.kernel.interp$x-Tshift*input$hazChange/100)^2*dt)))
+                       "2" = NA))
+    if(is.na(pF["kernel",d])){
+      T.kernel.interp$y <- T.kernel.interp$y[T.kernel.interp$x-Tshift*input$hazChange/100 > 0]
+      T.kernel.interp$x <- T.kernel.interp$x[T.kernel.interp$x-Tshift*input$hazChange/100 > 0]
+      T.kernel.interp$y <- T.kernel.interp$y/sum(T.kernel.interp$y*dt)
+      pF["kernel",d] <- sum(T.kernel.interp$y/(T.kernel.interp$x-Tshift*input$hazChange/100)^2*dt)
+  }
     pF$change <- (pF[,d] - pF$none)/pF$none*100
-    pF$label <- signif(pF$change,2)
+    pF$label <- paste0(signif(pF$change,2),"%")
+    pF$hjust <- ifelse(input$hazChange>=0,0,1)
+    
+    # make necessary changes if beyond axis limits
+    pF$label[abs(pF$change)>60] <- paste0("(",pF$label[abs(pF$change)>60],")")
+    pF$hjust[abs(pF$change)>60] <- abs(pF$hjust[abs(pF$change)>60]-1)
+    pF$change[abs(pF$change)>60] <- sign(pF$change[abs(pF$change)>60])*60
 
-    p <- ggplot(data = pF,aes(x=x,y=change)) + geom_col() + geom_hline(yintercept  = 0) + ylim(c(-60,60))+
-       getTheme() + geom_text(aes(y = change, label = label), hjust=0) + 
-      ggtitle('Change in annual collapse probability given hazard change [%]')+
-      theme(#axis.text.x   = element_blank(),
-        axis.ticks.x = element_blank(),
-        axis.ticks.y = element_blank()
-            axis.title.x = element_blank(),
-            axis.title.y = element_blank(),
-            axis.ticks.y = element_blank(),
-            axis.ticks.x = element_blank())
+    p <- ggplot(data = pF,aes(x=x,y=change)) + geom_col(aes(fill=group)) + 
+      scale_fill_manual(values = colorsP$Dist, guide = FALSE)+
+    geom_hline(yintercept  = 0) + 
+      ylim(c(-60,60))+
+       geom_text(aes(y = change, label = label, hjust = hjust),
+                 size =  textP$annotate["SHINY"]) + 
+      labs(title='Change in annual collapse probability given hazard change [%]',
+           x=NULL,
+           y=NULL)
     if(input$hazChange!=0){
-      p + geom_hline(yintercept = input$hazChange, color = colors[d]) + coord_flip() 
+      p <- p + geom_hline(yintercept = input$hazChange, color = colors[d]) 
     }
-    else p + coord_flip()
+    p  + getTheme(outputType = "SHINY") + 
+      theme(axis.ticks.x = element_blank(),
+            axis.ticks.y = element_blank(),
+            axis.text.x = element_blank(),
+            axis.text.y = element_text(size = 14)) + coord_flip()
+      # theme(axis.text.x = element_text(size = textP$sub["SHINY"]),
+            # axis.ticks.x = element_blank(),
+            # axis.ticks.y = element_blank(),
+            # axis.title.x = element_blank(),
+            # axis.title.y = element_blank(),
+            # )
   })#, 
   # height = 200,
   # width = 500)
