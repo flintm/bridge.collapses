@@ -213,7 +213,9 @@ labelsP$Dist <- c(nominal = "nominal",median = "median", kernel ="kernel")
 # fillsP$grays          <- gray(seq(0.3,0.8,length.out = 3))
 fillsP$grays <- c("white",gray(seq(0.95,0.85,length.out=2)))
 alphasP$grays          <- 0.5
-alphasP$emph <- c(emph = 1, back = 0.2)
+alphasP$emph <- c(emph = 1, back = 0.6)
+linesP$emph <- c(emph = 2, back = 1)
+sizesP$emph <- c(emph = 1.25, back = 0.75)
 # Significance for trend plot
 alphasP$MK   <- c("FALSE" = 0.4, "TRUE" = 0.95)
 colorsP$MK   <- c("POS" = colorsP$BridgeAge9[9], "NEG" = colorsP$BridgeAge9[1])
