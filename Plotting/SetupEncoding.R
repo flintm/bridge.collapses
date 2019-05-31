@@ -205,8 +205,8 @@ legendsP$Mat <- "MATERIAL"
 
 # Distribution / analysis type
 colorsP$Dist <- c(nominal = "black", median = "gray", kernel = "gray")
-linesP$Dist <- c(nominal = "solid", median = "dotted",kernel = "dashed")
-labelsP$Dist <- c(nominal = "nominal",median = "median", kernel ="kernel")
+linesP$Dist <- c(nominal = "dashed", median = "dotted",kernel = "solid")
+labelsP$Dist <- c(nominal = "Nominal",median = "Median", kernel ="Kernel")
 
 # MISCELLANEOUS FOR PLOTS ------------
 # Background grays
@@ -226,4 +226,4 @@ textP$reg  <- c(PRINT = 8, PRES = 14, SHINY = 14, NOTE = 10)
 textP$sub  <- c(PRINT = 8, PRES = 18, SHINY = 14, NOTE = 10)
 textP$labels <- c(PRINT = 8, PRES = 12, SHINY = 12, NOTE = 10)
 textP$labelcex <- 0.7
-textP$annotate <- c(PRINT = 2.8, PRES = 6, SHINY = 6, NOTE = 10)
+textP$annotate <- c(PRINT = 2.8, PRES = 6, SHINY = 4, NOTE = 10)

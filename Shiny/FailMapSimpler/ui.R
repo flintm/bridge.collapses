@@ -59,28 +59,34 @@ column(4,
 column(4,
        plotOutput("pFail", height = 300)
        
-))#,
+)),
                 # failure
 
-# fluidRow(
-#   column(4,
-#          h4("Historical collapse explorer"),
-#          checkboxGroupInput("FailCause",
-#                             label = "Collapse causes",
-#                             choices = list("FLOOD" = "FLOOD",
-#                                            "SCOUR" = "SCOUR",
-#                                            "HURRICANE" = "HURRICANE",
-#                                            "OTHER" = "OTHER"),
-#                             selected = c("FLOOD","SCOUR","HURRICANE","OTHER")),
-#          sliderInput("drainArea",
-#                      label = "Drainage Area (1000 sq.km)",
-#                      min = 0,
-#                      max = 8.5,
-#                      value = c(.01,8.2),
-#                      round = TRUE,
-#                      step = 0.5)
-#   ),
-#  column(8,
-#                   leafletOutput("map") )
-# )
+fluidRow(
+  column(4,
+         h4("Historical collapse data"),
+         checkboxGroupInput("FailCause",
+                            label = "Collapse causes",
+                            choices = list("FLOOD" = "FLOOD",
+                                           "SCOUR" = "SCOUR",
+                                           "HURRICANE" = "HURRICANE",
+                                           "OTHER" = "OTHER"),
+                            selected = c("FLOOD","SCOUR","HURRICANE","OTHER")),
+         sliderInput("drainArea",
+                     label = "Drainage Area (1000 sq.km)",
+                     min = 0,
+                     max = 8.5,
+                     value = c(.01,8.2),
+                     round = TRUE,
+                     step = 0.5),
+         checkboxGroupInput("FailData",
+                            label = "Collapse data",
+                            choices = list("Nominal" = "Nominal",
+                                           "Median" = "Median",
+                                           "Kernel" = "Kernel"),
+                            selected = c("Nominal","Kernel"))
+  ),
+ column(8,
+                  leafletOutput("map") )
+)
 ))
