@@ -7,6 +7,7 @@ source("../../Plotting/PlaceAnnotation.R")
 source("../../Plotting/PlotT1T2corrRegress.R")
 source("../../Plotting/PlotHazardCurve.R")
 source("my.kernel.interp.R")
+source("plotBar.R")
 source("calc.pF.R")
 load("../../Data/df.Fail.NBI.Gage.Active.RData")
 # Controls on scaling limits
@@ -196,145 +197,18 @@ shinyServer(function(input, output) {
   # absolute value of collapse probabilities ----
   output$pFail <- renderPlot({
     if(nrow(bridgesInBounds())<3) return()
-    lims <- range(bridgesInBounds()$T_FAIL_D_HECD_USGS, na.rm = T)
-    if(any(is.na(lims) | is.infinite(lims))){
-      lims <- c(0,2000)
-    }
-    t.int <- t[t<2*lims[2]]
-    T.kernel.interp <- my.kernel.interp(bridgesInBounds()$T_FAIL_D_HECD_USGS, 
-                                        to = 2*lims[2], 
-                                        t.interp = t.int)
-    T.kernel.interp$y <- T.kernel.interp$y/sum(T.kernel.interp$y*dt)
-    pF0 <- data.frame(x = labelsP$Dist,
-                     group = tolower(labelsP$Dist),
-                     "T" = c(t.F,
-                             median(bridgesInBounds()$T_FAIL_D_HECD_USGS),
-                             NA),
-                     ymin = rep(0,3),
-                     row.names = labelsP$Dist)
-    pF0$ymax <- c(1/t.F*pnorm(-beta), 
-                 1/pF0["Median","T"], 
-                 NA)
-    pF0["Kernel","ymax"] <-sum(T.kernel.interp$y/(T.kernel.interp$x)^2*dt)
-    pF0$label <- signif(pF0$ymax,2)
-
-    pF0.melt2 <- melt(pF0[,colnames(pF0)!="T"], id.vars = c("x","group","label"), value.name = "y")
-    pF0.melt2 <- pF0.melt2[order(pF0.melt2$x,decreasing = T ),]
-    row.names(pF0.melt2) <- seq(1,nrow(pF0.melt2))
-    grad.out <- 30
-    pF0.melt2[grep("Kernel",pF0.melt2$x)[1]:(grep("Kernel",pF0.melt2$x)[1]+grad.out-1),] <- pF0.melt2[grep("Kernel",pF0.melt2$x)[2],]
-    pF0.melt2[(grep("Kernel",pF0.melt2$x)[1]):(grep("Kernel",pF0.melt2$x)[1]+grad.out-1),"y"] <- seq(0,pF0.melt2[grep("Kernel",pF0.melt2$x)[1],"y"],length.out = grad.out) 
-    pF0.melt2[pF0.melt2$x=="Kernel","variable"] <- "ymin"
-    pF0.melt2[nrow(pF0.melt2),"variable"] <- "ymax"
-    pF0.melt2[pF0.melt2$x=="nominal","col"] <- 1
-    pF0.melt2[pF0.melt2$x=="median","col"] <- 0.5
-    pF0.melt2[pF0.melt2$x=="Kernel","col"] <- seq(0,0.1*length(input$FailCause)-0.1,length.out = grad.out)
-    pF0.melt2[pF0.melt2$variable=="ymin","label"] <- NA
-    
-    medCol <- apply(col2rgb(colorsP$Fail[input$FailCause]),MARGIN = 1, mean)
-    medCol <- rgb(medCol[1]/255,medCol[2]/255,medCol[3]/255)
-    colValues <- c(seq(0,0.1*length(input$FailCause)-0.1, by = 0.1),0.5,1)
-    colGrad   <- c(colorsP$Fail[input$FailCause], medCol, "black")
-    
-    pF0.melt2 <- pF0.melt2[pF0.melt2$x %in% tolower(input$FailData),]
-    
-    ggplot(data = pF0.melt2, aes(x=x,y=y, color = col)) + 
-      geom_path(size = 4) +# scale_linetype_manual(values = linesP$Dist, guide = FALSE) + 
-      scale_color_gradientn(colours = colGrad, values = colValues, guide = FALSE) + ggtitle("Probability of a Bridge\nCollapsing Over One Year") +
-      ylim(c(0,0.04))+
-      geom_text(aes(y = y, label = label), hjust=0, size = textP$annotate["SHINY"]) +
-      getTheme(outputType = "SHINY") + coord_flip()+
-      theme(axis.text.y = element_text(size = textP$sub["SHINY"]),#14),#
-            axis.text.x   = element_blank(),
-            axis.title.x = element_blank(),
-            axis.title.y = element_blank(),
-            axis.ticks.y = element_blank(),
-            axis.ticks.x = element_blank())
+    d <-  as.character(input$hazChange/100)
+    plotBar(bridgesInBounds(), FailData = input$FailData, FailCause = input$FailCause,
+            delta = input$hazChange/100, hazCol = colors[d],
+            hazSelect = input$hazSelect)
   })
   # change in annual probability of collapse, delta ---------
   output$anFail <- renderPlot({
     if(nrow(bridgesInBounds())<3) return()
     d <-  as.character(input$hazChange/100)
-    lims <- range(bridgesInBounds()$T_FAIL_D_HECD_USGS, na.rm = T)
-    if(any(is.na(lims) | is.infinite(lims))){
-      lims <- c(0,2000)
-    }
-    
-    t.int <- t[t<2*lims[2]]
-    T.kernel.interp <- my.kernel.interp(bridgesInBounds()$T_FAIL_D_HECD_USGS, 
-                                        to = 2*lims[2], 
-                                        t.interp = t.int)
-    T.kernel.interp$y <- T.kernel.interp$y/sum(T.kernel.interp$y*dt)
-
-    pF <- data.frame(x = c("Hazard",labelsP$Dist),
-                     group = tolower(c("Hazard",labelsP$Dist)),
-                     "T" = c(NA,
-                             t.F,
-                             median(bridgesInBounds()$T_FAIL_D_HECD_USGS),
-                             NA),
-                     ymin = rep(0,4),
-                     row.names = c("Hazard",labelsP$Dist))
-    pF$none <- c(0,1/t.F*pnorm(-beta), 
-                    1/pF["Median","T"], 
-                    sum(T.kernel.interp$y/(T.kernel.interp$x)^2*dt))
-    pF[,d] <- c(NA,
-                switch(as.character(input$hazSelect),
-                       "1" = 1/(t.F*(1-input$hazChange/100))*pnorm(-beta),
-                       "2" = 1/(t.F-Tshift*input$hazChange/100)*pnorm(-beta)),
-                switch(as.character(input$hazSelect),
-                       "1" = 1/(pF["Median","T"]*(1-input$hazChange/100)),
-                       "2" = 1/(pF["Median","T"]-Tshift*input$hazChange/100)),
-                switch(as.character(input$hazSelect),
-                       "1" = sum(T.kernel.interp$y/(T.kernel.interp$x*(1-input$hazChange/100))^2*dt),
-                       "2" = NA))
-    if(is.na(pF["Kernel",d])){
-      T.kernel.interp$y <- T.kernel.interp$y[T.kernel.interp$x-Tshift*input$hazChange/100 > 0]
-      T.kernel.interp$x <- T.kernel.interp$x[T.kernel.interp$x-Tshift*input$hazChange/100 > 0]
-      T.kernel.interp$y <- T.kernel.interp$y/sum(T.kernel.interp$y*dt)
-      pF["Kernel",d] <- sum(T.kernel.interp$y/(T.kernel.interp$x-Tshift*input$hazChange/100)^2*dt)
-  }
-    pF$change <- (pF[,d] - pF$none)/pF$none*100
-    pF["Hazard","Change"] <- input$hazChange
-    pF$label <- paste0(signif(pF$change,2),"%")
-    pF$hjust <- ifelse(input$hazChange>=0,0,1)
-    
-    medCol <- apply(col2rgb(colorsP$Fail[input$FailCause]),MARGIN = 1, mean)
-    medCol <- rgb(medCol[1]/255,medCol[2]/255,medCol[3]/255)
-    colValues <- c(seq(0,0.1*length(input$FailCause)-0.1, by = 0.1),0.5,1)
-    colGrad   <- c(colorsP$Fail[input$FailCause], medCol, "black")
-    
-    labels <- rev(c("Hazard",labelsP$Dist[labelsP$Dist %in% input$FailData]))
-    pF <- pF[pF$x %in% labels,]
-    pF$x <- factor(pF$x, levels = labels, labels = labels, ordered = T)
-    
-    # make necessary changes if beyond axis limits
-    pF$label[abs(pF$change)>60] <- paste0("(",pF$label[abs(pF$change)>60],")")
-    pF$hjust[abs(pF$change)>60] <- abs(pF$hjust[abs(pF$change)>60]-1)
-    pF$change[abs(pF$change)>60] <- sign(pF$change[abs(pF$change)>60])*60
-
-    p <- ggplot(data = pF,aes(x=x,y=change)) + geom_col(aes(fill=group)) + 
-      scale_fill_manual(values = c(hazard = colors[d],colorsP$Dist), guide = FALSE)+
-    geom_hline(yintercept  = 0) + 
-      ylim(c(-60,60))+
-       geom_text(aes(y = change, label = label, hjust = hjust),
-                 size =  textP$annotate["SHINY"]) + 
-      labs(title='Change in annual collapse\nprobability given hazard change [%]',
-           x=NULL,
-           y=NULL)
-    if(input$hazChange!=0){
-      p <- p + geom_hline(yintercept = input$hazChange, color = colors[d]) 
-    }
-    p  + getTheme(outputType = "SHINY") + 
-      theme(axis.ticks.x = element_blank(),
-            axis.ticks.y = element_blank(),
-            axis.text.x = element_blank(),
-            axis.text.y = element_text(size = 14)) + coord_flip()
-      # theme(axis.text.x = element_text(size = textP$sub["SHINY"]),
-            # axis.ticks.x = element_blank(),
-            # axis.ticks.y = element_blank(),
-            # axis.title.x = element_blank(),
-            # axis.title.y = element_blank(),
-            # )
+    plotBar(bridgesInBounds(), FailData = input$FailData, FailCause = input$FailCause,
+            DELTA = TRUE, delta = input$hazChange/100, hazCol = colors[d],
+            hazSelect = input$hazSelect)
   })#, 
   # height = 200,
   # width = 500)
