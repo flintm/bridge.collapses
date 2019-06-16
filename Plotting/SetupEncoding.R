@@ -207,6 +207,7 @@ legendsP$Mat <- "MATERIAL"
 colorsP$Dist <- c(nominal = "black", median = "gray", kernel = "gray")
 linesP$Dist <- c(nominal = "dashed", median = "dotted",kernel = "solid")
 labelsP$Dist <- c(nominal = "Nominal",median = "Median", kernel ="Kernel")
+labelsP$Delta <- c(nominal = "Nominal",median = "Median", kernel ="Kernel", hazard = "Hazard")
 
 # MISCELLANEOUS FOR PLOTS ------------
 # Background grays

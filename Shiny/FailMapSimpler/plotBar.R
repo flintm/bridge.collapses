@@ -23,23 +23,8 @@ plotBar <- function(Data,
   colGrad   <- c(colorsP$Fail[FailCause], medCol, hazCol, "black")
   names(colGrad)[(nCaus+1):length(colGrad)] <- c("Median","Delta","Nominal")
 
+  # set up labels and types of data to be plotted
   toPlot <- FailData
-  d <- as.character(delta)
-  
-  levels.x <- c("Kernel Delta","Kernel","Median Delta", "Median","Nominal Delta", "Nominal","Hazard Delta","Hazard")
-  levels.x <- switch(as.character(DELTA),
-                     "TRUE"  = levels.x[!grepl("Delta",levels.x)],
-                     "FALSE" = levels.x[1:6])
-  labels.x <- switch(as.character(DELTA),
-                     "TRUE"  = levels.x,
-                     "FALSE" = switch(as.character(abs(delta)>0.02),
-                                      "TRUE" = levels.x,
-                                      "FALSE" = sub(".*Delta","",levels.x)))
-  names(labels.x) <- levels.x
-  labels.x[c("Kernel","Median","Nominal")][!(c("Kernel","Median","Nominal") %in% FailData)] <- ""
-  print(levels.x)
-  print(labels.x)
-  
   if(DELTA){ 
     toPlot <- c(toPlot, "Hazard")
     ylims <- c(-60,60)
@@ -51,7 +36,27 @@ plotBar <- function(Data,
     if(abs(delta)>0.02) toPlot<- c(toPlot, paste(toPlot,"Delta"))
   }
   
+  d <- as.character(delta)
   
+  sgn <- ifelse(sign(as.numeric(d.emph))>0,"+","")
+  
+  levels.x <- as.vector(sapply(labelsP$Delta, function(l) paste0(l,c("",
+                                                                     " Delta"))))
+  levels.x <- switch(as.character(DELTA),
+                     "TRUE"  = levels.x[!grepl("Delta",levels.x)],
+                     "FALSE" = levels.x[1:6])
+  labels.x <- switch(as.character(DELTA),
+                     "TRUE"  = levels.x,
+                     "FALSE" = switch(as.character(abs(delta)>0.02),
+                                      "TRUE" = sub("Delta",paste0(sgn,delta*100,"%"),levels.x),
+                                      "FALSE" = sub(".*Delta","",levels.x)))
+  if(!DELTA){
+    labels.x <- sapply(labels.x, function(l) ifelse(any(sapply(FailData, function(m) grepl(m,l))),
+                                                    l,
+                                                    ""))
+  }
+  names(labels.x) <- levels.x
+
   # Calculations for kernel smoothed and data frame creation-----
   lims <- range(Data$T_FAIL_D_HECD_USGS, na.rm = T)
   if(any(is.na(lims) | is.infinite(lims))){
@@ -145,23 +150,20 @@ plotBar <- function(Data,
     pF.melt2 <- melt(pF[,colnames(pF)!="ymax"], id.vars = c("x","group","label", "order","hjust"), value.name = "y")
     pF.melt2$col <- 0.75 # maps to color of hazard
     
-    # print(pF.melt2)
     pF.melt <- rbind(pF.melt, pF.melt2)
     pF.melt[pF.melt$variable==d,"variable"] <- "ymax"
     
   # }
     pF.melt$x <- as.character(pF.melt$x)
-   
-    pF.melt <- pF.melt[pF.melt$x %in% levels.x,]
-    pF.melt$x <- factor(pF.melt$x, levels = levels.x, labels = labels.x,ordered = T)
-  # print(levels(pF$x))
+
   if(DELTA & abs(delta)<0.02) pF.melt$col <- 1
   pF.melt <- pF.melt[pF.melt$x %in% toPlot,]
   pF.melt[pF.melt$variable=="ymin","label"] <- NA
-  print(pF.melt)
+
   # make plot
   pB <- ggplot(data = pF.melt, aes(x=x,y=y, color = col)) + 
-    geom_path(size = 4) + scale_x_discrete(limits = levels.x, drop = FALSE, labels = labels.x) +
+    geom_path(size = 4) + 
+    scale_x_discrete(limits = rev(levels.x), drop = FALSE, labels = rev(labels.x)) +
     scale_color_gradientn(colours = colGrad, values = colValues, guide = FALSE) + ggtitle(title) +
     ylim(ylims)+
     geom_text(aes(y = y, label = label, hjust = hjust), size = textP$annotate["SHINY"]) +
