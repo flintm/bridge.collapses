@@ -127,6 +127,13 @@ shinyServer(function(input, output) {
   
 
   #  hazard curve shifting and scaling -----------
+  output$hazStatic <- renderPlot({
+    T.delta <- data.frame(T_0 = Ts,"delta"=1/Ts)
+    colnames(T.delta)[2] <- "0"
+    PlotHazardCurve(T.delta, STATIC = TRUE,x.limits = c(1,1000),y.limits = c(0.0005,1.01),
+                    AXES = "LOG", outputType = "SHINY")
+  })
+    
   output$haz <- renderPlot({
     d.emph <- as.character(input$hazChange/100)
     T.delta <- switch(as.character(input$hazSelect),

@@ -5,6 +5,7 @@ PlotHazardCurve <- function(T.delta, d.emph = NA, nCol = 9,
                             d.limits = c(-0.2,0.2),
                             x.limits = c(50,200), y.limits = c(0.005,0.5),
                             AXES = "LOG", 
+                            STATIC = FALSE,
                             outputType = "NOTE"){
   require(ggplot2)
   require(reshape2)
@@ -18,6 +19,7 @@ PlotHazardCurve <- function(T.delta, d.emph = NA, nCol = 9,
   d <- paste0(sgn,d)
   
   T.delta.melt <- melt(T.delta, id.vars = "T_0")
+  print(T.delta.melt)
   colors <- brewer.pal(nCol, "RdBu")
   names(colors) <- as.character(seq(d.limits[1],d.limits[2],length.out = nCol))
   colors["0"]   <- "black"
@@ -41,21 +43,26 @@ PlotHazardCurve <- function(T.delta, d.emph = NA, nCol = 9,
     geom_line(aes(group=variable, color=variable, alpha = alpha, size = line)) +  
     labs(x=expression(T[R]), y = expression(lambda(T[R])==1/T[R]), 
          title = expression("Hazard Curve for \nFlood Return Periods")) + 
-    geom_text(data = df.text, aes(x=x,y=y,label=label,hjust=hjust,vjust=vjust,
-                                  color = variable, alpha = alpha), size = textP$annotate[outputType])+
+   
     scale_color_manual(values = colors, name = expression(delta), guide = FALSE) + 
      scale_alpha_manual(values = alphasP$emph, guide = FALSE) +
     scale_size_manual(values = sizesP$emph, guide = FALSE) 
-  if(is.na(d.emph) | d.emph=="0"){
-    pT <- pT +  annotate("segment", x = 1.5*df.text[2,"x"], xend = 1.6*df.text[2,"x"], 
-                         y = T.delta[which.min(abs(T.delta$T_0-1.5*df.text[2,"x"])),nCol-1], 
-                         yend =  1.4*T.delta[which.min(abs(T.delta$T_0-1.5*df.text[2,"x"])),nCol-1], colour = colors["0.2"], size=1,
-                         arrow=arrow(length = unit(0.3,"cm"), type = "closed"))+
-      annotate("segment", x = 100, xend = 95, 
-               y = T.delta[which.min(abs(T.delta$T_0-100)),1], 
-               yend =  0.7*T.delta[which.min(abs(T.delta$T_0-100)),1], colour = colors["-0.2"], size=1,
-               arrow=arrow(length = unit(0.3,"cm"), type = "closed"))
+  
+  if(!STATIC){
+    pT <- pT +  geom_text(data = df.text, aes(x=x,y=y,label=label,hjust=hjust,vjust=vjust,
+                                              color = variable, alpha = alpha), size = textP$annotate[outputType])
+    if(is.na(d.emph) | d.emph=="0"){
+      pT <- pT +  annotate("segment", x = 1.5*df.text[2,"x"], xend = 1.6*df.text[2,"x"], 
+                           y = T.delta[which.min(abs(T.delta$T_0-1.5*df.text[2,"x"])),nCol-1], 
+                           yend =  1.4*T.delta[which.min(abs(T.delta$T_0-1.5*df.text[2,"x"])),nCol-1], colour = colors["0.2"], size=1,
+                           arrow=arrow(length = unit(0.3,"cm"), type = "closed"))+
+        annotate("segment", x = 100, xend = 95, 
+                 y = T.delta[which.min(abs(T.delta$T_0-100)),1], 
+                 yend =  0.7*T.delta[which.min(abs(T.delta$T_0-100)),1], colour = colors["-0.2"], size=1,
+                 arrow=arrow(length = unit(0.3,"cm"), type = "closed"))
+    }
   }
+ 
   pT <- pT +
 
     # guides(color = guide_legend(override.aes = list(values = sort(c(-0.2,0,as.numeric(d.emph/100),0.2)))))+

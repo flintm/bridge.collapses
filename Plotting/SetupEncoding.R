@@ -204,7 +204,7 @@ labelsP$Type     <- c("1" = "slab",
 legendsP$Mat <- "MATERIAL"
 
 # Distribution / analysis type
-colorsP$Dist <- c(nominal = "black", median = "gray", kernel = "gray")
+colorsP$Dist <- c(nominal = "black", median = "gray", kernel = "#606060")
 linesP$Dist <- c(nominal = "dashed", median = "dotted",kernel = "solid")
 labelsP$Dist <- c(nominal = "Nominal",median = "Median", kernel ="Kernel")
 labelsP$Delta <- c(nominal = "Nominal",median = "Median", kernel ="Kernel", hazard = "Hazard")

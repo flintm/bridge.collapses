@@ -11,6 +11,8 @@ plotBar <- function(Data,
                     hazSelect = 1, Tshift = 100,
                     hazCol = "black"){
   
+  # if(!("labelsP" %in% ls())) source("../../Plotting/SetupEncoding.R")
+  # if(!("my.kernel.interp" %in% ls())) source("my.kernel.interp.R")
   
   # set up colors and what data types will be plotted-----
   nCaus <- length(FailCause)
