@@ -6,36 +6,37 @@ source("../../Plotting/getTheme.R")
 source("../../Plotting/PlotHazardCurve.R")
 source("my.kernel.interp.R")
 source("plotBar.R")
-# source("calc.pF.R")
 load("BridgesDataFrame.RData")
 
 # SETUP AND OPTIONS------------------------------------------------------------
   # Shiny/display: color palettes, limits----------------------------------------
-hazChangeLims <- c(-25,20)
-step          <- 5
-nStops        <- (hazChangeLims[2]-hazChangeLims[1])/step+1
-deltas        <- seq(from       = as.numeric(hazChangeLims[1]/100),
+  hazChangeLims <- c(-25,20)
+  step          <- 5
+  nStops        <- (hazChangeLims[2]-hazChangeLims[1])/step+1
+  deltas        <- seq(from       = as.numeric(hazChangeLims[1]/100),
                      to         = as.numeric(hazChangeLims[2]/100),
                      length.out = nStops)
-names(deltas) <- as.character(deltas)
+  names(deltas) <- as.character(deltas)
 
-pal           <- colorFactor(colorsP$Fail, names(colorsP$Fail), ordered = TRUE)
-colors        <- brewer.pal(nStops, "RdBu")
-names(colors) <- as.character(deltas)
-colors["0"]   <- "black"
+  pal           <- colorFactor(colorsP$Fail, names(colorsP$Fail), ordered = TRUE)
+  colors        <- brewer.pal(nStops, "RdBu")
+  names(colors) <- as.character(deltas)
+  colors["0"]   <- "black"
 
   # Analysis-------------------------------------------------------------------
-dt       <- 1 # discretization of time in years for integrating hazard
-t        <- seq(1,3000,by=dt) # integration points
-Ts       <- 10^seq(from = 0.1, to = 3, length.out = 50) # collapse return periods
-T.shift  <- 100  # return period value fixed when scaling/shifting hazard curve
-T.nom    <- 100  # nominal return period of collapse-causing flood
-beta.nom <- 1.75 # nominal reliability given a "100-year" flood
+  dt       <- 1 # discretization of time in years for integrating hazard
+  t        <- seq(1,3000,by=dt) # integration points
+  Ts       <- 10^seq(from = 0.1, to = 3, length.out = 50) # collapse return periods
+  T.shift  <- 100  # return period value fixed when scaling/shifting hazard curve
+  T.nom    <- 100  # nominal return period of collapse-causing flood
+  beta.nom <- 1.75 # nominal reliability given a "100-year" flood
+
 
 
 # SHINY SERVER ----------------------------------------------------------------
 shinyServer(function(input, output){
-  # Reactive: displayed collapsed bridges--------------------------------------
+  # REACTIVES -----------------------------------------------------------------
+  # Filtered/displayed collapsed bridges
   filteredBridges <- reactive({
     subset(BridgesDataFrame,  DRAIN_SQKM >= input$drainArea[1]*1000 & 
              DRAIN_SQKM <= input$drainArea[2]*1000 &
@@ -47,10 +48,40 @@ shinyServer(function(input, output){
     bounds <- input$map_bounds
     latRng <- range(bounds$north, bounds$south)
     lngRng <- range(bounds$east, bounds$west)
-    REACT <- TRUE
     subset(filteredBridges(),
            LATDD >= latRng[1] & LATDD <= latRng[2] &
              LONGDD >= lngRng[1] & LONGDD <= lngRng[2])
+  })
+  
+  # limits of bridges in bounds and return periods
+  T.lims <- reactive({
+    T.lims <- list(x = range(bridgesInBounds()$T_FAIL_D_HECD_USGS, na.rm = T),
+                   y = nrow(bridgesInBounds()))
+    if(any(is.na(T.lims$x) | is.infinite(T.lims$x))){
+      T.lims$x <- range(t)
+    }
+    T.lims
+  })
+  
+  # Statistics of filtered/displayed bridges
+  median.stat <- reactive({
+    median.stat <- list(val = median(bridgesInBounds()$T_FAIL_D_HECD_USGS))
+    medCol <- apply(col2rgb(colorsP$Fail[input$FailCause]),MARGIN = 1, mean)
+    median.stat$col <- rgb(medCol[1]/255,medCol[2]/255,medCol[3]/255)
+    median.stat
+  })
+  
+  # Statistics of kernel-smoothed distribution of filtered/displayed bridges
+  kernel.stat <- reactive({
+    t.int <- t[t<2*T.lims()$x[2]]
+    T.kernel.interp <- my.kernel.interp(bridgesInBounds()$T_FAIL_D_HECD_USGS, 
+                                        to = 2*T.lims()$x[2], t.interp = t.int)
+    kernel.plot <- as.data.frame(x=T.kernel.interp)
+    integral    <- sum(kernel.plot$y*dt)
+    kernel.plot <- kernel.plot[kernel.plot$x<T.lims()$x[2],]
+    kernel.plot$y <- kernel.plot$y/integral*T.lims()$y*100
+    kernel.plot$c <- seq(0,1,length.out = nrow(kernel.plot))
+    kernel.plot
   })
   
   # TAB 1: MAP OF COLLAPSED BRIDGES ---------------------------------------------
@@ -112,46 +143,22 @@ shinyServer(function(input, output){
   # Histograms of failure return period
   output$histTfail <- renderPlot({
     if (nrow(bridgesInBounds()) < 3) return(NULL)
-    med <- median(bridgesInBounds()$T_FAIL_D_HECD_USGS)
-    medCol <- apply(col2rgb(colorsP$Fail[input$FailCause]),MARGIN = 1, mean)
-    medCol <- rgb(medCol[1]/255,medCol[2]/255,medCol[3]/255)
-    lims <- range(bridgesInBounds()$T_FAIL_D_HECD_USGS, na.rm = T)
-    if(any(is.na(lims) | is.infinite(lims))){
-      lims <- c(0,2000)
-      warning('Problem in histogram')
-    }
-    h = nrow(bridgesInBounds())
-    t.int <- t[t<2*lims[2]]
-    T.kernel.interp <- my.kernel.interp(bridgesInBounds()$T_FAIL_D_HECD_USGS, 
-                                        to = 2*lims[2], t.interp = t.int)
-    kernel.plot <- as.data.frame(T.kernel.interp)
-    integral    <- sum(kernel.plot$y*dt)
-    kernel.plot <- kernel.plot[kernel.plot$x<lims[2],]
-    kernel.plot$y <- kernel.plot$y/integral*h*100
-    kernel.plot$c <- seq(0,1,length.out = nrow(kernel.plot))
-    
-    
-    data.text <- data.frame(x = c(T.nom+25,med + (lims[2]-lims[1])/10,0.6*lims[2]), 
-                            y = c(h/1.5, h/2.5,h/10),
-                            label = c("nominal = 100 yr design flood",
-                                      paste("collapse median =\n", round(med),"years"),
+    # Labels
+    data.text <- data.frame(x = c(T.nom+25, 
+                                  median.stat()$val + (T.lims()$x[2]-T.lims()$x[1])/10,
+                                  0.6*T.lims()$x[2]), 
+                            y = c(T.lims()$y/1.5, T.lims()$y/2.5,T.lims()$y/10),
+                            label = c(paste("nominal =", T.nom ,"yr design flood"),
+                                      paste("collapse median =\n", round(median.stat()$val),"years"),
                                       "collapse kernel-smoothed\ndistribution"),
                             group = labelsP$Dist,
                             hjust = c(0,0,0.5),
-                            row.names = c("Nominal","Median","Kernel"))
-    data.text <- data.text[input$FailData,]
+                            row.names = c("Nominal","Median","Kernel"))[input$FailData,]
     
-    pTheme <- getTheme(outputType = "SHINY") +
-      theme(axis.text.x   = element_text(color = "black", 
-                                         size = textP$reg["SHINY"], 
-                                         angle = 90, vjust = 0.5, hjust = 1, 
-                                         margin  = margin(0.16,0,0,0, "cm")),
-            axis.text.y = element_blank(),
-            axis.ticks.y = element_blank(),
-            axis.ticks.x = element_blank())
+    # Histogram plot with nominal, median, and/or kernel-smoothed statistics
     pHist <- ggplot(bridgesInBounds(), aes(x=T_FAIL_D_HECD_USGS)) + 
       geom_histogram(aes(fill=FAIL_CAUS_CODE))+
-      scale_fill_manual(values = colorsP$Fail) + guides(fill=FALSE) + pTheme + 
+      scale_fill_manual(values = colorsP$Fail) + guides(fill=FALSE) + 
       labs(title = "Return Periods of Floods\nCausing Bridge Collapse", 
            x = expression(paste(T["R"]," [yr]")), 
            y = "") 
@@ -164,30 +171,36 @@ shinyServer(function(input, output){
         geom_text(data = data.text["Nominal",],aes(x=x,y=y,
                                                    label = label, 
                                                    hjust = hjust), 
-                  size = textP$annotate["SHINY"], color = colorsP$Dist["nominal"])
-      
+                  size = textP$annotate["SHINY"], 
+                  color = colorsP$Dist["nominal"])
     }
     if("Median" %in% input$FailData){
-      pHist <- pHist + geom_vline(xintercept = med, 
+      pHist <- pHist + geom_vline(xintercept = median.stat()$val, 
                                   linetype = linesP$Dist["median"], 
-                                  color = medCol, 
+                                  color = median.stat()$col, 
                                   size = 1) +
         geom_text(data = data.text["Median",],
                   aes(x=x,y=y,label = label, hjust = hjust), 
                   size = textP$annotate["SHINY"], 
-                  color = medCol)
+                  color = median.stat()$col)
       
     }
     if("Kernel" %in% input$FailData){
-      pHist <- pHist + geom_line(data = kernel.plot, aes(x=x,y=y, color = c), size = 1.5) + 
-        geom_text(data = data.text["Kernel",],aes(x=x,y=y,
-                                                  label = label, 
-                                                  hjust = hjust),
+      pHist <- pHist + geom_line(data = kernel.stat(), aes(x=x,y=y, color = c), size = 1.5) + 
+        geom_text(data = data.text["Kernel",],
+                  aes(x=x,y=y,label = label, hjust = hjust),
                   size = textP$annotate["SHINY"], 
                   color = colorsP$Dist["kernel"]) +
         scale_color_gradientn(colours=as.vector(colorsP$Fail[input$FailCause]), guide=FALSE)
     }
-    pHist
+    pHist + getTheme(outputType = "SHINY") +
+      theme(axis.text.x   = element_text(color = "black", 
+                                         size = textP$reg["SHINY"], 
+                                         angle = 90, vjust = 0.5, hjust = 1, 
+                                         margin  = margin(0.16,0,0,0, "cm")),
+            axis.text.y = element_blank(),
+            axis.ticks.y = element_blank(),
+            axis.ticks.x = element_blank())
   })
   
   # Absolute value of collapse probabilities
@@ -229,14 +242,13 @@ shinyServer(function(input, output){
     d.emph <- as.character(input$hazChange/100)
     T.delta <- switch(as.character(input$hazSelect),
                       "1" = as.data.frame(sapply(deltas, function(d) 1/(Ts*(1-d)), USE.NAMES = TRUE)),
-                      "2" = as.data.frame(sapply(deltas, function(d) 1/(Ts-Tshift*d)), USE.NAMES = TRUE))
+                      "2" = as.data.frame(sapply(deltas, function(d) 1/(Ts-T.shift*d)), USE.NAMES = TRUE))
     T.delta$T_0 <- Ts 
     PlotHazardCurve(T.delta, d.emph = d.emph, nCol = nStops,
                     d.limits = range(deltas),
                     x.limits = c(50,200), y.limits = c(0.002,0.05),
                     AXES = "LOG", outputType = "SHINY")
   })
-  
   
   # change in annual probability of collapse, delta 
   output$anFail <- renderPlot({

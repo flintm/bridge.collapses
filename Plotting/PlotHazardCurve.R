@@ -19,7 +19,6 @@ PlotHazardCurve <- function(T.delta, d.emph = NA, nCol = 9,
   d <- paste0(sgn,d)
   
   T.delta.melt <- melt(T.delta, id.vars = "T_0")
-  print(T.delta.melt)
   colors <- brewer.pal(nCol, "RdBu")
   names(colors) <- as.character(seq(d.limits[1],d.limits[2],length.out = nCol))
   colors["0"]   <- "black"
