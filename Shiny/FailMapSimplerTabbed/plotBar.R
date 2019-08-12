@@ -11,9 +11,6 @@ plotBar <- function(Data,
                     hazSelect = 1, Tshift = 100,
                     hazCol = "black"){
   
-  # if(!("labelsP" %in% ls())) source("../../Plotting/SetupEncoding.R")
-  # if(!("my.kernel.interp" %in% ls())) source("my.kernel.interp.R")
-  
   # set up colors and what data types will be plotted-----
   nCaus <- length(FailCause)
   colMax <- 0.1*(nCaus-1)
@@ -28,12 +25,12 @@ plotBar <- function(Data,
   toPlot <- FailData
   if(DELTA){ 
     toPlot <- c(toPlot, "Hazard")
-    ylims <- c(-1*delta.max,delta.max)
-    title <- "Change in annual collapse\nprobability given hazard change [%]"
+    ylims  <- c(-1*delta.max,delta.max)
+    title  <- "   Change in annual collapse\nprobability given hazard change"
   }
   else{ 
     ylims <- c(0,0.04)
-    title <- "Probability of a Bridge\nCollapsing Over One Year"
+    title <- "    Annual probability\nof a bridge collapsing"
     if(abs(delta)>0.02) toPlot<- c(toPlot, paste(toPlot,"Delta"))
   }
   
@@ -84,7 +81,7 @@ plotBar <- function(Data,
                 1/pF["Median","T"], 
                 NA)
   pF["Kernel","ymax"] <-sum(T.kernel.interp$y/(T.kernel.interp$x)^2*dt)
-  # if(abs(delta)>0.02){
+
     pF[,d] <- c(delta,
                 switch(as.character(hazSelect),
                        "1" = 1/(t.F*(1-delta))*pnorm(-beta),
@@ -101,10 +98,7 @@ plotBar <- function(Data,
       T.kernel.interp$y <- T.kernel.interp$y/sum(T.kernel.interp$y*dt)
       pF["Kernel",d] <- sum(T.kernel.interp$y/(T.kernel.interp$x-Tshift*delta)^2*dt)
     }
-  # }
-  # else{
-  #   pF[,d] <- pF$ymax
-  # }
+
   if(DELTA){
     pF$change <- (pF[,d] - pF$ymax)/pF$ymax*100
     pF["Hazard","change"] <- delta*100
@@ -173,14 +167,15 @@ plotBar <- function(Data,
     scale_x_discrete(limits = rev(levels.x), drop = FALSE, labels = rev(labels.x)) +
     scale_color_gradientn(colours = colGrad, values = colValues, guide = FALSE, limits = c(0,1)) + ggtitle(title) +
     ylim(ylims)+
-    geom_text(aes(label = label, hjust = hjust), size = textP$annotate["SHINY"]) + # y = y, 
+    geom_text(aes(label = label, hjust = hjust), size = textP$annotate["SHINY"]) + 
     getTheme(outputType = "SHINY") + coord_flip()+
-    theme(axis.text.y = element_text(size = textP$sub["SHINY"]),#14),#
+    theme(axis.text.y = element_text(size = textP$sub["SHINY"]),
           axis.text.x   = element_blank(),
           axis.title.x = element_blank(),
           axis.title.y = element_blank(),
           axis.ticks.y = element_blank(),
-          axis.ticks.x = element_blank())
+          axis.ticks.x = element_blank(),
+          plot.title   = element_text(color = "black", size = textP$head["SHINY"], hjust = 0))
   if(DELTA){
     pB <- pB +  geom_hline(yintercept  = 0, color = "black") 
     if(delta!=0){

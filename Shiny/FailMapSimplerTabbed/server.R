@@ -1,9 +1,10 @@
 library(shiny)
 library(Cairo)
+library(reshape2)
 options(shiny.usecairo=T)
-source("../../Plotting/SetupEncoding.R")
-source("../../Plotting/getTheme.R")
-source("../../Plotting/PlotHazardCurve.R")
+source("SetupEncoding.R")
+source("getTheme.R")
+source("PlotHazardCurve.R")
 source("my.kernel.interp.R")
 source("plotBar.R")
 load("BridgesDataFrame.RData")
@@ -138,6 +139,15 @@ shinyServer(function(input, output){
     ))
     leafletProxy("map") %>% addPopups(lng, lat, content, layerId = ID)
   }
+  
+  observe({
+    leafletProxy("map") %>% clearPopups()
+    event <- input$map_shape_click
+    if (is.null(event) ) return()
+    isolate({
+      showBridgePopup(event$id, event$lat, event$lng)
+    })
+  })
   
   # TAB 2: CALCULATING COLLAPSE PROBABILITIES--------------------------------------
   # Histograms of failure return period

@@ -1,0 +1,12 @@
+name: BridgeCollapseRisk
+title: BridgeCollapseRisk
+username:
+account: mflint
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 1081549
+bundleId: 2312200
+url: https://mflint.shinyapps.io/BridgeCollapseRisk/
+when: 1565624506.37794
+asMultiple: FALSE
+asStatic: FALSE
