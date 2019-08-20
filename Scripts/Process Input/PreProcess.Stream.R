@@ -23,7 +23,6 @@ PreProcess.Stream <- function(Data,
   Data$ROUTE_UNDER     <- NA_character_
 
   # Dataset-specific corrections
-  DATA_TYPE <- names(DATA_SETS)[sapply(DATA_SETS,"[[",1)==DATA_SET]
   ls.Keys   <- get(paste0("ls.",sub("Data","",DATA_SET),".Keys"))
   
   ls.Stream <- ls.Keys[sapply(1:length(ls.Keys), function(i) "STREAM" %in% ls.Keys[[i]])]

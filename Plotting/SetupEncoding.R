@@ -223,8 +223,8 @@ colorsP$MK   <- c("POS" = colorsP$BridgeAge9[9], "NEG" = colorsP$BridgeAge9[1])
 labelsP$MK   <- c("POS","NEG")
 # Annotation and header text size
 textP$head <- c(PRINT = 8, PRES = 20, SHINY = 12, NOTE = 10)
-textP$reg  <- c(PRINT = 8, PRES = 14, SHINY = 12, NOTE = 10)
+textP$reg  <- c(PRINT = 8, PRES = 18, SHINY = 12, NOTE = 10)
 textP$sub  <- c(PRINT = 8, PRES = 18, SHINY = 12, NOTE = 10)
-textP$labels <- c(PRINT = 8, PRES = 12, SHINY = 12, NOTE = 10)
+textP$labels <- c(PRINT = 8, PRES = 18, SHINY = 12, NOTE = 10)
 textP$labelcex <- 0.7
 textP$annotate <- c(PRINT = 2.8, PRES = 6, SHINY = 4, NOTE = 10)

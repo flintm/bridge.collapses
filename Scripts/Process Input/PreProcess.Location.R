@@ -21,7 +21,6 @@ PreProcess.Location <- function(Data,
       Data$TEMP    <- str_squish(gsub("[\\&\\*]+"," ", gsub("'","",Data$TEMP)))
       
       # Dataset-specific corrections
-      DATA_TYPE <- names(DATA_SETS)[sapply(DATA_SETS,"[[",1)==DATA_SET]
       ls.Keys   <- get(paste0("ls.",sub("Data","",DATA_SET),".Keys"))
       if(length(ls.Keys)>0){
         ls.TEMP <- ls.Keys[sapply(1:length(ls.Keys), function(i) col %in% ls.Keys[[i]])]

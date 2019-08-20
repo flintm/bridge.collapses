@@ -5,18 +5,24 @@ Find.Features <- function(Data,
 
   ## Determine which types of features are to be detected
   Rows  <- rownames(Data)
-  ls.patterns <- list(COUNTY = c(FIND = "WORD", STRICT = "COMPOUND"),
-                      CITY =c(FIND = "WORD", STRICT ="COMPOUND"),
-                      LOCATION = c("NEAR", "RELATIONAL","STREAM_NAME_LOC","STREAM_TYPE_LOC"),
+  ls.patterns <- list(COUNTY   = c(FIND = "NONE", STRICT = "COMPOUND"),
+                      CITY     = c(FIND = "NONE", STRICT ="COMPOUND"),
+                      LOCATION = c("AUX","STREAM_NAME_LOC","STREAM_TYPE_LOC"),
                       ROAD = paste0("ROAD_",c("NAME","TYPE","DIRECTION","AUX")),
-                      ROUTE = as.vector(sapply(1:2, function(i) paste0(paste0("ROUTE_",c("NAME","TYPE","DIRECTION","AUX")),i))),
-                      STREAM = as.vector(sapply(1:2, function(i) paste0(paste0("STREAM_",c("NAME","TYPE","TRIB","FORK","AUX")),i))))
-  ls.cols.out <- list(COUNTY = as.vector(sapply(1:2, function(i) paste0(c("COUNTY_NAME_","FIPS_"),i))),
-                      CITY = as.vector(sapply(1:3, function(i) paste0(c("CITY_NAME_","FIPS_FROM_CITY_","ANSICODE_","GNIS_ID_"),i))),
-                      LOCATION = c("NEAR", "RELATIONAL","STREAM_NAME_LOC","STREAM_TYPE_LOC", "BRIDGE_NAME"),
+                      ROUTE = as.vector(sapply(1:2, 
+                                               function(i) paste0(paste0("ROUTE_",c("NAME","TYPE","DIRECTION","AUX")),i))),
+                      STREAM = as.vector(sapply(1:2, 
+                                                function(i) paste0(paste0("STREAM_",c("NAME","TYPE","TRIB","FORK","AUX")),i))))
+  ls.cols.out <- list(COUNTY = as.vector(sapply(1:2, 
+                                                function(i) paste0(c("COUNTY_NAME_","FIPS_"),i))),
+                      CITY = as.vector(sapply(1:3, 
+                                              function(i) paste0(c("CITY_NAME_","FIPS_FROM_CITY_","ANSICODE_","GNIS_ID_"),i))),
+                      LOCATION = c("BRIDGE_NAME","LOC_AUX","STREAM_NAME_LOC","STREAM_TYPE_LOC"),
                       ROAD = paste0("ROAD_",c("NAME","TYPE","DIRECTION","AUX")),
-                      ROUTE = as.vector(sapply(1:2, function(i) paste0(paste0("ROUTE_",c("NAME","TYPE","DIRECTION","AUX")),i))),
-                      STREAM = as.vector(sapply(1:2, function(i) paste0(paste0("STREAM_",c("NAME","TYPE","TRIB","FORK","AUX")),i))))
+                      ROUTE = as.vector(sapply(1:2, 
+                                               function(i) paste0(paste0("ROUTE_",c("NAME","TYPE","DIRECTION","AUX")),i))),
+                      STREAM = as.vector(sapply(1:2, 
+                                                function(i) paste0(paste0("STREAM_",c("NAME","TYPE","TRIB","FORK","AUX")),i))))
   
   ## Loop over features
   for(f in names(Features)){
@@ -41,6 +47,7 @@ Find.Features <- function(Data,
         colnames(localities)[colnames(localities)=="FIPS_C"] <- "FIPS"
         localities$PATTERN1 <- localities$NAME
         localities$PATTERN2 <- ""
+        localities$REGEX    <- FALSE
         
         # check for presence of locality name and record name and FIPS or other standard codes
         Data[rows,c(COL,cols.out)] <- Feature.Detect(Data[rows,], 
@@ -50,7 +57,7 @@ Find.Features <- function(Data,
                                                      cols.out, 
                                                      n.dup.cols = n.dup.cols, 
                                                      DELETE = FALSE)
-        }
+      }
       # state-specific, not city or county --------
       if(state %in% names(ls.DOT.Keys)){
         if(f %in% names(ls.DOT.Keys[[state]])){
@@ -65,16 +72,21 @@ Find.Features <- function(Data,
                                                                         paste(Data[rows[i],ls.DOT.Keys[[state]][[f]]["MOVE"]],
                                                                               substr(Data[rows[i],COL],match.start,match.last)),
                                                                         substr(Data[rows[i],COL],match.start,match.last))
+              print(paste('moved to col',ls.DOT.Keys[[state]][[f]]["MOVE"]))
               }
             if(!is.na(ls.DOT.Keys[[state]][[f]]["ADDTO"])){ 
               Data[rows[i],ls.DOT.Keys[[state]][[f]]["ADDTO"]] <- ifelse(!is.na(Data[rows[i],ls.DOT.Keys[[state]][[f]]["ADDTO"]]),
                                                                          paste(Data[rows[i],ls.DOT.Keys[[state]][[f]]["ADDTO"]],
                                                                                ls.DOT.Keys[[state]][[f]]["ADD"]),
                                                                          ls.DOT.Keys[[state]][[f]]["ADD"])
+              print(paste('added to col',ls.DOT.Keys[[state]][[f]]["ADDTO"]))
               }
                                                                                                                  
             if(!is.na(ls.DOT.Keys[[state]][[f]]["SUB"])){ 
+              print(paste('Subbed to col',COL))
+              print(Data[rows[i],COL])
               Data[rows[i],COL] <- sub(ls.DOT.Keys[[state]][[f]][["SUBPTRN"]],ls.DOT.Keys[[state]][[f]][["SUB"]],Data[rows[i],COL])
+              print(Data[rows[i],COL])
             }
           }
         } 
@@ -87,9 +99,12 @@ Find.Features <- function(Data,
         ls.RteKeysState$statefull <- tolower(df.States[state,"STATE_FULL"])
         
         if(VERBOSE) print(paste("Checking for",tolower(f),"in state:",df.States[state,"STATE_FULL"]))
-        routes     <- data.frame(NAME = c(tolower(df.States[state,"STATE_CODE"]), tolower(df.States[state,"STATE_FULL"])))
+        routes     <- data.frame(NAME = c(tolower(df.States[state,"STATE_CODE"]), 
+                                          tolower(df.States[state,"STATE_FULL"])), stringsAsFactors = FALSE)
         routes$PATTERN1 <- paste0("\\<",routes$NAME,"\\>[[:space:]]?[[:punct:]]?[[:digit:]]+")
         routes$PATTERN2 <- ""
+        routes$REGEX    <- TRUE
+        routes$NAME     <- paste0("(?")
         Data[rows,c(COL,cols.out)] <- Feature.Detect(Data[rows,], 
                                                      routes, 
                                                      "NONE", 
@@ -97,6 +112,38 @@ Find.Features <- function(Data,
                                                      cols.out, 
                                                      n.dup.cols = n.dup.cols, 
                                                      DELETE = FALSE)
+      }
+    }
+    
+    # non state-specific checks ---------
+    if(f %in% c("LOCATION", "STREAM")){
+      # aux phrases: statements with explicit distance, e.g., "3.5 miles from Stanford"-------
+      rows        <- Rows[grepl("[[:digit:]]",Data[,COL]) & !is.na(Data[,COL])]
+      if(length(rows)>0){
+        relationals <- sapply(unlist(ls.RelationalKeys[c("miles","kilometers")]),
+                              function(dist) 
+                                sapply(c("",unlist(ls.CardKeys[1:8])),
+                                       function(card) 
+                                         sapply(unlist(ls.RelationalKeys[c("off","from","by","of")]),
+                                                function(rel)
+                                                  paste0("[[:digit:]]+[.]?[[:digit:]]?[[:space:]]?",
+                                                         dist,
+                                                         "[[:space:]]?",
+                                                         card,
+                                                         "[[:space:]]?",
+                                                         rel,
+                                                         "[[:space:]][[:alpha:]]+")
+                                         )))
+        relationals <- data.frame(PATTERN1 = as.vector(relationals), PATTERN2 = "", REGEX = TRUE, stringsAsFactors = FALSE)
+        relationals[,paste0(COL,"_AUX")] <- relationals$PATTERN1
+        if(VERBOSE) print("Checking relational auxilliary phrases")
+        Data[rows,c(COL,cols.out[grepl("AUX",cols.out)])] <- Feature.Detect(Data[rows,], 
+                                                                            relationals, 
+                                                                            "NONE", 
+                                                                            COL, 
+                                                                            cols.out[grepl("AUX",cols.out)], 
+                                                                            n.dup.cols = n.dup.cols, 
+                                                                            DELETE = TRUE)
       }
     }
   }
@@ -107,7 +154,7 @@ Find.Features <- function(Data,
 # for (j in FailStates){
 #   
 #   # FIND RELATIONAL STATEMENTS
-#   # statements with explicit distance, e.g., "3.5 miles from Stanford"
+#   # st
 #   MatchRegex <- "[[:digit:]]{1,3}[[:punct:]]?[[:digit:]]?[[:space:]]?m[i]{0,1}[l]{0,1}[e]{0,1}[s]{0,1}[[:punct:]]?[[:space:]]"
 #   RowsWithDistance <- rowsForState[grep(MatchRegex,FailDataFrame[rowsForState,"ROAD_NAME"])]
 #   for (i in RowsWithDistance){

@@ -165,6 +165,8 @@ require(rjson)
                             by     = c("by"),
                             of     = c("of"),
                             on     = c("on"),
+                            from   = c("from"),
+                            to     = c("to"),
                             over   = c("over", "ovr"),
                             intersection = c("intersection", "int", "ih"),
                             junction = c("junction", "junct", "jct"),
