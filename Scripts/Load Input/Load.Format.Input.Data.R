@@ -49,7 +49,8 @@ Load.Format.Input.Data <- function(filePath,            # relative to .Rproj roo
                         tab     = NULL,
                         geojson = 'geojsonR',
                         xlsx    = 'xlsx',
-                        xls     = 'XLconnect')
+                        xls     = 'XLconnect',
+                        gis     = 'rgdal')
     
     read.func  <- switch(extension,
                          csv     = 'read.csv',

@@ -21,7 +21,6 @@ PreProcess.Numeric <- function(Data,
     
     # split strings and remove non-numeric characters
     splits <- rows[grepl(paste0("^[[:digit:]]+",split.pattern[col],"[[:digit:]]+$"), Data[rows,"COL_NUM"])]
-    # Data[splits,"COL_NUM"] <- sapply(splits, function(i) str_squish(paste(unlist(str_split(Data[i,"COL_NUM"],split.pattern[col])),collapse=" ")))
     Data[splits,"COL_NUM"] <- str_squish(gsub(split.pattern[col]," ",Data[splits,"COL_NUM"]))
     if(VERBOSE) print(paste("Finished split numeric strings for",col))
     
@@ -31,7 +30,10 @@ PreProcess.Numeric <- function(Data,
       if(VERBOSE) print(paste("Finished removing leading and trailing letters for",col))
     }
     
-    FieldNames(Data)[FieldNames(Data)=="COL_NUM"] <- paste0(col,"_NUM")
+    # remove any remaining punctuation
+    Data[rows,"COL_NUM"] <- gsub("-"," ",Data[rows,"COL_NUM"], fixed= TRUE)
+    
+    colnames(Data)[colnames(Data)=="COL_NUM"] <- paste0(col,"_NUM")
     if(VERBOSE) print(paste("Finished making numeric version of field",col))
   }
   return(Data)

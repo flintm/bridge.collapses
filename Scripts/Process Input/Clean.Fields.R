@@ -3,7 +3,7 @@
 Clean.Fields <- function(Data = NULL,     # Use if passing Data directly, otherwise NULL
                          FilePath = NULL, # Use if loading from file, otherwise NULL
                          DATA_SET,        # Supported options are "Fail" and "NBI"
-                         FieldNames,        # FieldNames is a character of form c(MAT = "MAT_COL_NAME", TYPE = "TYPE_COL_NAME", etc.)
+                         FieldNames,      # FieldNames is a character of form c(MAT = "MAT_COL_NAME", TYPE = "TYPE_COL_NAME", etc.)
                          VERBOSE = FALSE){# Print intermediate messages to screen
                                      
   if(is.null(Data)){
@@ -43,7 +43,7 @@ Clean.Fields <- function(Data = NULL,     # Use if passing Data directly, otherw
   # Standardize structure material and type
   if(any(c("MAT", "TYPE") %in% names(FieldNames))){
     source(file.path("Scripts","Process Input","PreProcess.Structure.Fields.R"))
-    Data <- PreProcess.Structure.Fields(Data, FieldNames = FieldNames, VERBOSE = VERBOSE)
+    Data <- PreProcess.Structure.Fields(Data, DATA_SET = DATA_SET, FieldNames = FieldNames, VERBOSE = VERBOSE)
     if(VERBOSE) print(paste("Finished cleaning structure material and type for",DATA_SET,"data."))
   }
   return(Data)

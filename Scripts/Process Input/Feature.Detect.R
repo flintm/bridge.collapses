@@ -7,15 +7,17 @@ Feature.Detect <- function(Data,             # must contain col.in and cols.out
                            DELETE  = TRUE,   # whether to delete identified string
                            VERBOSE = FALSE){
   
-  ls.pattern.types <- list(NONE = NA_character_,
-                           WORD = c("\\<","\\>"),
+  ls.pattern.types <- list(NONE = c("","",""),
+                           WORD = c("\\<","\\>",""),
                            COMPOUND = c("\\<","\\>","[[:punct:]]?[[:space:]]+\\<","\\>"))
   
-  patterns <- paste0(ls.pattern.types[[type]][1],df.patterns$PATTERN,ls.pattern.types[[type]][2])
+  patterns <- paste0(ls.pattern.types[[type]][1],df.patterns$PATTERN1,ls.pattern.types[[type]][2],df.patterns$PATTERN2,ls.pattern.types[[type]][3])
   key.index  <- sapply(patterns,grepl,Data[,col.in],ignore.case=TRUE)
-  match.keys <- which(apply(key.index, MARGIN = 1, any))
+  match.keys <- switch(as.character(length(dim(key.index))),
+                       "2" = which(apply(key.index, MARGIN = 1, any)),
+                       "1" = which(key.index))
   for(i in match.keys){
-    for(col in colnames(df.patterns)[colnames(df.patterns)!="PATTERN"]){
+    for(col in colnames(df.patterns)[!grepl("PATTERN",colnames(df.patterns))]){
       matches <- tolower(df.patterns[key.index[i,],col])
       matches <- c(matches, rep(NA_character_, n.dup.cols-length(matches)))
       Data[i,cols.out[grepl(col,cols.out)]] <- matches

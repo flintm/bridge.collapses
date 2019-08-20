@@ -4,7 +4,7 @@ require(rjson)
 
 ## Failure data ------
 # FEATURE MAPPING, FIELD NAMES, AND FIELD FORMATS
-ls.Fail.Ont <- list(MAT      = c("MAT", "TYPE"),
+ls.Fail.Ont <- list(MAT     = c("MAT", "TYPE"),
                    TYPE     = c("TYPE", "MAT"),
                    LOCATION = c("LOCATION"),
                    COUNTY   = "LOCATION",
@@ -15,6 +15,7 @@ ls.Fail.Ont <- list(MAT      = c("MAT", "TYPE"),
                    STREAM   = c("FEAT_UND", "LOCATION"),
                    BIN      = "BIN",
                    ID       = "ID")
+
 save(ls.Fail.Ont, file = file.path("Data","Input","Ontologies","ls.Fail.Ont.RData"))
 cat(toJSON(ls.Fail.Ont), file = file.path("Data","Input","Ontologies","Fail.Ont.json"))
 
@@ -41,25 +42,41 @@ cat(toJSON(ls.Fail.Fields), file = file.path("Data","Input","Ontologies","Fail.F
 
 # Bridge number naming conventions in Fail Data
 ls.DOT.Keys <- list( "39" = list(LOCATION = c(PATTERN = "\\<[[:alnum:]]{1,3}-[[:alnum:]]{1,5}[[:punct:]]?[[:alnum:]]{0,3}[[:punct:]]?[[:alnum:]]{0,3}\\>",
-                                         SUB     = "",
-                                         MOVE    = "BRIDGE_NAME",
-                                         ADDTO   = NA,
-                                         ADD     = NA)), # Ohio
+                                              SUBPTRN = "\\<[[:alnum:]]{1,3}-[[:alnum:]]{1,5}[[:punct:]]?[[:alnum:]]{0,3}[[:punct:]]?[[:alnum:]]{0,3}\\>",
+                                              SUB     = "",
+                                              MOVE    = "BRIDGE_NAME",
+                                              ADDTO   = NA,
+                                              ADD     = NA)), # Ohio
                      "47" = list(LOCATION = c(PATTERN = "\\<[[:alnum:]]{1,3}-[[:alnum:]]{1,5}[[:punct:]]?[[:alnum:]]{0,3}[[:punct:]]?[[:alnum:]]{0,3}\\>",
-                                         SUB     = "",
-                                         MOVE    = "BRIDGE_NAME",
-                                         ADDTO   = NA,
-                                         ADD     = NA),
-                                 BRIDGE = c(PATTERN = "\\<fau[[:space:]]?[[:alpha:]]{0,3}[[:space:]]?[[:digit:]]{1,5}\\>",
-                                            SUB     = "",
-                                            MOVE    = "BRIDGE_NAME",
-                                            ADDTO   = NA,
-                                            ADD     = NA)), # Tenessee
-                     "19" = list(ROUTE = c(PATTERN = "[[:alpha:]][[:digit:]]{1,4}",
-                                           SUB     = NA,
-                                           MOVE    = NA,
-                                           ADDTO   = "ROUTE_PREFIX",
-                                           ADD     = "county highway"))) # Iowa
+                                              SUBPTRN = "\\<[[:alnum:]]{1,3}-[[:alnum:]]{1,5}[[:punct:]]?[[:alnum:]]{0,3}[[:punct:]]?[[:alnum:]]{0,3}\\>",
+                                              SUB     = "",
+                                              MOVE    = "BRIDGE_NAME",
+                                              ADDTO   = NA,
+                                              ADD     = NA),
+                                 BRIDGE   = c(PATTERN = "\\<fau[[:space:]]?[[:alpha:]]{0,3}[[:space:]]?[[:digit:]]{1,5}\\>",
+                                              SUBPTRN = "\\<fau[[:space:]]?[[:alpha:]]{0,3}[[:space:]]?[[:digit:]]{1,5}\\>",
+                                              SUB     = "",
+                                              MOVE    = "BRIDGE_NAME",
+                                              ADDTO   = NA,
+                                              ADD     = NA)), # Tenessee
+                     "05" = list(LOCATION = c(PATTERN = "[[:alpha:]]{1,2}[[:space:]]?[[:digit:]]{1,4}-[[:graph:]]{1,}",
+                                              SUBPTRN = "-[[:graph:]]{1,}",
+                                              SUB     = "",
+                                              MOVE    = "BRIDGE_NAME",
+                                              ADDTO   = NA,
+                                              ADD     = NA),
+                                 ROUTE    = c(PATTERN = "[[:alpha:]]{1,2}[[:space:]]?[[:digit:]]{1,4}",
+                                              SUBPTRN = NA,
+                                              SUB     = NA,
+                                              MOVE    = NA,
+                                              ADDTO   = "ROUTE_TYPE1",
+                                              ADD     = "county highway")), # Arkansas
+                     "19" = list(LOCATION = c(PATTERN = "[[:alpha:]]{1,2}[[:space:]]?[[:digit:]]{1,4}-[[:graph:]]{1,}",
+                                              SUBPTRN = "-[[:graph:]]{1,}",
+                                              SUB     = "",
+                                              MOVE    = "BRIDGE_NAME",
+                                              ADDTO   = NA,
+                                              ADD     = NA))) # Iowa
 save(ls.DOT.Keys, file = file.path("Data","Input","Ontologies","ls.DOT.Keys.RData"))
 cat(toJSON(ls.DOT.Keys), file = file.path("Data","Input","Ontologies","DOT.Keys.json"))
 

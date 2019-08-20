@@ -40,14 +40,14 @@ require(rjson)
                       road       = c("road", "rd"),
                       route      = c("route", "rte", "rt", "r"),
                       street     = c("street", "strt", "st"),
-                      state      = c(tolower(df.States$STATE_CODE),"k"))
+                      state      = c(tolower(df.States$STATE_CODE),"k"),
+                      statefull  = tolower(df.States$STATE_FULL))
   save(ls.RoadKeys, file = file.path("Data","Input","Dictionaries","ls.RoadKeys.RData"))
   cat(toJSON(ls.RoadKeys), file = file.path("Data","Input","Dictionaries","RoadKeys.json"))
   
   # Route (see also ITEM5B)
   ls.RteKeys <- ls.RoadKeys[c("route","freeway","highway","interstate","countyRoad",
-                                      "stateRoute","stateHighway","usHighway","countyHighway", "stateSecondary", "thruway","state")]
-  ls.RteKeys[["state"]] <- 
+                                      "stateRoute","stateHighway","usHighway","countyHighway", "stateSecondary", "thruway","state", "statefull")]
   save(ls.RteKeys, file = file.path("Data","Input","Dictionaries","ls.RteKeys.RData"))
   cat(toJSON(ls.RteKeys), file = file.path("Data","Input","Dictionaries","RteKeys.json"))
   

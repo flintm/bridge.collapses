@@ -2,7 +2,7 @@
 
 PreProcess.Location <- function(Data,             
                                 DATA_SET,         # Main supported option is Fail
-                                FieldNames,         # FieldNames is a character of form c(LOCATION = "LOCATION_COL_NAME", ROAD = "ROAD_COL_NAME")
+                                FieldNames,       # FieldNames is a character of form c(LOCATION = "LOCATION_COL_NAME", ROAD = "ROAD_COL_NAME")
                                 VERBOSE = FALSE){ #
   
   if(!("LOCATION") %in% names(FieldNames)) stop("Location column name not properly specified.")
@@ -22,13 +22,17 @@ PreProcess.Location <- function(Data,
       
       # Dataset-specific corrections
       DATA_TYPE <- names(DATA_SETS)[sapply(DATA_SETS,"[[",1)==DATA_SET]
-      ls.Keys   <- get(paste0("ls.",sub("Data","",DATA_TYPE),"Keys"))
+      ls.Keys   <- get(paste0("ls.",sub("Data","",DATA_SET),".Keys"))
       if(length(ls.Keys)>0){
         ls.TEMP <- ls.Keys[sapply(1:length(ls.Keys), function(i) col %in% ls.Keys[[i]])]
         if(length(ls.TEMP)>0){
-          rowsID <- Rows[sapply(names(ls.TEMP), function(i) which(Data[Rows,FieldNames["ID"]]==i))]
-          Data[rowsID,"TEMP"] <- sapply(1:length(ls.TEMP), 
-                                        function(i) sub(ls.TEMP[[i]][1],ls.TEMP[[i]][2],Data[rowsID[i],"TEMP"]))
+          if(any(names(ls.TEMP) %in% Data[,FieldNames["ID"]])){
+            IDs    <- names(ls.TEMP)[names(ls.TEMP) %in% Data[,FieldNames["ID"]]]
+            ls.TEMP <- ls.TEMP[IDs]
+            rowsID <- Rows[sapply(IDs, function(i) which(Data[,FieldNames["ID"]]==i))]
+            Data[rowsID,"TEMP"] <- sapply(1:length(ls.TEMP), 
+                                          function(i) sub(ls.TEMP[[i]][1],ls.TEMP[[i]][2],Data[rowsID[i],"TEMP"]))
+          }
         }
       }
       
@@ -86,7 +90,9 @@ PreProcess.Location <- function(Data,
           StatesWithCounty <- unique(df.Counties[apply(sapply(ls.CountyKeys[[j]],grepl,df.Counties$COUNTY_NAME,ignore.case=TRUE), MARGIN = 1, any),"STFIPS"])
           rowsForState <- Rows[Data$STFIPS %in% StatesWithCounty]
           key.index <- sapply(paste0("\\<",ls.CountyKeys[[j]][c(2:length(ls.CountyKeys[[j]]))],"\\>[[:punct:]]?"),grepl,Data[rowsForState,"TEMP"],ignore.case = TRUE)
-          match.keys <- which(apply(key.index, MARGIN = 1, any))
+          match.keys <- switch(as.character(length(dim(key.index))),
+                               "2" = which(apply(key.index, MARGIN = 1, any)),
+                               "1" = which(key.index))
           for (i in match.keys){  
             Data[rowsForState[i],"TEMP"] <- sub(paste0("\\<",ls.CountyKeys[[j]][which(key.index[i,])[1]+1],"\\>[[:punct:]]?[[:space:]]?\\<[county[:punct:]]{2,6}"),
                                                 paste0(ls.CountyKeys[[j]][1]," county"),
@@ -97,7 +103,9 @@ PreProcess.Location <- function(Data,
         # for places
         for (j in c(1:length(ls.PlaceKeys))){
           key.index <- sapply(paste("\\<",ls.PlaceKeys[[j]][c(2:length(ls.PlaceKeys[[j]]))],"\\>", sep = ""),grepl,Data$TEMP)
-          match.keys <- which(apply(key.index, MARGIN = 1, any))
+          match.keys <- switch(as.character(length(dim(key.index))),
+                               "2" = which(apply(key.index, MARGIN = 1, any)),
+                               "1" = which(key.index))
           for (i in match.keys){
             Data[i,"TEMP"] <- sub(paste("\\<",ls.PlaceKeys[[j]][which(key.index[i,])[1]+1],"\\>", sep = ""),ls.PlaceKeys[[j]][1],Data[i,"TEMP"])
           }
@@ -113,7 +121,7 @@ PreProcess.Location <- function(Data,
       
       # final cleanup for Fail or NBI data
       Data[,"TEMP"] <- str_squish(gsub("[[:blank:]]{1}[\\,]",",",Data[,"TEMP"]))
-      FieldNames(Data)[FieldNames(Data)=="TEMP"] <- col
+      colnames(Data)[colnames(Data)=="TEMP"] <- col
     }
   }
   return(Data)
