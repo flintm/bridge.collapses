@@ -4,7 +4,6 @@ author: '[Madeleine Flint](http://www.madeleinemflint.com)'
 date: "`r Sys.Date()`"
 output:
   html_notebook:
-    bibliography: bibliography.bib
     toc: no
   html_document:
     df_print: paged
@@ -46,7 +45,7 @@ rm(fold.req,dirsCreate,gitRepoName,files.req)
 ```{r installLoadPackages, include=FALSE, eval=params$eval}
 # Hidden: install and load packages
 packages <- c("ggplot2","stringr", "rjson", "knitr", "devtools", 
-              "english", "stringdist", "reshape2") 
+              "english", "stringdist", "reshape2", "formattable") 
 new.pkg <- packages[!(packages %in% installed.packages())]
 if (length(new.pkg)){
     repo <- "http://cran.us.r-project.org"
@@ -72,10 +71,10 @@ EXAMPLE_ID   <- c(31, 175)
 # Matching options
 M_STYLE <- params$mstyle # PAR: Runs for each M_TYPE in parallel (i.e., run independently and then combined)
                          # SEQ: Sequential runs (i.e., narrowing down by each match type in order)?
-M_TYPE  <- c("road",     # Determines how data should be matched, and supports: 
+M_TYPE  <- c("bin",     # Determines how data should be matched, and supports: 
              "stream",   # 'road', 'route', 'stream', and 'bin' (Bridge Id No). 
              "route",    # Order in vector determines the prioritization in ranking. 
-             "bin")
+             "road")
 ```
 
 
@@ -202,7 +201,7 @@ df.NBI <- Load.Format.Input.Data(inputs[["NBI"]],
                                      DATA_SET    = "NBI",
                                      REDUCE_SIZE = REDUCE[["NBI"]]["Fields"],
                                      VERB     = VERB)
-rm(Load.Format.Input.Data)
+rm(Load.Format.Input.Data,fp)
 }
 # as there are dozens of lists used as dictionaries, they are loaded into their own environment
 # so they don't clutter up the workspace
@@ -223,7 +222,7 @@ print(df.Fail[df.Fail$ID %in% EXAMPLE_ID,])
 Randomly selected examples of rows in the NBI Database are:
 
 ```{r echo=FALSE}
-print(df.NBI[sample.int(nrow(df.NBI),5),c("STATE_CODE_001","STRUCTURE_NUMBER_008","LOCATION_009","FACILITY_CARRIED_007","ROUTE_NUMBER_005D","FEATURES_DESC_006A")])
+print(df.NBI[sample.int(nrow(df.NBI),5),c("STFIPS","STRUCTURE_NUMBER_008","LOCATION_009","FACILITY_CARRIED_007","ROUTE_NUMBER_005D","FEATURES_DESC_006A")])
 ```
 
 I analyzed the quality of the entries for each bridge and field to determine the best approach to geolocating the bridges. With only 1948 bridges to study, I anticipated that recall was going to be more important than precision, which was borne out by the high number of bridges with missing fields.
@@ -304,7 +303,6 @@ A subfunction `Clean.Fields` was used to process entries in the collapsed bridge
 
 ```{r cleanData, include = FALSE, eval=params$eval, message=FALSE}
 if (RUN["CLEAN"]){
-  fp <- file.path("Analysis","Processed")
   source(file.path("Scripts","Process Input","Clean.Fields.R"))
   
   FieldNames <- sapply(opts[["Fields"]][["Fail"]], function(i) ls.Fail.Ont[[i]][1],
@@ -315,13 +313,13 @@ if (RUN["CLEAN"]){
                              VERB      = VERB)
   
   FieldNames <- sapply(opts[["Fields"]][["NBI"]], function(i) ls.NBI.Ont[[i]][1],
-                     USE.NAMES = TRUE)[c("BIN","ROUTE")]
+                     USE.NAMES = TRUE)[c("ID","BIN","ROUTE","LOCATION","STREAM","ROAD")]
   df.NBI  <- Clean.Fields(df.NBI, NULL,
                               DATA_SET     = "NBI",
                               FieldNames  = FieldNames,
                               VERB      = VERB)
 
-  rm(fp, Clean.Fields, FieldNames)
+  rm(Clean.Fields, FieldNames)
 }
 ```
 
@@ -368,56 +366,70 @@ Identify NBI bridges that could be linked to failed bridges. Matching style and 
 if (RUN["MATCH"]){
   source(file.path("Scripts","Matching","Helper","GenerateMatches.R"))
   source(file.path("Scripts","Matching","Helper","PerformMatch.R"))
-  # pass all data to main function for matching
-  ls.Matches   <- sapply(M_TYPE, function(m)
-                                 sapply(row.names(df.Fail),
-                                        function(i) GenerateMatches(df.Fail[i,],
-                                                                    m,
-                                                                    maxStringDist = opts$Match$maxStringDist[m],
-                                                                    capCandPct    = opts$Match$capCandPct[m],
-                                                                    capCandN      = opts$Match$capCandN[m],
-                                                                    SAVE          = M_STORE,
-                                                                    OutPath       = 'Data/Analysis',
-                                                                    LoadFromFile  = c(PAR = FALSE, SEQ = TRUE)[M_STYLE],
-                                                                    LoadPath      = 'Data/Analysis',
-                                                                    VERBOSE       = VERB), 
-                                        USE.NAMES = TRUE, simplify = FALSE),
-                                        USE.NAMES = TRUE, simplify = FALSE)
+  ls.Matches<-sapply(M_TYPE, 
+                     function(m)
+                       sapply(row.names(df.Fail),
+                              function(i) 
+                                GenerateMatches(df.Fail[i,],
+                                                m,
+                                                maxStringDist = opts$Match$maxStringDist[m],
+                                                capCandPct    = opts$Match$capCandPct[m],
+                                                capCandN      = opts$Match$capCandN[m],
+                                                SAVE          = M_STORE,
+                                                OutPath       = 'Data/Analysis',
+                                                LoadFromFile=c(PAR=FALSE,SEQ= TRUE)[M_STYLE],
+                                                LoadPath    = 'Data/Analysis',
+                                                VERBOSE     = VERB), 
+                              USE.NAMES = TRUE, simplify = FALSE),
+                     USE.NAMES = TRUE, simplify = FALSE)
   rm(GenerateMatches, PerformMatch)
 }
 ```
 
 Analyzing the number of candidate matches returned by each run allows me to assess the performance of the algorithm.
 ```{r analyzeNMatch, include = TRUE, warning=FALSE, message=FALSE}
-  nMatches <- sapply(names(ls.Matches), function(m)
-                                        sapply(names(ls.Matches[[m]]), function(i)
-                                               ifelse(!is.na(as.integer(ls.Matches[[m]][[i]][3])),
-                                                      -1*as.integer(ls.Matches[[m]][[i]][3]),
-                                               sum(!grepl("IDENT",ls.Matches[[m]][[i]]))),
-                                               USE.NAMES = TRUE, simplify = TRUE), 
+  nMatches <- sapply(names(ls.Matches), 
+                     function(m)
+                                        
+                       sapply(names(ls.Matches[[m]]), 
+                              function(i)
+                                ifelse(!is.na(as.integer(ls.Matches[[m]][[i]][3])),
+                                       -1*as.integer(ls.Matches[[m]][[i]][3]),
+                                       sum(!grepl("IDENT",ls.Matches[[m]][[i]]))),
+                              USE.NAMES = TRUE, simplify = TRUE), 
                      USE.NAMES = TRUE, simplify = FALSE)
- nMatches$state   <- sapply(row.names(df.Fail), function(i) sum(df.NBI$STFIPS==df.Fail[i,"STFIPS"]))
- nMatches$county  <- sapply(row.names(df.Fail), function(i) sum(df.NBI$COUNTY_CODE_003==df.Fail[i,"FIPS_1"] |  
-                                                        df.NBI$STFIPS==df.Fail[i,"FIPS_2"],na.rm = T))
+ nMatches$state   <- sapply(row.names(df.Fail), 
+                            function(i) sum(df.NBI$STFIPS==df.Fail[i,"STFIPS"]))
+ nMatches$county  <- sapply(row.names(df.Fail), 
+                            function(i) 
+                              sum(df.NBI$COUNTY_CODE_003== df.Fail[i,"FIPS_1"] |  
+                                      df.NBI$STFIPS==df.Fail[i,"FIPS_2"],na.rm = T))
  nMatches         <- as.data.frame(nMatches)
  nMatches$ID      <- row.names(nMatches)
- nMatches.melt    <- melt(nMatches, id.vars = "ID", variable.name = "Match", value.name = "Count")
+ nMatches.melt    <- melt(nMatches, id.vars="ID", variable.name="Match", value.name= "Count")
  nMatches.melt$Match <- factor(nMatches.melt$Match, levels = c("state", "county",M_TYPE))
- nBar <- ggplot(nMatches.melt, aes(x = ID, y = Count, fill = Match)) + geom_col(position = position_dodge()) +
-   geom_text(aes(label = Count, y = Count + 0.05), position = position_dodge(0.9), vjust = 0, size = sizesP$Reg["PRES"])
- nBar + scale_fill_manual(values = c(state = "gray65", county = "black", road = "red",stream = "blue", route = "orange",
-                                     bin = "green")) + getTheme(outputType = "PRES") + 
+ 
+ # Make plot
+ nBar <- ggplot(nMatches.melt, aes(x = ID, y = Count, fill = Match)) + 
+   geom_col(position = position_dodge()) +
+   geom_text(aes(label = Count, y = Count + 0.05), 
+             position = position_dodge(0.9), vjust = 0, size = sizesP$Reg["PRES"])
+ nBar + scale_fill_manual(values = c(state = "gray65", 
+                                     county = "black", 
+                                     road = "red",
+                                     stream = "blue", 
+                                     route = "orange",
+                                     bin = "green")) + 
+   getTheme(outputType = "PRES") + 
    labs(title = "Number of candidate matches by match type", x = "Collapsed Bridge ID")+
    theme(axis.ticks.x = element_blank(), axis.ticks.y = element_blank())
 ```
 
 
 # 5. Automated collating and ranking of potential matches
-The match quality is automatically recorded by match type, which field of that type was matched, and whether the match was
-exact, _____. In parallel mode, the matches can be combined across type to bring multi-matched candidates to the front.
+The match quality is automatically recorded by match type, which field of that type was matched, and whether the match was absolute (a perfect match to the original field), exact (perfect match to cleaned field), full (all words), partial (some words), or fuzzy (low string distance). In parallel mode, the matches can be combined across `M_TYPE` to bring multi-matched candidates to the front.
 ```{r collateRanking, include=TRUE, eval=params$eval}
 if (RUN["RANK"]){
-  
   source(file.path("Scripts","Matching","Rank.Matched.Bridges.R"))
 
   ls.Matches.Comb <- Rank.Matched.Bridges(ls.Matches)
@@ -427,109 +439,139 @@ if (RUN["RANK"]){
 ```
 
 # 6. Supervised match confirmation
-Shows a series of maps and data entry such that possible "true" matches can be identified.
-```{r confirmation, echo=FALSE}
+```{r confirmation, include = FALSE, echo=FALSE}
 if (RUN["CONFIRM"]){
-  ls.Comb <- list()
-  MatchQual <- c(exact   = "e",
-                 full    = "f",
-                 partial = "p",
-                 fuzzy   = "z")
-  qualRank <- c(as.vector(sapply(1:3, function(i) paste0(i,MatchQual))),"")
- for(i in row.names(df.Fail)){
-   dfF <- df.Fail[rep(i,length(ls.Matches.Comb[[i]]$MatchID)),1:11]
-   dfF$OBJECTID_new <- ls.Matches.Comb[[i]]$MatchID
-   dfF$Qual         <- ls.Matches.Comb[[i]]$Qual
-   dfF$Q_BIN    <- sapply(row.names(dfF), 
-                          function(i) ifelse(grepl("B",dfF[i,"Qual"]),
-                                             substr(regmatches(dfF[i,"Qual"],regexpr("[1-3][efpz]B",dfF[i,"Qual"])),1,2),
-                                             ""),
-                          simplify = TRUE, USE.NAMES = FALSE)
-   dfF$Q_STREAM <- sapply(row.names(dfF), 
-                          function(i) ifelse(grepl("S",dfF[i,"Qual"]),
-                                             substr(regmatches(dfF[i,"Qual"],regexpr("[1-3][efpz]S",dfF[i,"Qual"])),1,2),
-                                             ""),
-                          simplify = TRUE, USE.NAMES = FALSE)
-   dfF$Q_ROAD   <- sapply(row.names(dfF), 
-                          function(i) ifelse(grepl("R",dfF[i,"Qual"]),
-                                             substr(regmatches(dfF[i,"Qual"],regexpr("[1-3][efpz]R",dfF[i,"Qual"])),1,2),
-                                             ""),
-                          simplify = TRUE, USE.NAMES = FALSE)
-   dfF$Q_ROUTE  <- sapply(row.names(dfF), 
-                          function(i) ifelse(grepl("T",dfF[i,"Qual"]),
-                                             substr(regmatches(dfF[i,"Qual"],regexpr("[1-3][efpz]T",dfF[i,"Qual"])),1,2),
-                                             ""),
-                          simplify = TRUE, USE.NAMES = FALSE)
-   Q_cols <- colnames(dfF)[grepl("Q_",colnames(dfF))]
-   dfF[,Q_cols] <- sapply(Q_cols, function(j) factor(dfF[,j], levels = qualRank, labels = as.character(1:length(qualRank), drop = FALSE)))
-   
-   ls.Comb[[i]] <- merge(dfF, df.NBI[,c("OBJECTID_new","STATE_CODE_001", "COUNTY_CODE_003",
-                                "STRUCTURE_NUMBER_008","LOCATION_009",
-                                "FACILITY_CARRIED_007","ROUTE_NUMBER_005D",
-                                "FEATURES_DESC_006A","STRUCTURE_KIND_043A",
-                                "STRUCTURE_TYPE_043B")], 
-                         by = "OBJECTID_new")
-   ls.Comb[[i]]$MAT_NBI <- factor(as.character(ls.Comb[[i]]$STRUCTURE_KIND_043A),
-                                  levels = names(ls.ITEM43A.Ont),
-                                  labels = unlist(lapply(ls.ITEM43A.Ont,"[[",1)))
-   ls.Comb[[i]]$TYPE_NBI <- factor(as.character(ls.Comb[[i]]$STRUCTURE_TYPE_043B),
-                                  levels = names(ls.ITEM43B.Ont),
-                                  labels = unlist(lapply(ls.ITEM43B.Ont,"[[",1)))
-   ls.Comb[[i]]$COUNTY_NBI <- factor(as.character(ls.Comb[[i]]$COUNTY_CODE_003),
-                                     levels = df.Counties$FIPS_C[df.Counties$FIPS_C %in% unique(ls.Comb[[i]]$COUNTY_CODE_003)],
-                                     labels = df.Counties$COUNTY_NAME[df.Counties$FIPS_C %in% unique(ls.Comb[[i]]$COUNTY_CODE_003)])
-   cols <- c("BIN","STRUCTURE_NUMBER_008","LOCATION","COUNTY_NBI","LOCATION_009",
-                         "FACILITY_CARRIED_007","ROUTE_NUMBER_005D",
-                         "FEAT_UND","FEATURES_DESC_006A","FAIL_TYPE","YR_BLT","YR_FAIL",
-                         "MAT","MAT_NBI","TYPE","TYPE_NBI",Q_cols)
-  formattable(ls.Comb[[i]][,cols],
-            list(Q_BIN = FALSE, Q_STREAM = FALSE, Q_ROAD = FALSE, Q_ROUTE = FALSE,
-                 STRUCTURE_NUMBER_008 = formatter("span", 
-                 style = ~ style(color = "white",
-                                 "background-color" = sapply(Q_BIN, 
-                                                             function(x) if (x < 3) "#32a852" 
-                                                             else if (x < 6) "#86c287" 
-                                                             else if (x < 9) "#dbc832" 
-                                                             else if (x < 12) "#dbb132" 
-                                                             else "black"),
-                                 "padding-right" = "4px", "padding-left" = "2px"))),
-            COUNTY_NBI = formatter("span", 
-                 style = ~ style("background-color" = sapply(COUNTY_NBI, 
-                                                             function(x)
-                   ifelse(grepl(tolower(x), "jackson co",ignore.case = T),
-                                                           "green", 
-                                                           "black")))))
-                                 #   sapply(`Q_BIN`, 
-                                 #                function(x) if (x < 3) "#32a852" 
-                                 #                else if (x < 6) "#86c287" 
-                                 #                else if (x < 9) "#dbc832" 
-                                 #                else if (x < 12) "#dbb132" 
-                                 #                else "black"),
-                                 # "padding-right" = "4px", "padding-left" = "2px"))))
-                 # color = ifelse(`2016` > `2015`, "green", "red")),                                    
-                 # ~ icontext(sapply(`z`, function(x) if (x < -1.96) "arrow-down" else if (x > 1.96) "arrow-up" else ""), `2016`))))
-  # age = color_tile("white", "orange"),
-  # grade = formatter("span", style = x ~ ifelse(x == "A", 
-  #   style(color = "green", font.weight = "bold"), NA)),
-  # area(col = c(test1_score, test2_score)) ~ normalize_bar("pink", 0.2),
-  # final_score = formatter("span",
-  #   style = x ~ style(color = ifelse(rank(-x) <= 3, "green", "gray")),
-  #   x ~ sprintf("%.2f (rank: %02d)", x, rank(-x))),
-  # registered = formatter("span",
-  #   style = x ~ style(color = ifelse(x, "green", "red")),
-  #   x ~ icontext(ifelse(x, "ok", "remove"), ifelse(x, "Yes", "No")))
-# )))
-   print(ls.Comb[[i]][,cols])
- }
+  source(file.path("Scripts","Matching","Confirm.Matched.Bridges.R"))
+  ls.Conf <- lapply(row.names(df.Fail), 
+                    function(i)
+                      Confirm.Matched.Bridges(df.Fail[i,], df.NBI, ls.Matches.Comb[[i]]))
+  tab<-lapply(1:length(ls.Conf),
+              function(i)
+                formattable(ls.Conf[[i]],
+                       list(Q_BIN = FALSE, Q_STREAM = FALSE, Q_COUNTY = FALSE,
+                            Q_ROAD = FALSE, Q_ROUTE = FALSE, Q_ALL = FALSE,
+                            BIN_NBI=formatter("span",
+                                              style = ~ style(color = 
+                                                                ifelse(Q_BIN<1,
+                                                                       "white",
+                                                                       "black"),
+                                                              "background-color"=
+                                                                sapply(Q_BIN,
+                                                                       function(x) 
+                                                                         if (x < 0.5) "#32a852"
+                                                                       else if (x < 0.8) "#86c287"
+                                                                       else if (x < 0.9) "#dbc832"
+                                                                       else if (x < 1) "#dbb132"
+                                                                       else "white"),
+                                                              "padding-right" = "4px", "padding-left" = "2px")),
+                              COUNTY_NBI=formatter("span",
+                                                   style = ~ style(color = 
+                                                                    sapply(COUNTY_NBI, 
+                                                                              function(y) 
+                                                                                ifelse(
+                                                                                  grepl(y,  
+                                                                                        ls.Conf[[i]][1,"LOCATION"],
+                                                                                        ignore.case = TRUE),
+                                                                                  "#32a852",
+                                                                                  "black"))),
+                                                   "padding-right" = "4px", "padding-left" = "2px"),
+                              ROAD_NBI=formatter("span",
+                                                 style = ~ style(color = 
+                                                                ifelse(Q_ROAD<1,
+                                                                       "white",
+                                                                       "black"),
+                                                                 "background-color"=
+                                                                   sapply(Q_ROAD,
+                                                                          function(x) if (x < 0.25) "#32a852"
+                                                                          else if (x < 0.5) "#86c287"
+                                                                          else if (x < 0.75) "#dbc832"
+                                                                          else if (x < 1) "#dbb132"
+                                                                          else "white"),
+                                                                 "padding-right" = "4px", "padding-left" = "2px")),
+                              ROUTE_NBI=formatter("span",
+                                                  style = ~ style(color = 
+                                                                ifelse(Q_ROUTE<1,
+                                                                       "white",
+                                                                       "black"),
+                                                                  "background-color" = 
+                                                                    sapply(Q_ROUTE,
+                                                                           function(x) if (x < 0.25) "#32a852"
+                                                                           else if (x < 0.5) "#86c287"
+                                                                           else if (x < 0.75) "#dbc832"
+                                                                           else if (x < 1) "#dbb132"
+                                                                           else "white"),
+                                                                  "padding-right" = "4px", "padding-left" = "2px")),
+                              FEAT_NBI=formatter("span",
+                                                 style = ~ style(color = 
+                                                                ifelse(Q_STREAM<1,
+                                                                       "white",
+                                                                       "black"),
+                                                                 "background-color" = 
+                                                                   sapply(Q_STREAM,
+                                                                          function(x) if (x < 0.25) "#32a852"
+                                                                          else if (x < 0.5) "#86c287"
+                                                                          else if (x < 0.75) "#dbc832"
+                                                                          else if (x < 1) "#dbb132"
+                                                                          else "white"),
+                                                                 "padding-right" = "4px", "padding-left" = "2px")),
+                            YR_BLT_NBI=formatter("span",
+                                                 style = ~ style(color = 
+                                                                   sapply(YR_BLT_NBI,
+                                                                          function(x) 
+                                                                            if(
+                                                                              is.na(ls.Conf[[i]]$YR_BLT[1])
+                                                                              ) "black"
+                                                                          else if(x == 
+                                                                                  ls.Conf[[i]]$YR_BLT[1]
+                                                                                  ) "#32a852"
+                                                                          else if(x > ls.Conf[[i]]$YR_BLT[1]
+                                                                                  ) "red"
+                                                                          else if(x < ls.Conf[[i]]$YR_BLT[1] &
+                                                                                  is.na(ls.Conf[[i]]$FAIL_TYPE[1])
+                                                                                  ) "#dbb132"
+                                                                          else if(x < ls.Conf[[i]]$YR_BLT[1] &
+                                                                                  ls.Conf[[i]]$FAIL_TYPE[1]=="TC"
+                                                                                  ) "red"
+                                                                          else "black"))),
+                            YR_BLT_NBI=formatter("span",
+                                                 style = ~ style(color = 
+                                                                   sapply(YR_BLT_NBI,
+                                                                          function(x) 
+                                                                            if(
+                                                                              is.na(ls.Conf[[i]]$YR_BLT[1])
+                                                                              ) "black"
+                                                                          else if(x == 
+                                                                                  ls.Conf[[i]]$YR_BLT[1]
+                                                                                  ) "#32a852"
+                                                                          else if(x < ls.Conf[[i]]$YR_BLT[1]
+                                                                                  ) "red"
+                                                                          else if(x > ls.Conf[[i]]$YR_BLT[1] &
+                                                                                  is.na(ls.Conf[[i]]$FAIL_TYPE[1])
+                                                                                  ) "#dbb132"
+                                                                          else if(x > ls.Conf[[i]]$YR_BLT[1] &
+                                                                                  ls.Conf[[i]]$FAIL_TYPE[1]=="TC"
+                                                                                  ) "#dbb132"
+                                                                          else "black")))
+                       )
+                )
+  )
 }
 ```
-
-# Notebook metadata
-```{r sessionInfo, include=FALSE, echo=TRUE, results='markup'}
-devtools::session_info()
+Now let's check the matches.
+```{r confirm1, include=TRUE, echo=FALSE}
+  tab[[1]]
 ```
 
-# References
+```{r confirm2}
+  tab[[2]]
+```
+# Conclusions
+More work is needed, especially in match ranking and confirmation.
+
+# Notebook metadata
+```{r sessionInfo, include=TRUE, echo=TRUE, results='markup'}
+devtools::session_info()
+```
 
 ```{r cleanup, include=FALSE, echo=FALSE, error=FALSE, eval=params$eval}
 # Hidden: clear temporary files and environment
@@ -537,6 +579,6 @@ if(M_STORE){
   DeleteList <- list.files(path = file.path("Analysis","Temp"), full.names = TRUE)
   file.remove(DeleteList)
 }
-rm(list = ls())
+# rm(list = ls())
 ```
 
