@@ -10,19 +10,23 @@ Find.Features <- function(Data,
                       LOCATION = c("AUX","STREAM_NAME_LOC","STREAM_TYPE_LOC"),
                       ROAD = paste0("ROAD_",c("NAME","TYPE","DIRECTION","AUX")),
                       ROUTE = as.vector(sapply(1:2, 
-                                               function(i) paste0(paste0("ROUTE_",c("NAME","TYPE","DIRECTION","AUX")),i))),
+                                               function(i) 
+                                                 paste0(paste0("ROUTE_",c("NAME_","TYPE_","DIRECTION_","AUX_")),i))),
                       STREAM = as.vector(sapply(1:2, 
-                                                function(i) paste0(paste0("STREAM_",c("NAME","TYPE","TRIB","FORK","AUX")),i))))
+                                                function(i) 
+                                                  paste0(paste0("STREAM_",c("NAME_","TYPE_","TRIB_","FORK_","AUX_")),i))))
   ls.cols.out <- list(COUNTY = as.vector(sapply(1:2, 
-                                                function(i) paste0(c("COUNTY_NAME_","FIPS_"),i))),
+                                                function(i) 
+                                                  paste0(c("COUNTY_NAME_","FIPS_"),i))),
                       CITY = as.vector(sapply(1:3, 
-                                              function(i) paste0(c("CITY_NAME_","FIPS_FROM_CITY_","ANSICODE_","GNIS_ID_"),i))),
+                                              function(i) 
+                                                paste0(c("CITY_NAME_","FIPS_FROM_CITY_","ANSICODE_","GNIS_ID_"),i))),
                       LOCATION = c("BRIDGE_NAME","LOC_AUX","STREAM_NAME_LOC","STREAM_TYPE_LOC"),
                       ROAD = paste0("ROAD_",c("NAME","TYPE","DIRECTION","AUX")),
                       ROUTE = as.vector(sapply(1:2, 
-                                               function(i) paste0(paste0("ROUTE_",c("NAME","TYPE","DIRECTION","AUX")),i))),
+                                               function(i) paste0(paste0("ROUTE_",c("NAME_","TYPE_","DIRECTION_","AUX_")),i))),
                       STREAM = as.vector(sapply(1:2, 
-                                                function(i) paste0(paste0("STREAM_",c("NAME","TYPE","TRIB","FORK","AUX")),i))))
+                                                function(i) paste0(paste0("STREAM_",c("NAME_","TYPE_","TRIB_","FORK","AUX_")),i))))
   
   ## Loop over features
   for(f in names(Features)){
@@ -147,7 +151,7 @@ Find.Features <- function(Data,
       }
     }
   }
-  # rm(Feature.Detect)
+  rm(Feature.Detect, envir = .GlobalEnv)
   return(Data) #---------
 }
 

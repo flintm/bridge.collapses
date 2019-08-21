@@ -24,6 +24,7 @@ Clean.Fields <- function(Data = NULL,     # Use if passing Data directly, otherw
     source(file.path("Scripts","Process Input","PreProcess.Location.R"))
     Data <- PreProcess.Location(Data, DATA_SET = DATA_SET, FieldNames = FieldNames, VERBOSE = VERBOSE)
     if(VERBOSE) print(paste("Finished cleaning location field for",DATA_SET,"data."))
+    rm(PreProcess.Location, envir=.GlobalEnv)
   }
   
   # Correct abbreviations and mis-spellings in stream
@@ -31,6 +32,7 @@ Clean.Fields <- function(Data = NULL,     # Use if passing Data directly, otherw
     source(file.path("Scripts","Process Input","PreProcess.Stream.R"))
     Data <- PreProcess.Stream(Data, DATA_SET = DATA_SET, FieldNames = FieldNames, VERBOSE = VERBOSE)
     if(VERBOSE) print(paste("Finished cleaning stream field for",DATA_SET,"data."))
+    rm(PreProcess.Stream, envir=.GlobalEnv)
   }
   
   # Standardize numeric fields
@@ -38,6 +40,7 @@ Clean.Fields <- function(Data = NULL,     # Use if passing Data directly, otherw
     source(file.path("Scripts","Process Input","PreProcess.Numeric.R"))
     Data <- PreProcess.Numeric(Data, FieldNames = FieldNames, VERBOSE = VERBOSE)
     if(VERBOSE) print(paste("Finished numeric fields for",DATA_SET,"data."))
+    rm(PreProcess.Numeric, envir=.GlobalEnv)
   }
 
   # Standardize structure material and type
@@ -45,6 +48,7 @@ Clean.Fields <- function(Data = NULL,     # Use if passing Data directly, otherw
     source(file.path("Scripts","Process Input","PreProcess.Structure.Fields.R"))
     Data <- PreProcess.Structure.Fields(Data, DATA_SET = DATA_SET, FieldNames = FieldNames, VERBOSE = VERBOSE)
     if(VERBOSE) print(paste("Finished cleaning structure material and type for",DATA_SET,"data."))
+    rm(PreProcess.Structure.Fields, envir=.GlobalEnv)
   }
   return(Data)
 }

@@ -4,14 +4,14 @@ GenerateMatches <- function(MatchEntry,            # 1-row data.frame for which 
                             MatchType,             # type of match to be performed (bin, stream, road, route, gage, dam)
                             MatchSource  = "fail", # source of MatchEntry data
                             MatchTarget  = "nbi",  # source of MatchTarget data (potential matches)
-                            maxStringDist = 3,     # max string distance passed to PerformMatch
+                            maxStringDist= 3,      # max string distance passed to PerformMatch
                             SAVE         = FALSE,  # save PossibleMatchRows to file if TRUE
                             OutPath      = getwd(),# path to save output files of potential matches
                             LoadFromFile = FALSE,  # loads potential matches from existing file if TRUE
                             LoadType     = "r",    # will look for ID#-"LoadType", so e.g., this will find "ID#-route" and "ID#-road"
                             LoadPath     = getwd(),# path to loading potential matches from existing file
-                            capPossPct   = 0.5,    # pass to PerformMatch, if nPossMatch > capPossPct*nMatchRows, return "-"
-                            capN         = 200,    # pass to PerformMatch, if nPossMatch > capN, return "-"
+                            capCandPct   = 0.5,    # pass to PerformMatch, if nPossMatch > capPossPct*nMatchRows, return "-"
+                            capCandN     = 200,    # pass to PerformMatch, if nPossMatch > capN, return "-"
                             VERBOSE      = FALSE){ # print progress to screen 
 require(stringdist)
 
@@ -43,19 +43,19 @@ require(stringdist)
   MatchColOrigName  <-   c(bin     = "BIN",
                            stream  = "FEAT_UND",
                            road    = "LOCATION",
-                           route   = "ROUTE_NO", # noting not the original for this b/c many don't have a route
+                           route   = "LOCATION",
                            gage    = "FEAT_UND",
                            dam     = "FEAT_UND",
                            nbiGage = "STANAME")[MatchType]
   MatchIDENT    <- c(fail    = "ID",
                      gage    = "STAID",
                      dam     = "ID",
-                     nbi     = "NBI_ROW")[MatchSource] 
+                     nbi     = "OBJECTID_new")[MatchSource] 
   MatchEntry$IDENT <- MatchEntry[1,MatchIDENT[MatchSource]]
-  CountyCols <- list(fail    = c("FIPS","FIPS_2", "FIPS_FROM_CITY", "FIPS_FROM_CITY_2", "FIPS_FROM_CITY_3"),
+  CountyCols <- list(fail    = c("FIPS_1","FIPS_2", "FIPS_FROM_CITY_1", "FIPS_FROM_CITY_2", "FIPS_FROM_CITY_3"),
                      gage    = NA,
                      dam     = NA,
-                     nbi     = "ITEM3")[[MatchSource]]
+                     nbi     = "COUNTY_CODE_003")[[MatchSource]]
   CountyCols <- CountyCols[MatchEntry[,CountyCols]!="" & !is.na(MatchEntry[,CountyCols]) & !is.null(MatchEntry[,CountyCols])]
 
 if (VERBOSE) print(paste0("ID of MatchEntry is: ",MatchEntry$IDENT, ", and MatchType is: ", MatchType))
@@ -137,7 +137,7 @@ if (all(grepl("IDENT",PossibleMatchRows) | grepl("^-",PossibleMatchRows))){
     if(VERBOSE) print(" No county-matches, checking state")
     PossibleMatchRows<- c(PossibleMatchRows, paste0("IDENT", MatchEntry$IDENT,"-STFIPS"))
     PossibleMatches <- PerformMatch(MatchEntry, MatchTargetData, MatchType, 
-                                    maxStringDist = maxStringDist, capPossPct = capPossPct, capN = capN,
+                                    maxStringDist = maxStringDist, capCandPct = capCandPct, capCandN = capCandN,
                                     VERBOSE = VERBOSE)
   }
   
