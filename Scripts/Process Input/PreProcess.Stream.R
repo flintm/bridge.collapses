@@ -15,7 +15,7 @@ PreProcess.Stream <- function(Data,
                                                                        grepl, Data[,STREAM], ignore.case = TRUE),
                                                   MARGIN = 1, any)) & 
                                            !is.na(Data[,STREAM]),]),
-                 "NBI"  = row.names(Data[!is.na(Data[,grepl("38",FieldNames(Data))]),]))
+                 "NBI"  = row.names(Data[!is.na(Data[,grepl("38",FieldNames)]),]))
   
   punct <- c("'","&","*")
   Data$STREAM_UNDER    <- str_squish(gsub("[\\&\\*]+"," ", gsub("'","",Data[,STREAM])))
@@ -24,15 +24,16 @@ PreProcess.Stream <- function(Data,
 
   # Dataset-specific corrections
   ls.Keys   <- get(paste0("ls.",sub("Data","",DATA_SET),".Keys"))
-  
-  ls.Stream <- ls.Keys[sapply(1:length(ls.Keys), function(i) "STREAM" %in% ls.Keys[[i]])]
-  if(length(ls.Stream)>0){
-    if(any(names(ls.Stream) %in% Rows)){
-      rowsID <- Rows[sapply(names(ls.Stream), function(i) which(Data[Rows,FieldNames["ID"]]==i))]
-      Data[rowsID,"STREAM_UNDER"] <- sapply(1:length(ls.Stream), 
-                                            function(i) sub(ls.Stream[[i]][1],
-                                                            ls.Stream[[i]][2],
-                                                            Data[rowsID[i],"STREAM_UNDER"]))
+  if(length(ls.Keys) > 0){
+    ls.Stream <- ls.Keys[sapply(1:length(ls.Keys), function(i) "STREAM" %in% ls.Keys[[i]])]
+    if(length(ls.Stream)>0){
+      if(any(names(ls.Stream) %in% Rows)){
+        rowsID <- Rows[sapply(names(ls.Stream), function(i) which(Data[Rows,FieldNames["ID"]]==i))]
+        Data[rowsID,"STREAM_UNDER"] <- sapply(1:length(ls.Stream), 
+                                              function(i) sub(ls.Stream[[i]][1],
+                                                              ls.Stream[[i]][2],
+                                                              Data[rowsID[i],"STREAM_UNDER"]))
+      }
     }
   }
   

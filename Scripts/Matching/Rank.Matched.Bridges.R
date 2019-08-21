@@ -14,16 +14,24 @@ Rank.Matched.Bridges <- function(ls.Matches){
       rows  <- sub("[[:alnum:]]+.","",entry)
       qual  <- sub(".[[:digit:]]+\\>","",entry)
       ls.Match.Comb[[ID]]$MatchID <- c(ls.Match.Comb[[ID]]$MatchID, rows)
-      ls.Match.Comb[[ID]]$Qual <- c(ls.Match.Comb[[ID]]$Qual, qual)
+      ls.Match.Comb[[ID]]$Qual    <- c(ls.Match.Comb[[ID]]$Qual, qual)
       if(anyDuplicated(ls.Match.Comb[[ID]]$MatchID)>0){
-        ls.Match.Comb[[ID]]$Qual[duplicated(ls.Match.Comb[[ID]]$MatchID,fromLast = TRUE)] <- paste0(ls.Match.Comb[[ID]]$Qual[duplicated(ls.Match.Comb[[ID]]$MatchID)],
-                                                                                                    ls.Match.Comb[[ID]]$Qual[duplicated(ls.Match.Comb[[ID]]$MatchID,fromLast = TRUE)],
-                                                                                                    collapse = "")
-        ls.Match.Comb[[ID]]$Qual    <- ls.Match.Comb[[ID]]$Qual[!duplicated(ls.Match.Comb[[ID]]$MatchID)]
-        ls.Match.Comb[[ID]]$MatchID <- ls.Match.Comb[[ID]]$MatchID[!duplicated(ls.Match.Comb[[ID]]$MatchID)]
-        ls.Match.Comb[[ID]]$MatchID <- ls.Match.Comb[[ID]]$MatchID[order(ls.Match.Comb[[ID]]$Qual, decreasing = TRUE)]
-        ls.Match.Comb[[ID]]$Qual    <- ls.Match.Comb[[ID]]$Qual[order(ls.Match.Comb[[ID]]$Qual, decreasing = TRUE)]
+        for(i in 1:sum(duplicated(ls.Match.Comb[[ID]]$MatchID))){
+          r     <- ls.Match.Comb[[ID]]$MatchID[duplicated(ls.Match.Comb[[ID]]$MatchID)][1]
+          qOrig <- ls.Match.Comb[[ID]]$Qual[ls.Match.Comb[[ID]]$MatchID==r][1]
+          qNew  <- ls.Match.Comb[[ID]]$Qual[ls.Match.Comb[[ID]]$MatchID==r][2]
+          df <- data.frame(qs = c(qOrig, qNew), stringsAsFactors = FALSE)
+          df$n  <- -1*nchar(df$qs)
+          q     <- df$qs[order(df$n, df$qs)]
+          q     <- paste0(q,collapse="")
+          ls.Match.Comb[[ID]]$Qual[ls.Match.Comb[[ID]]$MatchID==r] <- q
+          ls.Match.Comb[[ID]]$Qual    <- ls.Match.Comb[[ID]]$Qual[-which(ls.Match.Comb[[ID]]$MatchID==r)[2]]
+          ls.Match.Comb[[ID]]$MatchID <- ls.Match.Comb[[ID]]$MatchID[-which(ls.Match.Comb[[ID]]$MatchID==r)[2]]
+        }
       }
+      orderL <- data.frame(n=-1*nchar(ls.Match.Comb[[ID]]$Qual), a = ls.Match.Comb[[ID]]$Qual, stringsAsFactors = F)
+      ls.Match.Comb[[ID]]$Qual    <- ls.Match.Comb[[ID]]$Qual[order(orderL$n,orderL$a)]
+      ls.Match.Comb[[ID]]$MatchID <- ls.Match.Comb[[ID]]$MatchID[order(orderL$n,orderL$a)]
     }
   }
   return(ls.Match.Comb)

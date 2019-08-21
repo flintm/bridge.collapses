@@ -19,7 +19,8 @@ MatchSuffix <- c(bin    = "B",
                  road   = "R",
                  stream = "S",
                  route  = "T")[MatchType]
-MatchQual   <- c(exact = "e",
+MatchQual   <- c(absolute = "a",
+                 exact = "e",
                  full  = "f",
                  partial = "p",
                  fuzzy = "z")
@@ -37,10 +38,10 @@ MatchColNames <-       list(bin     = c("BIN","BIN_NUM","BIN_NUM"),
                             route   = c("ROUTE_NAME_1", "ROUTE_NAME_2","ROUTE_TYPE_1", "ROUTE_TYPE_2"),
                             gage    = c("STREAM_NAME", "STREAM_TYPE"),
                             dam     = c("STREAM_NAME", "STREAM_TYPE"))
-MatchTargetColNames <- list(bin     = c("STRUCTURE_NUMBER_008","BIN_NUM", "ROUTE_NUMBER_005D"),
-                            stream  = rep("FEATURES_DESC_006A", 5),
-                            road    = rep("FACILITY_CARRIED_007", 3),
-                            route   = c("ROUTE_NUMBER_005D","ROUTE_NUMBER_005D", "ROUTE_PREFIX_ITEM5B", "ROUTE_PREFIX_ITEM5B"), #ITEM5D
+MatchTargetColNames <- list(bin     = c("STRUCTURE_NUMBER_008","BIN_NUM", "ROUTE_NUM"),
+                            stream  = rep("STREAM_UNDER", 5),
+                            road    = rep("LOC", 3),
+                            route   = c("ROUTE_NUM","ROUTE_NUM", "ROUTE_PREFIX_ITEM5B", "ROUTE_PREFIX_ITEM5B"), #ITEM5D
                             gage    = c("STREAM_NAME_GAGE", "STREAM_TYPE_GAGE"),
                             dam     = c("STREAM_NAME_DAM", "STREAM_TYPE_DAM"))
 
@@ -68,15 +69,18 @@ for (i in 1:nMatchTypes){
     next
   }
   if(VERBOSE) print(paste0("  Matching ",MatchTypes[i], " to ",MatchToTypes[i]))
-  MatchMarker <- paste0(Marker,MatchQual["exact"])
   string  <- as.character(MatchEntry[1,MatchTypes[i]])
-  if (VERBOSE) print("    Checking for exact string")
+  
+  MatchMarker <- paste0(Marker,MatchQual["absolute"])
+  if (VERBOSE) print("    Checking for absolute string")
   BoolRowMatch <- grepl(string, TargetData[,MatchToTypes[i]],fixed = TRUE)
   
+  MatchMarker <- paste0(Marker,MatchQual["exact"])
+  if (VERBOSE) print("    Checking for exact string")
+  BoolRowMatch <- grepl(string, TargetData[,MatchToTypes[i]], ignore.case = T)
   
   # all "words" in string matched in order
   MatchMarker <- paste0(Marker,MatchQual["full"])
-  string  <- as.character(MatchEntry[1,MatchTypes[i]])
   pattern <- ifelse(MatchType!="bin",
                     paste0("\\<",paste0(unlist(strsplit(string," ")), collapse="\\> \\<"),"\\>"),
                     paste0(unlist(strsplit(string," ")), collapse="[[:alnum:]]*"))
