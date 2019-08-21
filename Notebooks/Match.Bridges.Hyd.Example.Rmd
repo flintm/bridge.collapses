@@ -226,7 +226,7 @@ print(df.NBI[sample.int(nrow(df.NBI),5),c("STFIPS","STRUCTURE_NUMBER_008","LOCAT
 ```
 
 I analyzed the quality of the entries for each bridge and field to determine the best approach to geolocating the bridges. With only 1948 bridges to study, I anticipated that recall was going to be more important than precision, which was borne out by the high number of bridges with missing fields.
-```{r Exploratory, echo=FALSE,message=FALSE}
+```{r Exploratory, echo=FALSE,message=FALSE, results='asis'}
   # Set up fields of interest, naming convention, color palette, etc. -------
   critFields <- c("BIN","LOCATION","FEAT_UND")
   combFields     <- combn(critFields,2)
@@ -332,7 +332,7 @@ print(df.Fail[df.Fail$ID %in% EXAMPLE_ID,
 ```
 
 # 3. Identify features of match and target data
-Collapsed bridge "LOCATION" and "FEAT_UND" are searched for features, including county, city, bridge, road, route, and stream names. Other identifying information (e.g., "3.5 miles from") is also identified and isolated. Similar data is obtained from the appropriate fields in the target dataset.
+Collapsed bridge `LOCATION` and `FEAT_UND` are searched for features, including county, city, bridge, road, route, and stream names. Other identifying information (e.g., "3.5 miles from") is also identified and isolated. Similar data is obtained from the appropriate fields in the target dataset.
 
 ## Methods 
 A key aspect of the matching algorithm is the use of dictionaries and ontologies to relate entries between databases. The json ontologies were created by the authors, with extensive reference to existing metadata
@@ -361,7 +361,7 @@ print(df.Fail[df.Fail$ID %in% EXAMPLE_ID,c(30:31,34:35, 46:47,50:56,60:65)])
 ```
 
 # 4. Structured feature and string matching
-Identify NBI bridges that could be linked to failed bridges. Matching style and type of matching controlled by `M_STYLE` and `M_TYPE`. Sequential matching will first search for matches to the first type, and will consider only those possible matching when searching for matches to the second (or later) types. Parallel matching searches for the types separately and then combines the match pools. Currently supported types are `road`, `route`, `stream`, and `bin`. County and city information is automatically searched.
+Identify NBI bridges that could be linked to failed bridges. Matching style and type of matching controlled by `M_STYLE` and `M_TYPE`. Sequential matching will first search for matches to the first type, and will consider only those possible matching when searching for matches to the second (or later) types. Parallel matching searches for the types separately and then combines the match pools. Currently supported types are `road`, `route`, `stream`, and `bin`. `county` and `city` information is automatically searched.
 ```{r matching, include=TRUE, eval=params$eval, error=FALSE}
 if (RUN["MATCH"]){
   source(file.path("Scripts","Matching","Helper","GenerateMatches.R"))
@@ -387,7 +387,7 @@ if (RUN["MATCH"]){
 ```
 
 Analyzing the number of candidate matches returned by each run allows me to assess the performance of the algorithm.
-```{r analyzeNMatch, include = TRUE, warning=FALSE, message=FALSE}
+```{r analyzeNMatch, echo=FALSE, warning=FALSE, message=FALSE}
   nMatches <- sapply(names(ls.Matches), 
                      function(m)
                                         
