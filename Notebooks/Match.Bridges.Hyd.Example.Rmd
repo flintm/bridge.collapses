@@ -463,7 +463,7 @@ if (RUN["CONFIRM"]){
    Q_cols <- colnames(dfF)[grepl("Q_",colnames(dfF))]
    dfF[,Q_cols] <- sapply(Q_cols, function(j) factor(dfF[,j], levels = qualRank, labels = as.character(1:length(qualRank), drop = FALSE)))
    
-   ls.Comb[[i]] <- merge(dfF, df.NBI[,c("OBJECTID_new","STATE_CODE_001",
+   ls.Comb[[i]] <- merge(dfF, df.NBI[,c("OBJECTID_new","STATE_CODE_001", "COUNTY_CODE_003",
                                 "STRUCTURE_NUMBER_008","LOCATION_009",
                                 "FACILITY_CARRIED_007","ROUTE_NUMBER_005D",
                                 "FEATURES_DESC_006A","STRUCTURE_KIND_043A",
@@ -475,12 +475,39 @@ if (RUN["CONFIRM"]){
    ls.Comb[[i]]$TYPE_NBI <- factor(as.character(ls.Comb[[i]]$STRUCTURE_TYPE_043B),
                                   levels = names(ls.ITEM43B.Ont),
                                   labels = unlist(lapply(ls.ITEM43B.Ont,"[[",1)))
-   cols <- c("BIN","STRUCTURE_NUMBER_008","LOCATION","LOCATION_009",
+   ls.Comb[[i]]$COUNTY_NBI <- factor(as.character(ls.Comb[[i]]$COUNTY_CODE_003),
+                                     levels = df.Counties$FIPS_C[df.Counties$FIPS_C %in% unique(ls.Comb[[i]]$COUNTY_CODE_003)],
+                                     labels = df.Counties$COUNTY_NAME[df.Counties$FIPS_C %in% unique(ls.Comb[[i]]$COUNTY_CODE_003)])
+   cols <- c("BIN","STRUCTURE_NUMBER_008","LOCATION","COUNTY_NBI","LOCATION_009",
                          "FACILITY_CARRIED_007","ROUTE_NUMBER_005D",
                          "FEAT_UND","FEATURES_DESC_006A","FAIL_TYPE","YR_BLT","YR_FAIL",
-                         "MAT","MAT_NBI","TYPE","TYPE_NBI")
-  #  formattable(ls.Comb[[i]][,cols],
-  #              list(BIN = 
+                         "MAT","MAT_NBI","TYPE","TYPE_NBI",Q_cols)
+  formattable(ls.Comb[[i]][,cols],
+            list(Q_BIN = FALSE, Q_STREAM = FALSE, Q_ROAD = FALSE, Q_ROUTE = FALSE,
+                 STRUCTURE_NUMBER_008 = formatter("span", 
+                 style = ~ style(color = "white",
+                                 "background-color" = sapply(Q_BIN, 
+                                                             function(x) if (x < 3) "#32a852" 
+                                                             else if (x < 6) "#86c287" 
+                                                             else if (x < 9) "#dbc832" 
+                                                             else if (x < 12) "#dbb132" 
+                                                             else "black"),
+                                 "padding-right" = "4px", "padding-left" = "2px"))),
+            COUNTY_NBI = formatter("span", 
+                 style = ~ style("background-color" = sapply(COUNTY_NBI, 
+                                                             function(x)
+                   ifelse(grepl(tolower(x), "jackson co",ignore.case = T),
+                                                           "green", 
+                                                           "black")))))
+                                 #   sapply(`Q_BIN`, 
+                                 #                function(x) if (x < 3) "#32a852" 
+                                 #                else if (x < 6) "#86c287" 
+                                 #                else if (x < 9) "#dbc832" 
+                                 #                else if (x < 12) "#dbb132" 
+                                 #                else "black"),
+                                 # "padding-right" = "4px", "padding-left" = "2px"))))
+                 # color = ifelse(`2016` > `2015`, "green", "red")),                                    
+                 # ~ icontext(sapply(`z`, function(x) if (x < -1.96) "arrow-down" else if (x > 1.96) "arrow-up" else ""), `2016`))))
   # age = color_tile("white", "orange"),
   # grade = formatter("span", style = x ~ ifelse(x == "A", 
   #   style(color = "green", font.weight = "bold"), NA)),
