@@ -1,16 +1,19 @@
 ---
 title: 'Example: Geolocating and Cross-Database Matching of US Hydraulic Bridge Collapses'
 author: '[Madeleine Flint](http://www.madeleinemflint.com)'
-date: "`r Sys.Date()`"
+date: "`r format(Sys.Date(), '%B %e, %Y')`"
 output:
   html_notebook:
+    css: style.css
     toc: no
   html_document:
+    css: style.css
     df_print: paged
     toc: no
 params:
   eval: no
   mstyle: 'PAR'
+  verbose: TRUE
 ---
 
 
@@ -64,13 +67,14 @@ This R Notebook provides an example of geolocating and augmenting bridge collaps
 5. Collate and *rank* the candidate matches (based on user-defined hierarchy of match quality)
 6. Support supervised match *confirmation* (interactive)
 
-## Example User controls
-For the purposes of the example, we can modify the failed bridges we'll look at and the matching method (set in the Notebook parameters).
-```{r userExampleControls, include=TRUE, echo = FALSE, eval=params$eval}
+## Example user controls
+We can modify the fields of the failed bridges we'll use to match, as well as the matching method (set in the Notebook parameters).
+```{r userExampleControls, echo = TRUE, eval=params$eval}
 EXAMPLE_ID   <- c(31, 175) 
 # Matching options
-M_STYLE <- params$mstyle # PAR: Runs for each M_TYPE in parallel (i.e., run independently and then combined)
-                         # SEQ: Sequential runs (i.e., narrowing down by each match type in order)?
+M_STYLE <- params$mstyle 
+  # PAR: Runs for each M_TYPE in parallel (i.e., run independently and then combined)
+  # SEQ: Sequential runs (i.e., narrowing down by each match type in order)?
 M_TYPE  <- c("bin",     # Determines how data should be matched, and supports: 
              "stream",   # 'road', 'route', 'stream', and 'bin' (Bridge Id No). 
              "route",    # Order in vector determines the prioritization in ranking. 
@@ -105,7 +109,7 @@ M_STORE <- TRUE       # List of potential matches for each entry is stored on di
                       # rather than held in memory and returned to the notebook.
 
 # Subfunction controls for messages 
-VERB <- TRUE # Subfunctions to print intermediate results (e.g., # of matches 
+VERB <- params$verbose # Subfunctions to print intermediate results (e.g., # of matches 
              # completed). Mainly useful for debugging with a small set of MatchData.
 
 # Features      : which types of data will be cleaned and undergo feature detection
@@ -128,9 +132,9 @@ opts <-list(Fields   =list(Fail =c("MAT", "TYPE", "LOCATION", "STREAM", "BIN", "
                                       BRIDGE   = c("Bridge"),
                                       STREAM   = c("Stream", "Trib", "Bridge", "Near")
             )),
-            Match=list(maxStringDist =c(road =1, stream =2, route =0, bin = 2),
-                       capCandN      =c(road =200, stream =100, route =100, bin =200),
-                       capCandPct    =c(road =0.7, stream =0.7, route =0.7, bin =0.7)))
+            Match=list(maxDist    =c(road =1, stream =2, route =0, bin = 2),
+                       capCandN   =c(road =200, stream =100, route =100, bin =200),
+                       capCandPct =c(road =0.7, stream =0.7, route =0.7, bin =0.7)))
 ```
 
 ```{r controlsChecks, include=FALSE, eval=params$eval}
@@ -344,7 +348,8 @@ cat './Data/Input/Dictionaries/StreamKeys.json'
 if(RUN["FEATURE"]){
   source(file.path("Scripts","Process Input","Find.Features.R"))
   
-  Features <- sapply(opts[["Features"]][["Fail"]], function(i) ls.Fail.Ont[[i]][1],
+  Features <- sapply(opts[["Features"]][["Fail"]], 
+                     function(i) ls.Fail.Ont[[i]][1],
                      USE.NAMES = TRUE)
   Features <- sub("LOCATION","LOC",Features)
   Features["STREAM"] <- "STREAM_UNDER"
@@ -360,26 +365,28 @@ print(df.Fail[df.Fail$ID %in% EXAMPLE_ID,c(30:31,34:35, 46:47,50:58)])
 ```
 
 # 4. Structured feature and string matching
-Identify NBI bridges that could be linked to failed bridges. Matching style and type of matching controlled by `M_STYLE` and `M_TYPE`. Sequential matching will first search for matches to the first type, and will consider only those possible matching when searching for matches to the second (or later) types. Parallel matching searches for the types separately and then combines the match pools. Currently supported types are `road`, `route`, `stream`, and `bin`. `county` and `city` information is automatically searched.
+Identify NBI bridges that could be linked to failed bridges. Matching style is controlled by `M_STYLE`. Parallel matching searches for the types separately and then combines the match pools.
 ```{r matching, include=TRUE, eval=params$eval, error=FALSE}
 if (RUN["MATCH"]){
   source(file.path("Scripts","Matching","Helper","GenerateMatches.R"))
   source(file.path("Scripts","Matching","Helper","PerformMatch.R"))
   ls.Matches<-sapply(M_TYPE, 
                      function(m)
-                       sapply(row.names(df.Fail),
-                              function(i) 
-                                GenerateMatches(df.Fail[i,],
-                                                m,
-                                                maxStringDist = opts$Match$maxStringDist[m],
-                                                capCandPct    = opts$Match$capCandPct[m],
-                                                capCandN      = opts$Match$capCandN[m],
-                                                SAVE          = M_STORE,
-                                                OutPath       = 'Data/Analysis',
-                                                LoadFromFile=c(PAR=FALSE,SEQ= TRUE)[M_STYLE],
-                                                LoadPath    = 'Data/Analysis',
-                                                VERBOSE     = VERB), 
-                              USE.NAMES = TRUE, simplify = FALSE),
+                      sapply(row.names(df.Fail),
+                             function(i) 
+                              GenerateMatches(
+                                df.Fail[i,],
+                                m,
+                                maxStringDist= opts$Match$maxDist[m],
+                                capCandPct   = opts$Match$capCandPct[m],
+                                capCandN     = opts$Match$capCandN[m],
+                                SAVE         = M_STORE,
+                                OutPath      = 'Data/Analysis',
+                                LoadFromFile = c(PAR=FALSE,
+                                                 SEQ= TRUE)[M_STYLE],
+                                LoadPath     = 'Data/Analysis',
+                                VERBOSE      = VERB), 
+                             USE.NAMES = TRUE, simplify = FALSE),
                      USE.NAMES = TRUE, simplify = FALSE)
   rm(GenerateMatches, PerformMatch)
 }
@@ -389,7 +396,6 @@ Analyzing the number of candidate matches returned by each run allows me to asse
 ```{r analyzeNMatch, echo=FALSE, warning=FALSE, message=FALSE}
   nMatches <- sapply(names(ls.Matches), 
                      function(m)
-                                        
                        sapply(names(ls.Matches[[m]]), 
                               function(i)
                                 ifelse(!is.na(as.integer(ls.Matches[[m]][[i]][3])),
@@ -441,98 +447,125 @@ if (RUN["CONFIRM"]){
   source(file.path("Scripts","Matching","Confirm.Matched.Bridges.R"))
   ls.Conf <- lapply(row.names(df.Fail), 
                     function(i)
-                      Confirm.Matched.Bridges(df.Fail[i,], df.NBI, ls.Matches.Comb[[i]]))
-  tab<-lapply(1:length(ls.Conf),
-              function(i)
-                formattable(ls.Conf[[i]][1:10,],
-                       list(Q_BIN = FALSE, Q_STREAM = FALSE, Q_COUNTY = FALSE,
-                            Q_ROAD = FALSE, Q_ROUTE = FALSE, Q_ALL = FALSE,
-                            BIN_NBI=formatter("span",
-                                              style = ~ style(color = 
-                                                                ifelse(Q_BIN<1,
-                                                                       "white",
-                                                                       "black"),
-                                                              "background-color"=
-                                                                sapply(Q_BIN,
-                                                                       function(x) 
-                                                                         if (x < 0.76) "#32a852"
-                                                                       else if (x < 0.8) "#86c287"
-                                                                       else if (x < 0.9) "#dbc832"
-                                                                       else if (x < 1) "#dbb132"
-                                                                       else "white"),
-                                                              "padding-right" = "4px", "padding-left" = "2px")),
-                              COUNTY_NBI=formatter("span",
-                                                   style = ~ style(color = 
-                                                                    sapply(COUNTY_NBI, 
-                                                                              function(y) 
-                                                                                ifelse(
-                                                                                  grepl(y,  
-                                                                                        ls.Conf[[i]][1,"LOCATION"],
-                                                                                        ignore.case = TRUE),
-                                                                                  "#32a852",
-                                                                                  "black"))),
-                                                   "padding-right" = "4px", "padding-left" = "2px"),
-                              ROAD_NBI=formatter("span",
-                                                 style = ~ style(color = 
-                                                                ifelse(Q_ROAD<1,
-                                                                       "white",
-                                                                       "black"),
-                                                                 "background-color"=
-                                                                   sapply(Q_ROAD,
-                                                                          function(x) if (x < 0.25) "#32a852"
-                                                                          else if (x < 0.5) "#86c287"
-                                                                          else if (x < 0.75) "#dbc832"
-                                                                          else if (x < 1) "#dbb132"
-                                                                          else "white"),
-                                                                 "padding-right" = "4px", "padding-left" = "2px")),
-                              ROUTE_NBI=formatter("span",
-                                                  style = ~ style(color = 
-                                                                ifelse(Q_ROUTE<1,
-                                                                       "white",
-                                                                       "black"),
-                                                                  "background-color" = 
-                                                                    sapply(Q_ROUTE,
-                                                                           function(x) if (x < 0.25) "#32a852"
-                                                                           else if (x < 0.5) "#86c287"
-                                                                           else if (x < 0.75) "#dbc832"
-                                                                           else if (x < 1) "#dbb132"
-                                                                           else "white"),
-                                                                  "padding-right" = "4px", "padding-left" = "2px")),
-                              FEAT_NBI=formatter("span",
-                                                 style = ~ style(color = 
-                                                                ifelse(Q_STREAM<1,
-                                                                       "white",
-                                                                       "black"),
-                                                                 "background-color" = 
-                                                                   sapply(Q_STREAM,
-                                                                          function(x) if (x < 0.8) "#32a852"
-                                                                          else if (x < 0.9) "#86c287"
-                                                                          else if (x < 0.95) "#dbc832"
-                                                                          else if (x < 1) "#dbb132"
-                                                                          else "white"),
-                                                                 "padding-right" = "4px", "padding-left" = "2px")),
-                            YR_BLT_NBI=formatter("span",
-                                                 style = ~ style(color = 
-                                                                 sapply(YR_BLT_NBI,
-                                                                        function(x) 
-                                                                          if(
-                                                                            is.na(ls.Conf[[i]]$YR_BLT[1])
-                                                                          ) "black"
-                                                                        else if(x == 
-                                                                                ls.Conf[[i]]$YR_BLT[1]
-                                                                        ) "#32a852"
-                                                                        else if(x > ls.Conf[[i]]$YR_BLT[1]
-                                                                        ) "red"
-                                                                        else if(x < ls.Conf[[i]]$YR_BLT[1] &
-                                                                                is.na(ls.Conf[[i]]$FAIL_TYPE[1])
-                                                                        ) "#dbb132"
-                                                                        else if(x < ls.Conf[[i]]$YR_BLT[1] &
-                                                                                ls.Conf[[i]]$FAIL_TYPE[1]=="TC"
-                                                                        ) "red"
-                                                                        else "black")))
-                       )
-                )
-  )
+                      Confirm.Matched.Bridges(
+                        df.Fail[i,], 
+                        df.NBI, ls.Matches.Comb[[i]]))
+  tab <-
+    lapply(
+      1:length(ls.Conf),
+      function(i)
+        formattable(
+          ls.Conf[[i]][1:10,],
+          list(Q_BIN = FALSE, Q_STREAM = FALSE, Q_COUNTY = FALSE,
+               Q_ROAD = FALSE, Q_ROUTE = FALSE, Q_ALL = FALSE,
+               BIN_NBI =
+                 formatter(
+                   "span",
+                   style = ~ 
+                     style(color = 
+                             ifelse(Q_BIN<1,
+                                    "white",
+                                    "black"),
+                           "background-color"=
+                             sapply(Q_BIN,
+                                    function(x) 
+                                      if (x < 0.76) "#32a852"
+                                    else if (x < 0.8) "#86c287"
+                                    else if (x < 0.9) "#dbc832"
+                                    else if (x < 1) "#dbb132"
+                                    else "white"),
+                           "padding-right" = "4px", 
+                           "padding-left" = "2px")),
+               COUNTY_NBI = 
+                 formatter(
+                   "span",
+                   style = ~ 
+                     style(color = 
+                             sapply(COUNTY_NBI, 
+                                    function(y) 
+                                      ifelse(
+                                        grepl(y,  
+                                              ls.Conf[[i]][1,"LOCATION"],
+                                              ignore.case = TRUE),
+                                        "#32a852",
+                                        "black"))),
+                   "padding-right" = "4px", 
+                   "padding-left" = "2px"),
+               ROAD_NBI = 
+                 formatter(
+                   "span",
+                   style = ~ 
+                     style(color = 
+                             ifelse(Q_ROAD<1,
+                                    "white",
+                                    "black"),
+                           "background-color"=
+                             sapply(Q_ROAD,
+                                    function(x) if (x < 0.25) "#32a852"
+                                    else if (x < 0.5) "#86c287"
+                                    else if (x < 0.75) "#dbc832"
+                                    else if (x < 1) "#dbb132"
+                                    else "white"),
+                           "padding-right" = "4px", 
+                           "padding-left" = "2px")),
+               ROUTE_NBI=formatter(
+                 "span",
+                 style = ~ 
+                   style(color = 
+                           ifelse(Q_ROUTE<1,
+                                  "white",
+                                  "black"),
+                         "background-color" = 
+                           sapply(Q_ROUTE,
+                                  function(x) if (x < 0.25) "#32a852"
+                                  else if (x < 0.5) "#86c287"
+                                  else if (x < 0.75) "#dbc832"
+                                  else if (x < 1) "#dbb132"
+                                  else "white"),
+                         "padding-right" = "4px", 
+                         "padding-left" = "2px")),
+               FEAT_NBI = 
+                 formatter(
+                   "span",
+                   style = ~ 
+                     style(color = 
+                             ifelse(Q_STREAM<1,
+                                    "white",
+                                    "black"),
+                           "background-color" = 
+                             sapply(Q_STREAM,
+                                    function(x) if (x < 0.8) "#32a852"
+                                    else if (x < 0.9) "#86c287"
+                                    else if (x < 0.95) "#dbc832"
+                                    else if (x < 1) "#dbb132"
+                                    else "white"),
+                           "padding-right" = "4px", 
+                           "padding-left" = "2px")),
+               YR_BLT_NBI = 
+                 formatter(
+                   "span",
+                   style = ~ 
+                     style(color = 
+                             sapply(YR_BLT_NBI,
+                                    function(x) 
+                                      if(
+                                        is.na(ls.Conf[[i]]$YR_BLT[1])
+                                      ) "black"
+                                    else if(x == 
+                                            ls.Conf[[i]]$YR_BLT[1]
+                                    ) "#32a852"
+                                    else if(x > ls.Conf[[i]]$YR_BLT[1]
+                                    ) "red"
+                                    else if(x < ls.Conf[[i]]$YR_BLT[1] &
+                                            is.na(ls.Conf[[i]]$FAIL_TYPE[1])
+                                    ) "#dbb132"
+                                    else if(x < ls.Conf[[i]]$YR_BLT[1] &
+                                            ls.Conf[[i]]$FAIL_TYPE[1]=="TC"
+                                    ) "red"
+                                    else "black")))
+          )
+        )
+    )
 }
 ```
 Now let's check the matches.
@@ -543,8 +576,74 @@ Now let's check the matches.
 ```{r confirm2, echo = FALSE}
   tab[[2]]
 ```
-# Conclusions
-More work is needed, especially in match ranking and confirmation.
+# Assessment
+As the main goal is recall but precision currently causes issues with the amount of person-time needed to verify matches, I will take a look at false positives/negatives and true positives/negatives.
+```{r assessMatching, echo = FALSE, warning=FALSE, message=FALSE}
+# load data.frame of confirmed matches
+load(file.path("Data","df.Fail.NBI.Gage.Active.RData"))
+df.MatchMetrics <- data.frame(matrix(NA,5,9),
+                              row.names = c("combined", M_TYPE))
+colnames(df.MatchMetrics) <- c("tp","fp","tn","fn","recall", "precision", "f1","f2","d2m")
+# Overall
+Conf <- c("175"="490332","31"="590310")
+d2m  <- c(1,1)
+p    <- c(1,1)
+n    <- c(0,0)
+tp   <- sum(p)
+fn   <- sum(n)
+fp   <- sum(unlist(lapply(ls.Conf, nrow))) - tp
+tn   <- sum(n)
+recall    = tp/(tp+fn)
+precision = tp/(tp+fp)
+f1 <- 2*recall*precision/(recall+precision)
+f2 <- 5*recall*precision/(recall+4*precision)
+df.MatchMetrics["combined",] <- c(tp, fp, tn, fn, recall, precision, f1, f2, mean(d2m))
+
+# for individual parallel runs
+for (m in M_TYPE){
+  tp  <- sapply(row.names(df.Fail), function(i) sum(grepl(Conf[i], ls.Matches[[m]][[i]])))
+  d2m <- sapply(row.names(df.Fail), function(i) ifelse(tp[i]==1,
+                                                       which(grepl(Conf[i], ls.Matches[[m]][[i]])),
+                                                       nMatches[i,m]))
+  tp  <- sum(tp)
+  fn  <- sum(p) - tp
+  fp  <- sum(nMatches[,m]) - tp
+  recall    <- tp/(tp+fn)
+  precision <- tp/(tp+fp)
+  f1 <- 2*recall*precision/(recall+precision)
+  f2 <- 5*recall*precision/(recall+4*precision)
+  df.MatchMetrics[m,] <- c(tp, fp, tn, fn, recall, precision, f1, f2, mean(d2m))
+}
+df.MatchMetrics$type <- row.names(df.MatchMetrics)
+df.MatchMetrics$fp   <- -1*df.MatchMetrics$fp
+df.MatchMetrics$fn   <- -1*df.MatchMetrics$fn
+df.Metrics.melt      <- melt(df.MatchMetrics[,c(1:4,10)], id.vars = "type", variable.name = "stat", value.name = "y")
+df.Metrics.melt$x    <- factor(grepl("p",df.Metrics.melt$stat), 
+                               levels = c(TRUE, FALSE), 
+                               labels = c("positives", "negatives"))
+df.Metrics.melt$tf   <- factor(grepl("t",df.Metrics.melt$stat), 
+                               levels = c(TRUE, FALSE),
+                               labels = c("TRUE", "FALSE"))
+df.Metrics.melt$type <- factor(as.character(df.Metrics.melt$type), levels = c("combined","bin","stream","road","route")[5:1])
+ylimn <- -75
+df.Metrics.melt[df.Metrics.melt$y==0 & df.Metrics.melt$tf == "TRUE","y"] <- 0.1
+df.Metrics.melt[df.Metrics.melt$y==0 & df.Metrics.melt$tf == "FALSE","y"] <- -0.1
+df.Metrics.melt$y[df.Metrics.melt$y < ylimn] <- ylimn
+Flag <- ggplot(data = subset(df.Metrics.melt), 
+               aes(x = x, fill = type, y = y, alpha = tf)) + geom_col(position = position_dodge()) + coord_flip() 
+Flag + ylim(c(ylimn,10)) + 
+  scale_alpha_manual(values = c("TRUE" = 1, "FALSE" = 0.5), guide = FALSE) + 
+  scale_x_discrete(limits = c("negatives","positives")) +
+  labs(y = "count (false <- -> true)", x = "error category", title = "Visual check of recall and precision") + 
+  getTheme(outputType = "PRES")
+```
+It appears that with the parallel format, I have managed to achieve high recall at the expense of precision, which is in line with my goals. That said, more work is certainly needed, especially in match ranking and confirmation. While I have not yet finished the confirmation process on the updated version of the matching algorithm, the results confirmed from the previous version are shown below (387 bridges of 1172 hydraulic collapses were located).
+```{r plotMap, echo = FALSE, warning=FALSE, message=FALSE}
+source(file.path("Plotting","PlotFailedBridgesMap.R"))
+map <- PlotFailedBridgesMap(df.Fail.NBI.Gage, size = "none", SHOW_HURR = FALSE, outputType = "PRES")
+map
+```
+
 
 # Notebook metadata
 ```{r sessionInfo, include=TRUE, echo=TRUE, results='markup'}

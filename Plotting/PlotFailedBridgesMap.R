@@ -17,7 +17,7 @@ PlotFailedBridgesMap <- function(BridgesDataFrame, ggmap = FALSE, size = "area",
   require(gridExtra)
   require(plyr)
   require(reshape2)
-  source(file.path(dirsGit$ScriptsPlot,"SetupEncoding.R"))
+  source(file.path("Plotting","SetupEncoding.R"))
   
   if (FOR_INSET)  alphasP$FailDate <- c(KNOWN = 0.7, UNKNOWN = 0.4)
   else  alphasP$FailDate <- c(KNOWN = 0.8, UNKNOWN = 0.4)
@@ -144,7 +144,7 @@ PlotFailedBridgesMap <- function(BridgesDataFrame, ggmap = FALSE, size = "area",
       # ylim(25,52) + xlim(-125,-60)
   }
   else { # USE GIS DATA OF STATES AS BACKGROUND FOR PLOTTING
-    load(file.path(dirsGit$Data,"df.USstates.RData"))
+    load(file.path("Data","df.USstates.RData"))
     colnames(df.USstates)[1] <- "lon"
     sizeI <- ifelse(FOR_INSET, 0.15,0.15)
     if (FOR_INSET){
@@ -444,7 +444,7 @@ PlotFailedBridgesMap <- function(BridgesDataFrame, ggmap = FALSE, size = "area",
       theme(legend.position = "bottom")
   }
   if (SAVE==TRUE){
-    filename <- file.path(dirsGit$Plots,paste("FailedBridgesMap","pdf",sep="."))
+    filename <- file.path("Plots",paste("FailedBridgesMap","pdf",sep="."))
     if (FOR_INSET) filename <- sub("FailedBridgesMap","FailedBridgesMapForInset",filename)
     if (!EPS) ggsave(filename = filename,width=SIZE[1],height=SIZE[2])
     else ggsave(filename = sub("pdf","eps",filename),width=SIZE[1],height=SIZE[2])
