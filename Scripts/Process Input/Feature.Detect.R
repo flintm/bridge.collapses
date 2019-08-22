@@ -24,23 +24,26 @@ Feature.Detect <- function(Data,             # must contain col.in and cols.out
   # loop over all rows in Data that have a match
   for(i in match.keys){
     for(col in colnames(df.patterns)[!grepl("PATTERN",colnames(df.patterns)) & !grepl("REGEX",colnames(df.patterns))]){
-      if(!df.patterns[i,"REGEX"]){
+      if(!df.patterns[1,"REGEX"]){
         matches <- tolower(df.patterns[key.index[i,],col])
       }
       else{
         matches <- sapply(df.patterns[key.index[i,],col], function(pat) regmatches(Data[i,col.in],regexpr(pat,Data[i,col.in])))
-        matches <- matches[!duplicated(matches)]
       }
       matches <- c(matches, rep(NA_character_, n.dup.cols-length(matches)))
+      
       Data[i,cols.out[grepl(col,cols.out)]] <- matches
+      if(DELETE){
+        p <- ifelse(length(patterns[key.index[i,]])==1,
+                    df.patterns[key.index[i,],col],
+                    paste0("(",paste0(df.patterns[key.index[i,],col], collapse=")|("),")"))
+        Data[i,col.in] <- str_squish(sub(p,"",Data[i,col.in],ignore.case = TRUE))
+      }
     }
-    if(DELETE){
-      p <- ifelse(length(patterns[key.index[i,]])==1,
-                  patterns[key.index[i,]],
-                  paste0(patterns[key.index[i,]], collapse="|"))
-      Data[i,col.in] <- str_squish(gsub(p,"",Data[i,col.in],ignore.case = TRUE))
     }
+  if(col.in!=cols.out[1]){
+    Data <- Data[,c(col.in,cols.out)]
   }
-  Data <- Data[,c(col.in,cols.out)]
+  else Data <- Data[,col.in]
   return(Data)
 }

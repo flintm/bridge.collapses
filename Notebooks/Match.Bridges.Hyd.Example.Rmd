@@ -120,8 +120,7 @@ VERB <- TRUE # Subfunctions to print intermediate results (e.g., # of matches
 #   *Pct        : if number of candidate matches is > capCandPct*nTargetRows, revoke 
 opts <-list(Fields   =list(Fail =c("MAT", "TYPE", "LOCATION", "STREAM", "BIN", "ID"),
                            NBI  =c("ROUTE","LOCATION","ROAD","STREAM", "BIN", "ID")),
-            Features =list(Fail =c("COUNTY", "CITY","LOCATION","ROAD","ROUTE", 
-                                   "BRIDGE","STREAM"),
+            Features =list(Fail =c("COUNTY", "CITY","LOCATION","ROAD","ROUTE","STREAM"),
                            NBI  =NULL),
             Keys     =list(Fail =list(LOCATION = c("Relational"),
                                       ROAD     = c("Road"),
@@ -129,7 +128,7 @@ opts <-list(Fields   =list(Fail =c("MAT", "TYPE", "LOCATION", "STREAM", "BIN", "
                                       BRIDGE   = c("Bridge"),
                                       STREAM   = c("Stream", "Trib", "Bridge", "Near")
             )),
-            Match=list(maxStringDist =c(road =2, stream =2, route =1, bin =3),
+            Match=list(maxStringDist =c(road =1, stream =2, route =0, bin = 2),
                        capCandN      =c(road =200, stream =100, route =100, bin =200),
                        capCandPct    =c(road =0.7, stream =0.7, route =0.7, bin =0.7)))
 ```
@@ -357,7 +356,7 @@ if(RUN["FEATURE"]){
 ```
 
 ```{r echo=FALSE}
-print(df.Fail[df.Fail$ID %in% EXAMPLE_ID,c(30:31,34:35, 46:47,50:56,60:65)])
+print(df.Fail[df.Fail$ID %in% EXAMPLE_ID,c(30:31,34:35, 46:47,50:58)])
 ```
 
 # 4. Structured feature and string matching
@@ -428,12 +427,10 @@ Analyzing the number of candidate matches returned by each run allows me to asse
 
 # 5. Automated collating and ranking of potential matches
 The match quality is automatically recorded by match type, which field of that type was matched, and whether the match was absolute (a perfect match to the original field), exact (perfect match to cleaned field), full (all words), partial (some words), or fuzzy (low string distance). In parallel mode, the matches can be combined across `M_TYPE` to bring multi-matched candidates to the front.
-```{r collateRanking, include=TRUE, eval=params$eval}
+```{r collateRanking, include=FALSE, eval=params$eval}
 if (RUN["RANK"]){
   source(file.path("Scripts","Matching","Rank.Matched.Bridges.R"))
-
   ls.Matches.Comb <- Rank.Matched.Bridges(ls.Matches)
-  
   rm(Rank.Matched.Bridges)
 }
 ```
@@ -447,7 +444,7 @@ if (RUN["CONFIRM"]){
                       Confirm.Matched.Bridges(df.Fail[i,], df.NBI, ls.Matches.Comb[[i]]))
   tab<-lapply(1:length(ls.Conf),
               function(i)
-                formattable(ls.Conf[[i]],
+                formattable(ls.Conf[[i]][1:10,],
                        list(Q_BIN = FALSE, Q_STREAM = FALSE, Q_COUNTY = FALSE,
                             Q_ROAD = FALSE, Q_ROUTE = FALSE, Q_ALL = FALSE,
                             BIN_NBI=formatter("span",
@@ -458,7 +455,7 @@ if (RUN["CONFIRM"]){
                                                               "background-color"=
                                                                 sapply(Q_BIN,
                                                                        function(x) 
-                                                                         if (x < 0.5) "#32a852"
+                                                                         if (x < 0.76) "#32a852"
                                                                        else if (x < 0.8) "#86c287"
                                                                        else if (x < 0.9) "#dbc832"
                                                                        else if (x < 1) "#dbb132"
@@ -508,61 +505,42 @@ if (RUN["CONFIRM"]){
                                                                        "black"),
                                                                  "background-color" = 
                                                                    sapply(Q_STREAM,
-                                                                          function(x) if (x < 0.25) "#32a852"
-                                                                          else if (x < 0.5) "#86c287"
-                                                                          else if (x < 0.75) "#dbc832"
+                                                                          function(x) if (x < 0.8) "#32a852"
+                                                                          else if (x < 0.9) "#86c287"
+                                                                          else if (x < 0.95) "#dbc832"
                                                                           else if (x < 1) "#dbb132"
                                                                           else "white"),
                                                                  "padding-right" = "4px", "padding-left" = "2px")),
                             YR_BLT_NBI=formatter("span",
                                                  style = ~ style(color = 
-                                                                   sapply(YR_BLT_NBI,
-                                                                          function(x) 
-                                                                            if(
-                                                                              is.na(ls.Conf[[i]]$YR_BLT[1])
-                                                                              ) "black"
-                                                                          else if(x == 
-                                                                                  ls.Conf[[i]]$YR_BLT[1]
-                                                                                  ) "#32a852"
-                                                                          else if(x > ls.Conf[[i]]$YR_BLT[1]
-                                                                                  ) "red"
-                                                                          else if(x < ls.Conf[[i]]$YR_BLT[1] &
-                                                                                  is.na(ls.Conf[[i]]$FAIL_TYPE[1])
-                                                                                  ) "#dbb132"
-                                                                          else if(x < ls.Conf[[i]]$YR_BLT[1] &
-                                                                                  ls.Conf[[i]]$FAIL_TYPE[1]=="TC"
-                                                                                  ) "red"
-                                                                          else "black"))),
-                            YR_BLT_NBI=formatter("span",
-                                                 style = ~ style(color = 
-                                                                   sapply(YR_BLT_NBI,
-                                                                          function(x) 
-                                                                            if(
-                                                                              is.na(ls.Conf[[i]]$YR_BLT[1])
-                                                                              ) "black"
-                                                                          else if(x == 
-                                                                                  ls.Conf[[i]]$YR_BLT[1]
-                                                                                  ) "#32a852"
-                                                                          else if(x < ls.Conf[[i]]$YR_BLT[1]
-                                                                                  ) "red"
-                                                                          else if(x > ls.Conf[[i]]$YR_BLT[1] &
-                                                                                  is.na(ls.Conf[[i]]$FAIL_TYPE[1])
-                                                                                  ) "#dbb132"
-                                                                          else if(x > ls.Conf[[i]]$YR_BLT[1] &
-                                                                                  ls.Conf[[i]]$FAIL_TYPE[1]=="TC"
-                                                                                  ) "#dbb132"
-                                                                          else "black")))
+                                                                 sapply(YR_BLT_NBI,
+                                                                        function(x) 
+                                                                          if(
+                                                                            is.na(ls.Conf[[i]]$YR_BLT[1])
+                                                                          ) "black"
+                                                                        else if(x == 
+                                                                                ls.Conf[[i]]$YR_BLT[1]
+                                                                        ) "#32a852"
+                                                                        else if(x > ls.Conf[[i]]$YR_BLT[1]
+                                                                        ) "red"
+                                                                        else if(x < ls.Conf[[i]]$YR_BLT[1] &
+                                                                                is.na(ls.Conf[[i]]$FAIL_TYPE[1])
+                                                                        ) "#dbb132"
+                                                                        else if(x < ls.Conf[[i]]$YR_BLT[1] &
+                                                                                ls.Conf[[i]]$FAIL_TYPE[1]=="TC"
+                                                                        ) "red"
+                                                                        else "black")))
                        )
                 )
   )
 }
 ```
 Now let's check the matches.
-```{r confirm1, include=TRUE, echo=FALSE}
+```{r confirm1, echo=FALSE}
   tab[[1]]
 ```
 
-```{r confirm2}
+```{r confirm2, echo = FALSE}
   tab[[2]]
 ```
 # Conclusions

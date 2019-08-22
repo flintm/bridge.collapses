@@ -34,14 +34,14 @@ MatchColOrigNames <-      c(bin     = "BIN",
                             dam     = "FEAT_UND")
 MatchColNames <-       list(bin     = c("BIN","BIN_NUM","BIN_NUM"),
                             stream  = c("FEAT_UND","STREAM_NAME_1", "STREAM_TYPE_1","STREAM_NAME_2", "STREAM_TYPE_2"),
-                            road    = c("LOCATION","ROAD_NAME", "ROAD_TYPE"),
-                            route   = c("ROUTE_NAME_1", "ROUTE_NAME_2","ROUTE_TYPE_1", "ROUTE_TYPE_2"),
+                            road    = c("LOC","ROUTE_NAME_1", "ROAD_TYPE", "ROUTE_NAME_1"),
+                            route   = c("ROUTE_NAME_1", "ROUTE_NAME_1", "ROUTE_NAME_2","ROUTE_TYPE_1", "ROUTE_TYPE_2"),
                             gage    = c("STREAM_NAME", "STREAM_TYPE"),
                             dam     = c("STREAM_NAME", "STREAM_TYPE"))
 MatchTargetColNames <- list(bin     = c("STRUCTURE_NUMBER_008","BIN_NUM", "ROUTE_NUM"),
                             stream  = rep("STREAM_UNDER", 5),
-                            road    = rep("LOC", 3),
-                            route   = c("ROUTE_NUM","ROUTE_NUM", "ROUTE_PREFIX_ITEM5B", "ROUTE_PREFIX_ITEM5B"), #ITEM5D
+                            road    = c("ROAD", "ROAD", "ROUTE_NUM","ROAD","ROAD","ROAD"),
+                            route   = c("ROUTE_NUM","ROAD","ROUTE_NUM", "ROUTE_PREFIX_ITEM5B", "ROUTE_PREFIX_ITEM5B"), #ITEM5D
                             gage    = c("STREAM_NAME_GAGE", "STREAM_TYPE_GAGE"),
                             dam     = c("STREAM_NAME_DAM", "STREAM_TYPE_DAM"))
 
@@ -71,23 +71,29 @@ for (i in 1:nMatchTypes){
   if(VERBOSE) print(paste0("  Matching ",MatchTypes[i], " to ",MatchToTypes[i]))
   string  <- as.character(MatchEntry[1,MatchTypes[i]])
   
+  # absolute: fixed match ---------
   MatchMarker <- paste0(Marker,MatchQual["absolute"])
   if (VERBOSE) print("    Checking for absolute string")
   BoolRowMatch <- grepl(string, TargetData[,MatchToTypes[i]],fixed = TRUE)
+
+  # exact: ignore case exact match ----------
+  if(!any(BoolRowMatch)){
+    MatchMarker <- paste0(Marker,MatchQual["exact"])
+    if (VERBOSE) print("    Checking for exact string")
+    BoolRowMatch <- grepl(string, TargetData[,MatchToTypes[i]], ignore.case = T)
+  }
   
-  MatchMarker <- paste0(Marker,MatchQual["exact"])
-  if (VERBOSE) print("    Checking for exact string")
-  BoolRowMatch <- grepl(string, TargetData[,MatchToTypes[i]], ignore.case = T)
+  # full match: all "words" in string matched in order -----
+  if(!any(BoolRowMatch)){
+    MatchMarker <- paste0(Marker,MatchQual["full"])
+    pattern <- ifelse(MatchType!="bin",
+                      paste0("\\<",paste0(unlist(strsplit(string," ")), collapse="\\> \\<"),"\\>"),
+                      paste0(unlist(strsplit(string," ")), collapse="[[:alnum:]]*"))
+    if (VERBOSE) print("    Checking for all parts of string, ordered")
+    BoolRowMatch <- grepl(pattern, TargetData[,MatchToTypes[i]])
+  }
   
-  # all "words" in string matched in order
-  MatchMarker <- paste0(Marker,MatchQual["full"])
-  pattern <- ifelse(MatchType!="bin",
-                    paste0("\\<",paste0(unlist(strsplit(string," ")), collapse="\\> \\<"),"\\>"),
-                    paste0(unlist(strsplit(string," ")), collapse="[[:alnum:]]*"))
-  if (VERBOSE) print("    Checking for all parts of string, ordered")
-  BoolRowMatch <- grepl(pattern, TargetData[,MatchToTypes[i]])
-  
-  # if full name did not yield match, try split string
+  # if full name did not yield match, try split string ------
   if (!any(BoolRowMatch)){
     MatchMarker <- paste0(Marker,MatchQual["partial"])
     SplitString  <- unlist(strsplit(string, " "))
@@ -114,7 +120,7 @@ for (i in 1:nMatchTypes){
       else BoolRowMatch <- FALSE
     }
   }
-  # if no matches on split strings, try fuzzy matching
+  # if no matches on split strings, try fuzzy matching ------
   if (!any(BoolRowMatch)){ 
     MatchMarker <- paste0(Marker,MatchQual["fuzzy"])
     if (VERBOSE) print(paste0("    Checking for string distance less than ",maxStringDist) )
@@ -129,7 +135,7 @@ for (i in 1:nMatchTypes){
   if(any(BoolRowMatch)) break
 }
 
-# record matches: return -nMatchRows if no or very many matches
+# record matches: return -nMatchRows if no or very many matches ------
 CandidateMatchRows <- MatchRowNames[BoolRowMatch]
 nMatches <- length(CandidateMatchRows)
 if(nMatches==0 | nMatches > capCandPct*nMatchRows | nMatches > capCandN){

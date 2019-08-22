@@ -52,7 +52,7 @@ require(stringdist)
                      dam     = "ID",
                      nbi     = "OBJECTID_new")[MatchSource] 
   MatchEntry$IDENT <- MatchEntry[1,MatchIDENT[MatchSource]]
-  CountyCols <- list(fail    = c("FIPS_1","FIPS_2", "FIPS_FROM_CITY_1", "FIPS_FROM_CITY_2", "FIPS_FROM_CITY_3"),
+  CountyCols <- list(fail    = c("FIPS_1","FIPS_2", "FIPS_FROM_CITY_1", "FIPS_FROM_CITY_2"),#, "FIPS_FROM_CITY_3"),
                      gage    = NA,
                      dam     = NA,
                      nbi     = "COUNTY_CODE_003")[[MatchSource]]
@@ -110,19 +110,19 @@ if (VERBOSE) print(paste0("ID of MatchEntry is: ",MatchEntry$IDENT, ", and Match
                               MatchEntry$STFIPS,
                               c(MatchEntry$STFIPS,unlist(ls.Adj.STFIPS[as.character(MatchEntry$STFIPS)])))
   MatchTargetData <- MatchTargetData[MatchTargetData$STFIPS %in% TargetStates,]
-  # MatchTargetNames  <- rownames(MatchTargetData)
+
 PossibleMatches <- ""
   # start with county matches (will skip if no counties present)
   for (j in CountyCols){
     if(VERBOSE) print(paste("Checking county with FIPS", MatchEntry[1,j]))
-    MatchTargetsCounty   <- MatchTargetData[MatchTargetData$FIPS == as.integer(sub(MatchEntry$STFIPS,"",MatchEntry[,j])),]
+    MatchTargetsCounty   <- MatchTargetData[MatchTargetData$COUNTY_CODE_003 == MatchEntry[,j],]
     if(nrow(MatchTargetsCounty)==0){
       if(VERBOSE) print(" No bridges in county")
       next
     }
     PossibleMatchRows<- c(PossibleMatchRows, paste0("IDENT", MatchEntry$IDENT,"-FIPS",MatchEntry[,j]))
     PossibleMatches <- PerformMatch(MatchEntry, MatchTargetsCounty, MatchType, 
-                                    maxStringDist = maxStringDist, capPossPct = capPossPct, capN = capN,
+                                    maxStringDist = maxStringDist, capCandPct = capCandPct, capCandN = capCandN,
                                     VERBOSE = VERBOSE)
     
     if(grepl("-",PossibleMatches[1]) & VERBOSE)  print(" No county matches")

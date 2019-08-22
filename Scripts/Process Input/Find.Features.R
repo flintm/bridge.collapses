@@ -5,32 +5,22 @@ Find.Features <- function(Data,
 
   ## Determine which types of features are to be detected
   Rows  <- rownames(Data)
-  ls.patterns <- list(COUNTY   = c(FIND = "NONE", STRICT = "COMPOUND"),
-                      CITY     = c(FIND = "NONE", STRICT ="COMPOUND"),
-                      LOCATION = c("AUX","STREAM_NAME_LOC","STREAM_TYPE_LOC"),
-                      ROAD = paste0("ROAD_",c("NAME","TYPE","DIRECTION","AUX")),
-                      ROUTE = as.vector(sapply(1:2, 
-                                               function(i) 
-                                                 paste0(paste0("ROUTE_",c("NAME_","TYPE_","DIRECTION_","AUX_")),i))),
-                      STREAM = as.vector(sapply(1:2, 
-                                                function(i) 
-                                                  paste0(paste0("STREAM_",c("NAME_","TYPE_","TRIB_","FORK_","AUX_")),i))))
   ls.cols.out <- list(COUNTY = as.vector(sapply(1:2, 
                                                 function(i) 
                                                   paste0(c("COUNTY_NAME_","FIPS_"),i))),
-                      CITY = as.vector(sapply(1:3, 
+                      CITY = as.vector(sapply(1:2, 
                                               function(i) 
                                                 paste0(c("CITY_NAME_","FIPS_FROM_CITY_","ANSICODE_","GNIS_ID_"),i))),
-                      LOCATION = c("BRIDGE_NAME","LOC_AUX","STREAM_NAME_LOC","STREAM_TYPE_LOC"),
+                      LOCATION = c("LOC_AUX","BRIDGE_NAME"),
                       ROAD = paste0("ROAD_",c("NAME","TYPE","DIRECTION","AUX")),
                       ROUTE = as.vector(sapply(1:2, 
                                                function(i) paste0(paste0("ROUTE_",c("NAME_","TYPE_","DIRECTION_","AUX_")),i))),
                       STREAM = as.vector(sapply(1:2, 
-                                                function(i) paste0(paste0("STREAM_",c("NAME_","TYPE_","TRIB_","FORK","AUX_")),i))))
+                                                function(i) paste0(paste0("STREAM_",c("NAME_","TYPE_","TRIB_","AUX_")),i))))
   
   ## Loop over features
   for(f in names(Features)){
-    print(f)
+    if(VERBOSE) print(f)
     COL        <- Features[f]
     cols.out   <- ls.cols.out[[f]]
     names.out  <- unique(sub("_[[:digit:]]+","",cols.out))
@@ -56,7 +46,7 @@ Find.Features <- function(Data,
         # check for presence of locality name and record name and FIPS or other standard codes
         Data[rows,c(COL,cols.out)] <- Feature.Detect(Data[rows,], 
                                                      localities, 
-                                                     ls.patterns[[f]]["FIND"], 
+                                                     "NONE", 
                                                      COL, 
                                                      cols.out, 
                                                      n.dup.cols = n.dup.cols, 
@@ -69,28 +59,25 @@ Find.Features <- function(Data,
           if(VERBOSE) print(paste("Checking for state-specific pattern",pattern,"in state:",df.States[state,"STATE_FULL"]))
           match.keys <- grep(pattern,Data[rows,COL])
           for(i in match.keys){
-            match.start <- regexpr(pattern,Data[rows[i],COL])
-            match.last  <- match.start + attr(match.start,"match.length") - 1
+            str <- regmatches(Data[rows[i],COL],regexpr(pattern,Data[rows[i],COL]))
             if(!is.na(ls.DOT.Keys[[state]][[f]]["MOVE"])){ 
               Data[rows[i],ls.DOT.Keys[[state]][[f]]["MOVE"]] <- ifelse(!is.na(Data[rows[i],ls.DOT.Keys[[state]][[f]]["MOVE"]]),
                                                                         paste(Data[rows[i],ls.DOT.Keys[[state]][[f]]["MOVE"]],
-                                                                              substr(Data[rows[i],COL],match.start,match.last)),
-                                                                        substr(Data[rows[i],COL],match.start,match.last))
-              print(paste('moved to col',ls.DOT.Keys[[state]][[f]]["MOVE"]))
+                                                                              str),
+                                                                        str)
+              if(VERBOSE) print(paste('moved to col',ls.DOT.Keys[[state]][[f]]["MOVE"]))
               }
             if(!is.na(ls.DOT.Keys[[state]][[f]]["ADDTO"])){ 
               Data[rows[i],ls.DOT.Keys[[state]][[f]]["ADDTO"]] <- ifelse(!is.na(Data[rows[i],ls.DOT.Keys[[state]][[f]]["ADDTO"]]),
                                                                          paste(Data[rows[i],ls.DOT.Keys[[state]][[f]]["ADDTO"]],
                                                                                ls.DOT.Keys[[state]][[f]]["ADD"]),
                                                                          ls.DOT.Keys[[state]][[f]]["ADD"])
-              print(paste('added to col',ls.DOT.Keys[[state]][[f]]["ADDTO"]))
+              if(VERBOSE) print(paste('added to col',ls.DOT.Keys[[state]][[f]]["ADDTO"]))
               }
                                                                                                                  
             if(!is.na(ls.DOT.Keys[[state]][[f]]["SUB"])){ 
-              print(paste('Subbed to col',COL))
-              print(Data[rows[i],COL])
+              if(VERBOSE) print(paste('Deleted in col',COL))
               Data[rows[i],COL] <- sub(ls.DOT.Keys[[state]][[f]][["SUBPTRN"]],ls.DOT.Keys[[state]][[f]][["SUB"]],Data[rows[i],COL])
-              print(Data[rows[i],COL])
             }
           }
         } 
@@ -103,135 +90,156 @@ Find.Features <- function(Data,
         ls.RteKeysState$statefull <- tolower(df.States[state,"STATE_FULL"])
         
         if(VERBOSE) print(paste("Checking for",tolower(f),"in state:",df.States[state,"STATE_FULL"]))
-        routes     <- data.frame(NAME = c(tolower(df.States[state,"STATE_CODE"]), 
-                                          tolower(df.States[state,"STATE_FULL"])), stringsAsFactors = FALSE)
-        routes$PATTERN1 <- paste0("\\<",routes$NAME,"\\>[[:space:]]?[[:punct:]]?[[:digit:]]+")
-        routes$PATTERN2 <- ""
-        routes$REGEX    <- TRUE
-        routes$NAME     <- paste0("(?")
+        routes     <- data.frame(PATTERN1 = unlist(ls.RteKeysState), PATTERN2 = "", REGEX = TRUE)
+        routes$PATTERN1 <- paste0(routes$PATTERN1,"[[:space:]]?[[:punct:]]?[[:digit:]]+")
+        routes$ROUTE_NAME <- "[[:digit:]]+"
+        routes$ROUTE_TYPE <- unlist(ls.RteKeysState)
         Data[rows,c(COL,cols.out)] <- Feature.Detect(Data[rows,], 
                                                      routes, 
                                                      "NONE", 
                                                      COL, 
                                                      cols.out, 
                                                      n.dup.cols = n.dup.cols, 
-                                                     DELETE = FALSE)
+                                                     DELETE = TRUE)
       }
     }
     
     # non state-specific checks ---------
-    if(f %in% c("LOCATION", "STREAM")){
-      # aux phrases: statements with explicit distance, e.g., "3.5 miles from Stanford"-------
-      rows        <- Rows[grepl("[[:digit:]]",Data[,COL]) & !is.na(Data[,COL])]
+    if(VERBOSE) print("Moving to non-state-specific checks")
+    rows        <- Rows[!is.na(Data[,COL]) & Data[,COL]!=""]
+    if(f =="LOCATION"){
+      cols.out <- cols.out[1]
+      # aux phrases: -------
       if(length(rows)>0){
-        relationals <- sapply(unlist(ls.RelationalKeys[c("miles","kilometers")]),
-                              function(dist) 
-                                sapply(c("",unlist(ls.CardKeys[1:8])),
-                                       function(card) 
-                                         sapply(unlist(ls.RelationalKeys[c("off","from","by","of")]),
-                                                function(rel)
-                                                  paste0("[[:digit:]]+[.]?[[:digit:]]?[[:space:]]?",
-                                                         dist,
-                                                         "[[:space:]]?",
-                                                         card,
-                                                         "[[:space:]]?",
-                                                         rel,
-                                                         "[[:space:]][[:alpha:]]+")
-                                         )))
-        relationals <- data.frame(PATTERN1 = as.vector(relationals), PATTERN2 = "", REGEX = TRUE, stringsAsFactors = FALSE)
-        relationals[,paste0(COL,"_AUX")] <- relationals$PATTERN1
-        if(VERBOSE) print("Checking relational auxilliary phrases")
-        Data[rows,c(COL,cols.out[grepl("AUX",cols.out)])] <- Feature.Detect(Data[rows,], 
-                                                                            relationals, 
-                                                                            "NONE", 
-                                                                            COL, 
-                                                                            cols.out[grepl("AUX",cols.out)], 
-                                                                            n.dup.cols = n.dup.cols, 
-                                                                            DELETE = TRUE)
+        # parentheticals ------
+        rows    <- rows[grepl("(",Data[rows,COL], fixed = TRUE)]
+        if(length(rows)>0){
+          parenth <- data.frame(PATTERN1 = "\\(*\\)", PATTERN2 = "",
+                                REGEX = TRUE, stringsAsFactors = FALSE)
+          parenth[,cols.out] <- "\\([a-z 0-9]+\\)"
+          if(VERBOSE) print("Checking parenthetical auxilliary phrases")
+          Data[rows,c(COL,cols.out)] <- Feature.Detect(Data[rows,],
+                                                                 parenth,
+                                                                 "NONE",
+                                                                 COL,
+                                                                 cols.out,
+                                                                 n.dup.cols = 1,
+                                                                 DELETE = TRUE)
+        }
+
+        # statements with explicit distance, e.g., "3.5 miles from Stanford"---------
+        # TODO: fix such that pulls out the location that it's related to
+        # rows <- Rows[!is.na(Data[,COL]) & grepl("[[:digit:]]",Data[,COL])]
+        # if(length(rows)>0){
+        #   relationals <- sapply(unlist(ls.RelationalKeys[c("miles","kilometers")]),
+        #                         function(dist) 
+        #                           sapply(c("",unlist(ls.CardKeys[1:8])),
+        #                                  function(card) 
+        #                                    sapply(unlist(ls.RelationalKeys[c("off","from","by","of")]),
+        #                                           function(rel)
+        #                                             paste0("[[:digit:]]+[.]?[[:digit:]]?[[:space:]]?",
+        #                                                    dist,
+        #                                                    "[[:space:]]?",
+        #                                                    card,
+        #                                                    "[[:space:]]?",
+        #                                                    rel,
+        #                                                    "[[:space:]][[:alpha:]]+")
+        #                                    )))
+        #   relationals <- data.frame(PATTERN1 = as.vector(relationals), PATTERN2 = "", 
+        #                             REGEX = TRUE, stringsAsFactors = FALSE)
+        #   relationals[,cols.out] <- relationals$PATTERN1
+        #   if(VERBOSE) print("Checking distance-relational auxilliary phrases")
+        #   Data[rows,c(COL,cols.out)] <- Feature.Detect(Data[rows,], 
+        #                                                relationals, 
+        #                                                "NONE", 
+        #                                                COL, 
+        #                                                cols.out, 
+        #                                                n.dup.cols = 1, 
+        #                                                DELETE = TRUE)
+        # }
+        
+        
+        # non-explicit distance relationals
+        # rows        <- Rows[!is.na(Data[,COL]) & 
+        #                       apply(
+        #                       sapply(unlist(ls.RelationalKeys[c("off","from",
+        #                                                         "by","of","near","at",
+        #                                                         "in_loc")]),
+        #                              function(s) grepl(s,Data[,COL])),
+        #                       MARGIN = 1, any)]
+        # if(length(rows)>0){
+        #   print(rows)
+        #   relationals <- sapply(c("",unlist(ls.CardKeys[1:8])),
+        #                         function(card) 
+        #                           sapply(unlist(ls.RelationalKeys[c("off","from",
+        #                                                             "by","of","near","at",
+        #                                                             "in_loc")]),
+        #                                  function(rel)
+        #                                    paste0(card,
+        #                                           "[[:space:]]?",
+        #                                           rel,
+        #                                           "[[:space:]][[:alpha:]]+")
+        #                           ))
+        #   relationals <- data.frame(PATTERN1 = as.vector(relationals), PATTERN2 = "", REGEX = TRUE, stringsAsFactors = FALSE)
+        #   relationals[,paste0(COL,"_AUX")] <- relationals$PATTERN1
+        #   if(VERBOSE) print("Checking relational auxilliary phrases")
+        #   Data[rows,c(COL,cols.out[grepl("AUX",cols.out)])] <- Feature.Detect(Data[rows,], 
+        #                                                                       relationals, 
+        #                                                                       "NONE", 
+        #                                                                       COL, 
+        #                                                                       cols.out[grepl("AUX",cols.out)], 
+        #                                                                       n.dup.cols = n.dup.cols, 
+        #                                                                       DELETE = TRUE)
+        # }
+
+        rows  <- Rows[!is.na(Data[,COL]) & Data[,COL]!=""] #------
+        if(length(rows)>0){
+          localities <- data.frame(PATTERN1 = df.Counties[df.Counties$STFIPS_C == state, "COUNTY_NAME"],
+                                   PATTERN2 = "",
+                                   REGEX   = TRUE, stringsAsFactors = FALSE)
+          localities$PATTERN1 <- paste0(tolower(localities$PATTERN1),"[[:space:]]co[unty.]?[[:space:]]?[^r(oad)+]")
+          localities$LOC      <- localities$PATTERN1
+          if(VERBOSE) print("removing county names (strict)")
+          Data[rows,COL] <- Feature.Detect(Data[rows,], 
+                                           localities, 
+                                           "NONE", 
+                                           COL, 
+                                           COL, 
+                                           n.dup.cols = 1, 
+                                           DELETE = TRUE)
+        }
+      }
+    }
+    if(f=="STREAM"){
+      # Tributary checks
+      Data[rows,COL] <- gsub("[[:punct:]]","",Data[rows,COL])
+      rows <- rows[apply(sapply(unlist(ls.TribKeys),
+                                function(s) grepl(s,Data[rows,COL])),
+                         MARGIN = 1, any)]
+      if(length(rows)>0){
+        if(VERBOSE) print("Checking for tributaries, forks, branches")
+        tribs <- data.frame(PATTERN1 = unlist(ls.TribKeys), PATTERN2 = "", REGEX = TRUE, stringsAsFactors = FALSE)
+        tribs$STREAM_TRIB <- tribs$PATTERN1
+        tribs <- tribs[order(nchar(tribs$PATTERN1),decreasing = TRUE),]
+        Data[rows,c(COL,"STREAM_TRIB_1","STREAM_TRIB_2")] <- Feature.Detect(Data[rows,], 
+                                         tribs, 
+                                         "NONE", 
+                                         COL, 
+                                         c("STREAM_TRIB_1","STREAM_TRIB_2"), 
+                                         n.dup.cols = 2, 
+                                         DELETE = TRUE)
       }
     }
   }
+  Data[,c("STREAM_UNDER","STREAM_NAME_1","STREAM_TYPE_1","STREAM_TRIB_1")] <- data.frame(c("",""),
+                                                                                         c("forked deer", "sandy"),
+                                                                                         c("river","creek"),
+                                                                                         c("south fork","left fork"),
+                                                                                         stringsAsFactors = FALSE)
   rm(Feature.Detect, envir = .GlobalEnv)
   return(Data) #---------
 }
 
-# for (j in FailStates){
-#   
-#   # FIND RELATIONAL STATEMENTS
-#   # st
-#   MatchRegex <- "[[:digit:]]{1,3}[[:punct:]]?[[:digit:]]?[[:space:]]?m[i]{0,1}[l]{0,1}[e]{0,1}[s]{0,1}[[:punct:]]?[[:space:]]"
-#   RowsWithDistance <- rowsForState[grep(MatchRegex,FailDataFrame[rowsForState,"ROAD_NAME"])]
-#   for (i in RowsWithDistance){
-#     if (grepl("[[:digit:]]m",FailDataFrame[i,"ROAD_NAME"])){ # if no space between # and "mi", add
-#       make_space_first <- regexpr("[[:digit:]]m",FailDataFrame[i,"ROAD_NAME"])
-#       FailDataFrame[i,"ROAD_NAME"] <- paste(substr(FailDataFrame[i,"ROAD_NAME"],1,make_space_first),substr(FailDataFrame[i,"ROAD_NAME"],make_space_first+1,nchar(FailDataFrame[i,"ROAD_NAME"])))
-#     }
-#     match_start <- regexpr(MatchRegex,FailDataFrame[i,"ROAD_NAME"])
-#     match_last  <- match_start + attr(match_start, "match.length") - 1
-#     # find distance
-#     dist_start  <- regexpr("[[:digit:]]{1,3}[[:punct:]]{0,1}[[:digit:]]{0,1}",FailDataFrame[i,"ROAD_NAME"])
-#     dist_last  <- dist_start + attr(dist_start, "match.length") - 1
-#     FailDataFrame[i,"RD_RELATIONAL"] <- paste(substr(FailDataFrame[i,"ROAD_NAME"],dist_start,dist_last),"mi",sep=" ")
-#     FailDataFrame[i,"ROAD_NAME"] <- substr(FailDataFrame[i,"ROAD_NAME"],match_last+1,nchar(FailDataFrame[i,"ROAD_NAME"]))      
-#     # look for cardinal direction (north, nw, sw...)
-#     substrings <- unlist(strsplit(FailDataFrame[i,"ROAD_NAME"],"[[:space:]]"))
-#     directionalWord <- ls.CardinalKeys[[grep(paste("\\<",substrings[1],"\\>",sep=""), ls.CardinalKeys)]][1]
-#     FailDataFrame[i,"RD_RELATIONAL"] <- paste(FailDataFrame[i,"RD_RELATIONAL"],directionalWord,"of",sep=" ")      
-#     # look for place
-#     placeSubstring <- ifelse(grepl("\\<of\\>",substrings[2]), 3, 2)
-#     relationalPlace <- substrings[placeSubstring]
-#     if (placeSubstring ==2){
-#       FailDataFrame[i,"ROAD_NAME"] <- gsub("\\<of\\>","",FailDataFrame[i,"ROAD_NAME"])
-#     }
-#     PlaceIsCounty <- relationalPlace %in% StateCounties[,"COUNTY_NAME"]
-#     PlaceIsCity   <-  relationalPlace %in% StateCities[,"CITY_NAME"]
-#     if (PlaceIsCounty){
-#       MatchedCountyIndex <- grep(paste("\\<",relationalPlace,"\\>",sep=""),StateCounties[,"COUNTY_NAME"])
-#       FailDataFrame[i,LocProcessColsOut] <- GetAndRemoveLocationData(FailDataFrame[i, LocProcessColsIn], relationalPlace, LocProcessColsOut, ls.JurisdictionKeys, ls.RoadKeys, ls.StreamKeys, FALSE, TRUE)
-#       FailDataFrame[i,"COUNTY_NAME"] <- StateCounties[MatchedCountyIndex,"COUNTY_NAME"]
-#       FailDataFrame[i,"FIPS"] <- StateCounties[MatchedCountyIndex,"FIPS"]
-#       if (PlaceIsCity){
-#         MatchedCityIndex <- grep(paste("\\<",relationalPlace,"\\>",sep=""),StateCities[,"CITY_NAME"])
-#         FailDataFrame[i,"CITY_NAME"] <- StateCities[MatchedCityIndex,"CITY_NAME"]
-#         FailDataFrame[i,"FIPS_FROM_CITY"] <- StateCities[MatchedCityIndex,"FIPS"]
-#         FailDataFrame[i,"ANSICODE"] <- StateCities[MatchedCityIndex,"ANSICODE"]
-#         FailDataFrame[i,"GNIS_ID"] <- StateCities[MatchedCityIndex,"GNIS_ID"]
-#       }
-#     }
-#     else{
-#       if (PlaceIsCity){
-#         MatchedCityIndex <- grep(paste("\\<",relationalPlace,"\\>",sep=""),StateCities[,"CITY_NAME"])
-#         FailDataFrame[i,LocProcessColsOut] <- GetAndRemoveLocationData(FailDataFrame[i, LocProcessColsIn], relationalPlace, LocProcessColsOut,ls.JurisdictionKeys, ls.RoadKeys, ls.StreamKeys, TRUE, FALSE)
-#         FailDataFrame[i,"CITY_NAME"] <- StateCities[MatchedCityIndex,"CITY_NAME"]
-#         FailDataFrame[i,"FIPS_FROM_CITY"] <- StateCities[MatchedCityIndex,"FIPS"]
-#         FailDataFrame[i,"ANSICODE"] <- StateCities[MatchedCityIndex,"ANSICODE"]
-#         FailDataFrame[i,"GNIS_ID"] <- StateCities[MatchedCityIndex,"GNIS_ID"]
-#       }
-#       else{
-#         FailDataFrame[i,"ROAD_NEAR"] <- paste(FailDataFrame[i,"ROAD_NEAR"],relationalPlace,"-",sep=" ")
-#       }
-#     }
-#     FailDataFrame[i,"ROAD_NAME"] <- sub(MatchRegex,"",FailDataFrame[i,"ROAD_NAME"])
-#     FailDataFrame[i,"ROAD_NAME"] <- sub(paste("\\<",substrings[1],"\\>",sep=""),"",FailDataFrame[i,"ROAD_NAME"])
-#     FailDataFrame[i,"ROAD_NAME"] <- sub("\\<of\\>","",FailDataFrame[i,"ROAD_NAME"])
-#   }
-#   # find relational, no distance ("west of")
-#   HasRelationalBool <- sapply(RelationalKeys, grepl, gsub("[[:punct:]]","",FailDataFrame[rowsForState,"ROAD_NAME"]))
-#   if (nRowsState == 1) HasRelationalBool <- t(HasRelationalBool) 
-#   RowsWithRelationalMatchIndex <- which(rowSums(HasRelationalBool) != 0)
-#   RowsWithRelationalMatch   <- rowsForState[RowsWithRelationalMatchIndex]  
-#   nRowsWithMatch <- length(RowsWithRelationalMatch)
-#   if (nRowsWithMatch >= 1){ 
-#     MatchedRelationalIndex  <- sapply(1:nRowsWithMatch, function(i) min(which(HasRelationalBool[RowsWithRelationalMatchIndex[i],])))
-#     if (class(MatchedRelationalIndex)=="list") MatchedRelationalIndex <- unlist(MatchedRelationalIndex)
-#     for (i in 1:nRowsWithMatch){
-#       match_start <- regexpr(paste("\\<",RelationalKeys[MatchedRelationalIndex[i]],"\\>",sep=""),gsub("[[:punct:]]","",FailDataFrame[RowsWithRelationalMatch[i],"ROAD_NAME"]))
-#       match_last  <- match_start + attr(match_start,"match.length") - 1
-#       FailDataFrame[RowsWithRelationalMatch[i],"RD_RELATIONAL"] <- substr(gsub("[[:punct:]]","",FailDataFrame[RowsWithRelationalMatch[i],"ROAD_NAME"]),match_start,match_last)
-#       FailDataFrame[RowsWithRelationalMatch[i],"ROAD_NAME"] <- gsub(paste("\\<",RelationalKeys[MatchedRelationalIndex[i]],"\\>",sep=""),"",gsub("[[:punct:]]","",FailDataFrame[RowsWithRelationalMatch[i],"ROAD_NAME"]))
-#     }
-#   }
-#   
 #   # FIND BRIDGE NO (I.E., ANY NUMBERS IN PARENTHESES OR WITH "NO" BUT NOT "ROUTE NO" OR SIMILAR)
 #   # Assumed bridge numbers in parentheticals
 #   MatchRegex <- "\\([[:digit:]]{0,5}[[:punct:]]?[[:alpha:]]{0,2}[[:punct:]]?[[:digit:]]{0,5}\\>\\)"
@@ -296,83 +304,7 @@ Find.Features <- function(Data,
 #     }
 #   }
 #   
-#   # GET ROUTE NUMBER
-#   MatchRegex <- "\\<[[:alpha:]]{0,6}[[:punct:]]?[[:space:]]?[[:alpha:]]{1,9}[[:punct:]]?[[:space:]]?[[:alpha:]]{0,2}[[:space:]]?[[:digit:]]{1,4}[[:space:]]?[[:alpha:]]?\\>"
-#   RowsWithRteNo   <- rowsForState[grep(MatchRegex,FailDataFrame[rowsForState,"ROAD_NAME"])]
-#   RteStrings      <- list()
-#   RemainStrings   <- list()
-#   for (i in RowsWithRteNo){
-#     if (j==72){ # have different encodings for Puerto Rico, throws off regexpr
-#       match_start <- regexpr(MatchRegex,FailDataFrame[i,"ROAD_NAME"],useBytes=TRUE)
-#       rte_start   <- regexpr("[[:digit:]]{1,4}",FailDataFrame[i,"ROAD_NAME"],useBytes=TRUE)
-#     }
-#     else {
-#       match_start <- regexpr(MatchRegex,FailDataFrame[i,"ROAD_NAME"])
-#       rte_start   <- regexpr("[[:digit:]]{1,4}",FailDataFrame[i,"ROAD_NAME"])
-#     }
-#     match_last  <- match_start + attr(match_start,"match.length") - 1    
-#     FailDataFrame[i,"ROUTE_NO"] <- substr(FailDataFrame[i,"ROAD_NAME"],rte_start,match_last)
-#     RteStrings[[i]] <- gsub("^ *|(?<= ) | *$", "", gsub("[[:punct:]]"," ",substr(FailDataFrame[i,"ROAD_NAME"],match_start,rte_start-1)),perl=TRUE)
-#     RemainStrings[[i]] <- substr(FailDataFrame[i,"ROAD_NAME"],match_last+1,nchar(FailDataFrame[i,"ROAD_NAME"]))
-#   }
-#   
-#   if (length(RowsWithRteNo)>=1){
-#     FailDataFrame[RowsWithRteNo,"ROAD_NAME"]   <- sapply(RowsWithRteNo, function(i) RemainStrings[[i]])
-#     FailDataFrame[RowsWithRteNo,"RTE_PREFIX"]  <- sapply(RowsWithRteNo, function(i) RteStrings[[i]])
-#     # first find cardinals
-#     HasCardinalBool <- sapply(paste("\\<",CardinalKeys,"\\>",sep=""),grepl,FailDataFrame[RowsWithRteNo,"RTE_PREFIX"])
-#     if (length(RowsWithRteNo)==1) HasCardinalBool <- t(HasCardinalBool)
-#     RowsWithCardinalIndex <- which(rowSums(HasCardinalBool) != 0)
-#     RowsWithCardinal <- RowsWithRteNo[RowsWithCardinalIndex]
-#     nRowsWithMatch <- length(RowsWithCardinal)
-#     if (nRowsWithMatch >= 1){
-#       MatchedDirectionIndex  <- sapply(1:nRowsWithMatch, function(i) min(which(HasCardinalBool[RowsWithCardinalIndex[i],])))     
-#       FailDataFrame[RowsWithCardinal,"RTE_DIRECTION"] <- sapply(1:nRowsWithMatch, function(i) ls.CardinalKeys[[CardinalKeyIndex[MatchedDirectionIndex[i]]]][1])
-#       FailDataFrame[RowsWithCardinal,"RTE_PREFIX"]     <- sapply(1:nRowsWithMatch, function(i) gsub(paste("\\<",CardinalKeys[MatchedDirectionIndex[i]],"\\>",sep=""),"", FailDataFrame[RowsWithCardinal[i],"RTE_PREFIX"]))
-#     }
-#     # then find road prefix types
-#     HasRteTypeBool <- sapply(paste("\\<",RteKeys,"\\>",sep=""), grepl, FailDataFrame[RowsWithRteNo,"RTE_PREFIX"])
-#     if (length(RowsWithRteNo)==1) HasRteTypeBool <- t(HasRteTypeBool) 
-#     RowsWithRteTypeIndex   <- which(rowSums(HasRteTypeBool) != 0)
-#     RowsWithRteTypeMatch   <- RowsWithRteNo[RowsWithRteTypeIndex]
-#     nRowsWithMatch         <- length(RowsWithRteTypeMatch)
-#     if (nRowsWithMatch >= 1){
-#       MatchedRteTypeIndex  <- sapply(1:length(RowsWithRteTypeMatch), function(i) max(which(HasRteTypeBool[RowsWithRteTypeIndex[i],])))     
-#       FailDataFrame[RowsWithRteTypeMatch,"RTE_PREFIX"]   <- sapply(1:length(RowsWithRteTypeMatch), function(i) ls.RteKeysState[[RteKeyIndex[MatchedRteTypeIndex[i]]]][1])
-#     }  
-#   }
-#   # check for secondary route numbers (i.e., if mentions two roads)
-#   HasRteTypeBool <- sapply(paste("\\<",RteKeys,"[[:punct:]]?[[:space:]]?[[:digit:]]{1,4}\\>",sep=""), grepl, FailDataFrame[rowsForState,"ROAD_NAME"])
-#   if (length(rowsForState)==1) HasRteTypeBool <- t(HasRteTypeBool) 
-#   RowsWithRteTypeIndex   <- which(rowSums(HasRteTypeBool) != 0)
-#   RowsWithRteTypeMatch   <- rowsForState[RowsWithRteTypeIndex]
-#   nRowsWithMatch         <- length(RowsWithRteTypeMatch)
-#   if (nRowsWithMatch >= 1){
-#     for (i in RowsWithRteTypeMatch){
-#       rte_start   <- regexpr("[[:digit:]]{1,4}",FailDataFrame[i,"ROAD_NAME"])
-#       rte_last    <- rte_start + attr(rte_start, "match.length") - 1
-#       FailDataFrame[i,"RTE_SECOND"]  <- substr(FailDataFrame[i,"ROAD_NAME"],rte_start,rte_last)
-#     }
-#     FailDataFrame[RowsWithRteTypeMatch,"ROAD_NAME"] <- sapply(1:nRowsWithMatch, function(i) gsub(FailDataFrame[RowsWithRteTypeMatch[i],"RTE_SECOND"],"",FailDataFrame[RowsWithRteTypeMatch[i],"ROAD_NAME"]))
-#     MatchedRteTypeIndex  <- sapply(1:length(RowsWithRteTypeMatch), function(i) max(which(HasRteTypeBool[RowsWithRteTypeIndex[i],])))
-#     if (class(MatchedRteTypeIndex) == "list") MatchedRteTypeIndex <- unlist(MatchedRteTypeIndex)
-#     FailDataFrame[RowsWithRteTypeMatch,"RTE_SECOND"]   <- sapply(1:nRowsWithMatch, function(i) paste(ls.RteKeysState[[RteKeyIndex[MatchedRteTypeIndex[i]]]][1],FailDataFrame[RowsWithRteTypeMatch[i],"RTE_SECOND"],sep=" "))
-#     FailDataFrame[RowsWithRteTypeMatch,"ROAD_NAME"] <- sapply(1:nRowsWithMatch, function(i) gsub(paste("\\<",RteKeys[MatchedRteTypeIndex[i]],"\\>",sep=""),"",FailDataFrame[RowsWithRteTypeMatch[i],"ROAD_NAME"]))
-#   }  
-#   # Any remaining with a number should be the route number, even if they don't have a route type
-#   RowsWithNo <- rowsForState[grep("[[:digit:]]{1,4}\\>",FailDataFrame[rowsForState,"ROAD_NAME"])]
-#   for (i in RowsWithNo){
-#     rte_start   <- regexpr("[[:digit:]]{1,4}",FailDataFrame[i,"ROAD_NAME"])
-#     rte_last    <- rte_start + attr(rte_start, "match.length") - 1
-#     if (FailDataFrame[i,"ROUTE_NO"]==""){
-#       FailDataFrame[i,"ROUTE_NO"]  <- substr(FailDataFrame[i,"ROAD_NAME"],rte_start,rte_last)
-#       FailDataFrame[i,"ROAD_NAME"] <- gsub(FailDataFrame[i,"ROUTE_NO"],"",FailDataFrame[i,"ROAD_NAME"])
-#     }
-#     else {
-#       FailDataFrame[i,"RTE_SECOND"]  <- substr(FailDataFrame[i,"ROAD_NAME"],rte_start,rte_last)
-#       FailDataFrame[i,"ROAD_NAME"] <- gsub(FailDataFrame[i,"RTE_SECOND"],"",FailDataFrame[i,"ROAD_NAME"])
-#     }
-#   }
+
 #   # find alphabet route numbers (i.e., supplemental or secondary routes in Missouri)
 #   HasRteTypeBool <- sapply(paste("\\<",RteKeys,"\\>[[:punct:]]?[[:space:]]?\\<[[:alpha:]]{1,2}\\>",sep=""), grepl, FailDataFrame[rowsForState,"ROAD_NAME"])
 #   if (length(rowsForState)==1) HasRteTypeBool <- t(HasRteTypeBool) 
@@ -416,143 +348,7 @@ Find.Features <- function(Data,
 #     FailDataFrame[RowsWithDirectionRowsWithMatch,"ROAD_NAME"]   <- sapply(1:nRowsWithMatch, function(i) gsub(paste("\\<",CardBoundKeys[MatchedDirectionIndex[i]],"\\>",sep=""),"", FailDataFrame[RowsWithDirectionRowsWithMatch[i],"ROAD_NAME"]))
 #   }
 #   
-#   # PERFORM COUNTY MATCHING - STRICT (i.e., only deletes if has name followed by "county" or "co")
-#   if (nrow(StateCounties)==0) {
-#     warning(paste("No counties in state #",as.character(j),"-",as.character(df.States[df.States==j,"STATE_CODE"]),sep = " "))
-#     return(FailDataFrame)
-#   }
-#   HasCountyStringBool <- sapply(paste("\\<",StateCounties$COUNTY_NAME,"\\>",sep=""),grepl,FailDataFrame[rowsForState,"ROAD_NAME"])
-#   if (nRowsState==1) HasCountyStringBool <- t(HasCountyStringBool)
-#   RowsWithCountyIndex <- which(rowSums(HasCountyStringBool) != 0)
-#   RowsWithCountyMatch <- rowsForState[RowsWithCountyIndex]
-#   nRowsWithMatch <- length(RowsWithCountyMatch)
-#   if (nRowsWithMatch > 0){
-#     MatchedCountyIndex  <- lapply(1:nRowsWithMatch, function(i) which(HasCountyStringBool[RowsWithCountyIndex[i],]))
-#     nRowsWithMatchesRow <- sapply(1:nRowsWithMatch, function(i) length(MatchedCountyIndex[[i]]))
-#     for (i in 1:nRowsWithMatch){
-#       for (k in 1:nRowsWithMatchesRow[i]){
-#         FailDataFrame[RowsWithCountyMatch[i],LocProcessColsOut]     <- GetAndRemoveLocationData(FailDataFrame[RowsWithCountyMatch[i], LocProcessColsIn], StateCounties[MatchedCountyIndex[[i]][k],"COUNTY_NAME"], LocProcessColsOut, ls.JurisdictionKeys, ls.RoadKeys, ls.StreamKeys, FALSE, TRUE)
-#         FailDataFrame[RowsWithCountyMatch[i],CountyOutCols[[1]][k]] <- StateCounties[MatchedCountyIndex[[i]][k],"COUNTY_NAME"]
-#         FailDataFrame[RowsWithCountyMatch[i],CountyOutCols[[2]][k]] <- StateCounties[MatchedCountyIndex[[i]][k],"FIPS"]
-#         #print(paste("Matched county", StateCounties[MatchedCountyIndex[[i]][k],"COUNTY_NAME"],"to entry", FailDataFrame[rowsForState[i],"LOCATION"],sep=" "))
-#       }
-#     }
-#   }
-#   print("    Finished county identification")
-#   
-#   # PERFORM CITY MATCHING - NOT STRICT (still checks to see if part of road or stream name)
-#   # named cities, townships, villages (e.g., "City of Baltimore" or "Luellen Township)
-#   HasCityTypeBool <- sapply(paste("\\<",CityKeys,"\\>",sep=""), grepl, FailDataFrame[rowsForState,"ROAD_NAME"])
-#   if (nRowsState==1) HasCityTypeBool <- t(HasCityTypeBool)
-#   RowsWithCityMatchIndex <- which(rowSums(HasCityTypeBool) != 0)
-#   RowsWithCityMatch      <- rowsForState[RowsWithCityMatchIndex]
-#   nRowsWithMatch <- length(RowsWithCityMatch)
-#   if (nRowsWithMatch > 0){
-#     MatchedCityIndex  <- sapply(1:nRowsWithMatch, function(i) max(which(HasCityTypeBool[RowsWithCityMatchIndex[i],])))
-#     for (i in 1:nRowsWithMatch){
-#       MatchRegex <- paste("\\<",CityKeys[MatchedCityIndex[i]],"\\>",sep="")
-#       MatchRegexOf <- paste(MatchRegex,"[[:space:]]{1,2}\\<of\\>",sep="")
-#       HasOfBool <- grepl(MatchRegexOf,FailDataFrame[RowsWithCityMatch[i],"ROAD_NAME"])
-#       if (HasOfBool){
-#         match_start <- regexpr(MatchRegexOf, FailDataFrame[RowsWithCityMatch[i],"ROAD_NAME"])
-#         temp_entry <- substr(FailDataFrame[RowsWithCityMatch[i],"ROAD_NAME"],match_start,nchar(FailDataFrame[RowsWithCityMatch[i],"ROAD_NAME"]))
-#         temp_entry <- unlist(strsplit(unlist(strsplit(temp_entry,"[[:punct:]]")), "[[:digit:]]"))[1] 
-#         entry <- str_trim(gsub(MatchRegexOf,"",temp_entry))
-#         to_delete <- MatchRegexOf
-#       }
-#       else{
-#         match_start <- regexpr(MatchRegex, FailDataFrame[RowsWithCityMatch[i],"ROAD_NAME"])
-#         match_last  <- match_start + attr(match_start,"match.length") - 1
-#         temp_entry <- substr(FailDataFrame[RowsWithCityMatch[i],"ROAD_NAME"],1,match_last)
-#         substrings <- unlist(strsplit(temp_entry,"[[:punct:]]"))
-#         temp_entry <- substrings[length(substrings)]
-#         entry <- str_trim(gsub(MatchRegex,"",temp_entry))
-#         to_delete <- MatchRegex
-#       }
-#       HasKnownCityBool <- unlist(sapply(StateCities$CITY_NAME, grepl, temp_entry))
-#       if (all(!HasKnownCityBool)){ # means an unknown township, so record now (otherwise will catch later)
-#         FailDataFrame[RowsWithCityMatch[i],"ROAD_NEAR"] <- paste(FailDataFrame[RowsWithCityMatch[i],"ROAD_NEAR"], entry, ls.JurisdictionKeys[[CityKeyIndex[MatchedCityIndex[i]]]][1], "-", sep=" ")
-#         FailDataFrame[RowsWithCityMatch[i],"ROAD_NAME"] <- gsub(temp_entry,"",FailDataFrame[RowsWithCityMatch[i],"ROAD_NAME"])
-#       }
-#       else{
-#         FailDataFrame[RowsWithCityMatch[i],"ROAD_NAME"] <- gsub(to_delete,"",FailDataFrame[RowsWithCityMatch[i],"ROAD_NAME"])
-#       }
-#     }  
-#   }
-#   # not-explicitly-named cities
-#   if (nrow(StateCities)==0) {
-#     warning(paste("No cities in state #",as.character(j),"-",as.character(df.States[df.States==j,"STATE_CODE"]),sep = " "))
-#     return(FailDataFrame)
-#   }
-#   HasCityStringBool <- sapply(StateCities$CITY_NAME,grepl,FailDataFrame[rowsForState,"ROAD_NAME"]) 
-#   if (nRowsState==1) HasCityStringBool <- t(HasCityStringBool)
-#   RowsWithCityMatch <- which(rowSums(HasCityStringBool) != 0)
-#   nRowsWithMatch <- length(RowsWithCityMatch)
-#   if (nRowsWithMatch > 0){
-#     MatchedCityIndex            <- lapply(RowsWithCityMatch, function(i) which(HasCityStringBool[i,]))
-#     nRowsWithMatchesRow                    <- integer(nRowsState)
-#     nRowsWithMatchesRow[RowsWithCityMatch] <- sapply(1:nRowsWithMatch, function(i) length(MatchedCityIndex[[i]]))
-#     for (i in 1:nRowsWithMatch){
-#       for (k in 1:nRowsWithMatchesRow[RowsWithCityMatch[i]]){
-#         FailDataFrame[rowsForState[RowsWithCityMatch[i]],LocProcessColsOut] <- GetAndRemoveLocationData(FailDataFrame[rowsForState[RowsWithCityMatch[i]], LocProcessColsIn], StateCities[MatchedCityIndex[[i]][k],"CITY_NAME"], LocProcessColsOut, ls.JurisdictionKeys, ls.RoadKeys, ls.StreamKeys, TRUE, FALSE)
-#         FailDataFrame[rowsForState[RowsWithCityMatch[i]],CityOutCols[[1]][k]] <- StateCities[MatchedCityIndex[[i]][k],"CITY_NAME"]
-#         FailDataFrame[rowsForState[RowsWithCityMatch[i]],CityOutCols[[2]][k]] <- StateCities[MatchedCityIndex[[i]][k],"FIPS"]
-#         FailDataFrame[rowsForState[RowsWithCityMatch[i]],CityOutCols[[3]][k]] <- StateCities[MatchedCityIndex[[i]][k],"ANSICODE"]
-#         FailDataFrame[rowsForState[RowsWithCityMatch[i]],CityOutCols[[4]][k]] <- StateCities[MatchedCityIndex[[i]][k],"GNIS_ID"] 
-#         #print(paste("Matched city", StateCities[MatchedCityIndex[[i]][k],"CITY_NAME"],"to entry", FailDataFrame[rowsForState[i],"LOCATION"],sep=" "))
-#       } 
-#     }  
-#   }
-#   print("    Finished city identification")
-#   
-#   # PROCESS STATE NAMES
-#   State <- tolower(df.States[df.States$STFIPS==j,"STATE_FULL"])
-#   RowsWithState <- rowsForState[grep(State, FailDataFrame[rowsForState,"ROAD_NAME"])]
-#   nRowsWithMatch <- length(RowsWithState)
-#   if (nRowsWithMatch > 0){
-#     for (i in RowsWithState){
-#       FailDataFrame[i,LocProcessColsOut] <- GetAndRemoveLocationData(FailDataFrame[i, LocProcessColsIn], State, LocProcessColsOut, ls.JurisdictionKeys, ls.RoadKeys, ls.StreamKeys, TRUE, FALSE)
-#     }
-#   }
-#   # abbreviated version
-#   State <- tolower(df.States[df.States$STFIPS==j,"STATE_CODE"])
-#   RowsWithState <- rowsForState[grep(paste("\\<",State,"\\>",sep=""), FailDataFrame[rowsForState,"ROAD_NAME"])]
-#   nRowsWithMatch <- length(RowsWithState)
-#   if (nRowsWithMatch > 0){
-#     for (i in RowsWithState){
-#       FailDataFrame[i,LocProcessColsOut] <- GetAndRemoveLocationData(FailDataFrame[i, LocProcessColsIn], State, LocProcessColsOut, ls.JurisdictionKeys, ls.RoadKeys, ls.StreamKeys, TRUE, FALSE)
-#     }
-#   }
-#   # assume that other mentioned states are "near" statements
-#   HasStateBool      <- sapply(tolower(df.States$STATE_FULL), grepl, FailDataFrame[rowsForState,"ROAD_NAME"])
-#   if (nRowsState==1) HasStateBool <- t(HasStateBool)
-#   RowsWithStateIndex  <- which(rowSums(HasStateBool) != 0)
-#   RowsWithStateMatch <- rowsForState[RowsWithStateIndex]
-#   nRowsWithMatch <- length(RowsWithStateMatch)
-#   if (nRowsWithMatch > 0){
-#     MatchedStateIndex  <- sapply(1:nRowsWithMatch, function(i) min(which(HasStateBool[RowsWithStateIndex[i],])))
-#     if (class(MatchedStateIndex)=="list") MatchedStateIndex <- unlist(MatchedStateIndex)
-#     StateMatch <- sapply(1:nRowsWithMatch, function(i) tolower(df.States$STATE_FULL[MatchedStateIndex[i]]))
-#     for (i in 1:nRowsWithMatch){
-#       FailDataFrame[RowsWithStateMatch[i],LocProcessColsOut] <- GetAndRemoveLocationData(FailDataFrame[RowsWithStateMatch[i], LocProcessColsIn], StateMatch[i], LocProcessColsOut, ls.JurisdictionKeys, ls.RoadKeys, ls.StreamKeys, TRUE, FALSE)
-#     }
-#   }
-#   
-#   # RE-PROCESS COUNTIES, NON-STRICT
-#   HasCountyStringBool <- sapply(StateCounties$COUNTY_NAME,grepl,FailDataFrame[rowsForState,"ROAD_NAME"])
-#   if (nRowsState==1) HasCountyStringBool <- t(HasCountyStringBool)
-#   RowsWithCountyIndex <- which(rowSums(HasCountyStringBool) != 0)
-#   RowsWithCountyMatch <- rowsForState[RowsWithCountyIndex]
-#   nRowsWithMatch <- length(RowsWithCountyMatch)
-#   if (nRowsWithMatch > 0){
-#     # assume only one county name remaining after city matching
-#     MatchedCountyIndex  <- sapply(1:nRowsWithMatch, function(i) min(which(HasCountyStringBool[RowsWithCountyIndex[i],])))
-#     for (i in 1:nRowsWithMatch){
-#       FailDataFrame[RowsWithCountyMatch[i],LocProcessColsOut]     <- GetAndRemoveLocationData(FailDataFrame[RowsWithCountyMatch[i], LocProcessColsIn], StateCounties[MatchedCountyIndex[[i]][k],"COUNTY_NAME"], LocProcessColsOut, ls.JurisdictionKeys, ls.RoadKeys, ls.StreamKeys, FALSE, FALSE)
-#       #print(paste("Matched county", StateCounties[MatchedCountyIndex[[i]][k],"COUNTY_NAME"],"to entry", FailDataFrame[rowsForState[i],"LOCATION"],sep=" "))
-#     }
-#   }
-#   
+
 #   # RIVER DATA - MIDDLE FORK, ETC
 #   HasTribStringBool <- sapply(paste("\\<",TribRelatKeys,"\\>",sep=""), grepl, gsub("^ *|(?<= ) | *$", "", gsub("[[:punct:]]"," ",FailDataFrame[rowsForState, "ROAD_NAME"]), perl=TRUE))
 #   if (nRowsState==1) HasTribStringBool <- t(HasTribStringBool)
@@ -591,19 +387,6 @@ Find.Features <- function(Data,
 #   }
 #   print("    Finished stream (in location field) identification")
 #   
-#   #  REST OF PARENTHETICALS
-#   MatchRegex <- "\\([[:print:]]{1,15}\\)"
-#   RowsWithParentheticalMatchIndex <- grep(MatchRegex, FailDataFrame[rowsForState,"ROAD_NAME"])
-#   RowsWithParentheticalMatch <- rowsForState[RowsWithParentheticalMatchIndex]
-#   nRowsWithMatch <- length(RowsWithParentheticalMatch)
-#   if (nRowsWithMatch >= 1){ 
-#     for (i in 1:nRowsWithMatch){
-#       match_start <- regexpr(MatchRegex,FailDataFrame[RowsWithParentheticalMatch[i],"ROAD_NAME"])
-#       match_last  <- match_start + attr(match_start,"match.length") - 1
-#       FailDataFrame[RowsWithParentheticalMatch[i],"ROAD_NEAR"] <- paste(FailDataFrame[RowsWithParentheticalMatch[i],"ROAD_NEAR"],substr(FailDataFrame[RowsWithParentheticalMatch[i],"ROAD_NAME"],match_start+1,match_last-1),"-",sep=" ")
-#       FailDataFrame[RowsWithParentheticalMatch[i],"ROAD_NAME"] <- gsub(MatchRegex,"",FailDataFrame[RowsWithParentheticalMatch[i],"ROAD_NAME"])
-#     }
-#   }
 #   
 #   # FINAL TRIBS CLEANUP
 #   HasTribStringBool <- sapply(paste("\\<",unlist(ls.TribsKeys),"\\>",sep=""), grepl, gsub("^ *|(?<= ) | *$", "", gsub("[[:punct:]]"," ",FailDataFrame[rowsForState, "ROAD_NAME"]), perl=TRUE))

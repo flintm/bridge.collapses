@@ -46,8 +46,10 @@ require(rjson)
   cat(toJSON(ls.RoadKeys), file = file.path("Data","Input","Dictionaries","RoadKeys.json"))
   
   # Route (see also ITEM5B)
-  ls.RteKeys <- ls.RoadKeys[c("route","freeway","highway","interstate","countyRoad",
-                                      "stateRoute","stateHighway","usHighway","countyHighway", "stateSecondary", "thruway","state", "statefull")]
+  ls.RteKeys <- ls.RoadKeys[c("freeway","highway","interstate","countyRoad",
+                                      "stateRoute","stateHighway","usHighway",
+                              "countyHighway", "stateSecondary", "thruway","state", "statefull",
+                              "route")]
   save(ls.RteKeys, file = file.path("Data","Input","Dictionaries","ls.RteKeys.RData"))
   cat(toJSON(ls.RteKeys), file = file.path("Data","Input","Dictionaries","RteKeys.json"))
   
@@ -227,17 +229,35 @@ require(rjson)
   Cards        <- ls.CardKeys[!grepl("b",names(ls.CardKeys))]
   Relations    <- ls.RelationalKeys[c("main", "middle", "left","right","upper","lower","little", "big")]
   Tribs        <- ls.StreamKeys[c("branch", "fork", "tributary")]
-  ls.TribKeys  <- list()
-  for (i in 1:length(Cards)){
-    for (j in 1:length(Tribs)){
-      ls.TribKeys[[paste0(names(Cards)[i],"_",names(Tribs)[j])]] <- paste(Cards[[i]],Tribs[[j]])
-    }
-  }
-  for (i in 1:length(Relations)){
-    for (j in 1:length(Tribs)){
-      ls.TribKeys[[paste0(names(Relations)[i],"_",names(Tribs)[j])]] <- paste(Relations[[i]],Tribs[[j]])
-    }
-  }
+  ls.TribKeys <- sapply(c("",Cards),
+                        function(card)
+                          sapply(c("",Relations),
+                                   function(rel)
+                                     sapply(Tribs,
+                                            function(trib)
+                                              paste0("\\<",card,
+                                                     "\\> \\<",
+                                                     rel,
+                                                     "\\> \\<",
+                                                     trib,"\\>"))
+                                   
+                          ))
+  # ls.TribKeys  <- sapply(1:length(ls.TribKeys), 
+  #                        function(i) gsub("[[:space:]][[:space:]]","[[:space:]]",ls.TribKeys[[i]],fixed = TRUE))
+  # ls.TribKeys  <- sapply(1:length(ls.TribKeys), 
+  #                        function(i) sub("^\\[\\[\\:space\\:\\]\\]","",ls.TribKeys[[i]]))
+  ls.TribKeys  <- sapply(1:length(ls.TribKeys), 
+                         function(i) str_squish(gsub("\\<\\>","",ls.TribKeys[[i]],fixed = TRUE)))
+  # for (i in 1:length(Cards)){
+  #   for (j in 1:length(Tribs)){
+  #     ls.TribKeys[[paste0(names(Cards)[i],"_",names(Tribs)[j])]] <- paste(Cards[[i]],Tribs[[j]])
+  #   }
+  # }
+  # for (i in 1:length(Relations)){
+  #   for (j in 1:length(Tribs)){
+  #     ls.TribKeys[[paste0(names(Relations)[i],"_",names(Tribs)[j])]] <- paste(Relations[[i]],Tribs[[j]])
+  #   }
+  # }
   rm(Cards,Relations,Tribs)
   save(ls.TribKeys, file = file.path("Data","Input","Dictionaries","ls.TribKeys.RData"))
   cat(toJSON(ls.TribKeys), file = file.path("Data","Input","Dictionaries","TribKeys.json"))
