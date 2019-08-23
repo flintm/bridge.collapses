@@ -16,7 +16,6 @@ params:
   verbose: TRUE
 ---
 
-
 ```{r setup, include=FALSE, eval=params$eval}
 library(knitr)
 knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
@@ -70,7 +69,7 @@ This R Notebook provides an example of geolocating and augmenting bridge collaps
 ## Example user controls
 We can modify the fields of the failed bridges we'll use to match, as well as the matching method (set in the Notebook parameters).
 ```{r userExampleControls, echo = TRUE, eval=params$eval}
-EXAMPLE_ID   <- c(31, 175) 
+EXAMPLE_ID   <- c(3, 31, 63, 77, 81, 175, 513, 1191, 1269) 
 # Matching options
 M_STYLE <- params$mstyle 
   # PAR: Runs for each M_TYPE in parallel (i.e., run independently and then combined)
@@ -151,7 +150,7 @@ if(RUN["MATCH"] & !(all(M_TYPE %in% c("road", "stream","bin","route")))){
 ```
 
 # 1. Load and format raw or minimally pre-processed input data
-The `Load.Format.Input.Data` subfunction is used to create match and target dataframes with appropriate data classes and names. Input files in RData, CSV, TAB, XLSX, XLS, or GIS (NBI only) are supported, with packages automatically selected based on the input filename extension:
+The `Load.Format.Input.Data` subfunction accepts input files in RData, CSV, TAB, XLSX, XLS, or GIS (NBI only), with packages automatically selected based on the input filename extension:
 
 ```{bash, echo = TRUE, comment = ''}
 sed -n '46,53p;53q' './Scripts/Load Input/Load.Format.Input.Data.R'
@@ -279,17 +278,21 @@ I analyzed the quality of the entries for each bridge and field to determine the
   df <- rbind(df.3, df.2, df.1)
   df$group <- factor(df$group, levels = c("ALL","TWO FIELDS", "ONE FIELD"))
   
-  # make plot --------
+  
+```
+
+```{r explorePlot}
+# make plot --------
   bar <- ggplot(df, aes(x = group, fill = colorP)) + geom_bar(aes(y=(..count..))) 
   bar + scale_fill_manual(values = colorsAll, labels = colorLabels, name = "Fields", drop = FALSE) +
     geom_text(stat='count', aes(label=..count..), color = "white", size = textP$annotate["PRES"],
               position = position_stack(vjust = 0.5))+
     labs(title = "Fields available for 1948 collapsed bridges", x = "subset of bridges", y = "count") +
     getTheme(outputType="PRES") + theme(axis.ticks.x = element_blank(), axis.ticks.y = element_blank())
-
   rm(df,df.1,df.2,df.3,combFieldLabels,combFieldLevels,combFields,colors,colorsAll,colorsCount,
      nonNAs,colorLabels,critFields, bar, labels, levels)
 ```
+
 
 ```{r exampleSetup, include = FALSE, echo = FALSE}
 # remove unneeded rows 
@@ -310,7 +313,7 @@ if (RUN["CLEAN"]){
   
   FieldNames <- sapply(opts[["Fields"]][["Fail"]], function(i) ls.Fail.Ont[[i]][1],
                      USE.NAMES = TRUE)
-  df.Fail  <- Clean.Fields(df.Fail, NULL,
+  df.Fail.cl  <- Clean.Fields(df.Fail.l, NULL,
                              DATA_SET     = "Fail",
                              FieldNames   = FieldNames,
                              VERB      = VERB)
@@ -353,7 +356,7 @@ if(RUN["FEATURE"]){
                      USE.NAMES = TRUE)
   Features <- sub("LOCATION","LOC",Features)
   Features["STREAM"] <- "STREAM_UNDER"
-  df.Fail  <- Find.Features(df.Fail, 
+  df.Fail  <- Find.Features(df.Fail.cl, 
                               Features,
                               VERBOSE = VERB)
   rm(Find.Features, Features)
@@ -414,7 +417,11 @@ Analyzing the number of candidate matches returned by each run allows me to asse
  nMatches.melt    <- melt(nMatches, id.vars="ID", variable.name="Match", value.name= "Count")
  nMatches.melt$Match <- factor(nMatches.melt$Match, levels = c("state", "county",M_TYPE))
  
- # Make plot
+ 
+```
+
+```{r plotNMatch, echo = FALSE}
+# Make plot
  nBar <- ggplot(nMatches.melt, aes(x = ID, y = Count, fill = Match)) + 
    geom_col(position = position_dodge()) +
    geom_text(aes(label = Count, y = Count + 0.05), 
@@ -428,6 +435,7 @@ Analyzing the number of candidate matches returned by each run allows me to asse
    getTheme(outputType = "PRES") + 
    labs(title = "Number of candidate matches by match type", x = "Collapsed Bridge ID")+
    theme(axis.ticks.x = element_blank(), axis.ticks.y = element_blank())
+
 ```
 
 
@@ -629,6 +637,10 @@ ylimn <- -75
 df.Metrics.melt[df.Metrics.melt$y==0 & df.Metrics.melt$tf == "TRUE","y"] <- 0.1
 df.Metrics.melt[df.Metrics.melt$y==0 & df.Metrics.melt$tf == "FALSE","y"] <- -0.1
 df.Metrics.melt$y[df.Metrics.melt$y < ylimn] <- ylimn
+rm(ylimn,n,p,precision,recall,f1,f2,tp,tn,fp,fn,m)
+```
+
+```{r plotStats, echo = FALSE}
 Flag <- ggplot(data = subset(df.Metrics.melt), 
                aes(x = x, fill = type, y = y, alpha = tf)) + geom_col(position = position_dodge()) + coord_flip() 
 Flag + ylim(c(ylimn,10)) + 
@@ -637,7 +649,9 @@ Flag + ylim(c(ylimn,10)) +
   labs(y = "count (false <- -> true)", x = "error category", title = "Visual check of recall and precision") + 
   getTheme(outputType = "PRES")
 ```
+
 It appears that with the parallel format, I have managed to achieve high recall at the expense of precision, which is in line with my goals. That said, more work is certainly needed, especially in match ranking and confirmation. While I have not yet finished the confirmation process on the updated version of the matching algorithm, the results confirmed from the previous version are shown below (387 bridges of 1172 hydraulic collapses were located).
+
 ```{r plotMap, echo = FALSE, warning=FALSE, message=FALSE}
 source(file.path("Plotting","PlotFailedBridgesMap.R"))
 map <- PlotFailedBridgesMap(df.Fail.NBI.Gage, size = "none", SHOW_HURR = FALSE, outputType = "PRES")

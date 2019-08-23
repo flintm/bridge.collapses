@@ -226,9 +226,9 @@ require(rjson)
   cat(toJSON(ls.StreamKeys), file = file.path("Data","Input","Dictionaries","StreamKeys.json"))
   
   # Tributaries (branches and forks)
-  Cards        <- ls.CardKeys[!grepl("b",names(ls.CardKeys))]
-  Relations    <- ls.RelationalKeys[c("main", "middle", "left","right","upper","lower","little", "big")]
-  Tribs        <- ls.StreamKeys[c("branch", "fork", "tributary")]
+  Cards        <- unlist(ls.CardKeys[!grepl("b",names(ls.CardKeys))])
+  Relations    <- unlist(ls.RelationalKeys[c("main", "middle", "left","right","upper","lower","little", "big")])
+  Tribs        <- unlist(ls.StreamKeys[c("branch", "fork", "tributary")])
   ls.TribKeys <- sapply(c("",Cards),
                         function(card)
                           sapply(c("",Relations),
@@ -246,8 +246,8 @@ require(rjson)
   #                        function(i) gsub("[[:space:]][[:space:]]","[[:space:]]",ls.TribKeys[[i]],fixed = TRUE))
   # ls.TribKeys  <- sapply(1:length(ls.TribKeys), 
   #                        function(i) sub("^\\[\\[\\:space\\:\\]\\]","",ls.TribKeys[[i]]))
-  ls.TribKeys  <- sapply(1:length(ls.TribKeys), 
-                         function(i) str_squish(gsub("\\<\\>","",ls.TribKeys[[i]],fixed = TRUE)))
+  ls.TribKeys  <- str_squish(gsub("\\<\\>","",ls.TribKeys,fixed = TRUE))
+  ls.TribKeys  <- ls.TribKeys[grepl("\\<", sub("\\<","",ls.TribKeys, fixed = TRUE), fixed = TRUE)]
   # for (i in 1:length(Cards)){
   #   for (j in 1:length(Tribs)){
   #     ls.TribKeys[[paste0(names(Cards)[i],"_",names(Tribs)[j])]] <- paste(Cards[[i]],Tribs[[j]])
@@ -317,14 +317,16 @@ require(rjson)
   
 ## DATABASE-SPECIFIC MISSPELLINGS AND CORRECTIONS
   ls.Fail.Keys <- list("671"  = c("richmond","richland","LOC"),
-                      "1345" = c("wash.", "washington ","LOC"),
-                      "212"  = c("amer.", "american ", "LOC"),
-                      "1304" = c("s4\\&5","s4\\-5","LOC"),
-                      "1061" = c("razrhon","razor hone","LOC", "STREAM"),
-                      "1557" = c("\\(","","LOC"),
-                      "218"  = c("sf-oak", "san francisco oakland","LOC"),
-                      "240"  = c("sf-oak", "san francisco oakland","LOC"),
-                      "1331" = c("rcb", "reinforced concrete box culvert", "MAT"))
+                       "1345" = c("wash.", "washington ","LOC"),
+                       "212"  = c("amer.", "american ", "LOC"),
+                       "1304" = c("s4\\&5","s4\\-5","LOC"),
+                       "1061" = c("razrhon","razor hone","LOC", "STREAM"),
+                       "1557" = c("\\(","","LOC"),
+                       "218"  = c("sf-oak", "san francisco oakland","LOC"),
+                       "240"  = c("sf-oak", "san francisco oakland","LOC"),
+                       "1331" = c("rcb", "reinforced concrete box culvert", "MAT"),
+                       "1191" = c("pend.","pendleton", "LOC"),
+                       "1269" = c("balt co.", "baltimore county ", "LOC"))
   save(ls.Fail.Keys, file = file.path("Data","Input","Dictionaries","ls.Fail.Keys.RData"))
   cat(toJSON(ls.Fail.Keys), file = file.path("Data","Input","Dictionaries","Fail.Keys.json"))
   

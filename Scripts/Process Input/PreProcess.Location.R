@@ -28,9 +28,8 @@ PreProcess.Location <- function(Data,
           if(any(names(ls.TEMP) %in% Data[,FieldNames["ID"]])){
             IDs    <- names(ls.TEMP)[names(ls.TEMP) %in% Data[,FieldNames["ID"]]]
             ls.TEMP <- ls.TEMP[IDs]
-            rowsID <- Rows[sapply(IDs, function(i) which(Data[,FieldNames["ID"]]==i))]
-            Data[rowsID,"TEMP"] <- sapply(1:length(ls.TEMP), 
-                                          function(i) sub(ls.TEMP[[i]][1],ls.TEMP[[i]][2],Data[rowsID[i],"TEMP"]))
+            Data[IDs,"TEMP"] <- sapply(IDs, 
+                                     function(i) sub(ls.TEMP[[i]][1],ls.TEMP[[i]][2],Data[i,"TEMP"]))
           }
         }
       }
