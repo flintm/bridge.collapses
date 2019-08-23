@@ -11,7 +11,7 @@ Find.Features <- function(Data,
                       CITY = as.vector(sapply(1:2, 
                                               function(i) 
                                                 paste0(c("CITY_NAME_","FIPS_FROM_CITY_","ANSICODE_","GNIS_ID_"),i))),
-                      LOCATION = c("LOC_AUX","BRIDGE_NAME"),
+                      LOCATION = c("LOC_AUX_1","LOC_AUX_2","BRIDGE_NAME"),
                       ROAD = paste0("ROAD_",c("NAME","TYPE","DIRECTION","AUX")),
                       ROUTE = as.vector(sapply(1:2, 
                                                function(i) paste0(paste0("ROUTE_",c("NAME_","TYPE_","DIRECTION_","AUX_")),i))),
@@ -108,7 +108,8 @@ Find.Features <- function(Data,
     if(VERBOSE) print("Moving to non-state-specific checks")
     rows        <- Rows[!is.na(Data[,COL]) & Data[,COL]!=""]
     if(f =="LOCATION"){
-      cols.out <- cols.out[1]
+      cols.out <- cols.out[grepl("AUX",cols.out)]
+      print(cols.out)
       # aux phrases: -------
       if(length(rows)>0){
         # parentheticals ------
@@ -116,47 +117,51 @@ Find.Features <- function(Data,
         if(length(rows)>0){
           parenth <- data.frame(PATTERN1 = "\\(*\\)", PATTERN2 = "",
                                 REGEX = TRUE, stringsAsFactors = FALSE)
-          parenth[,cols.out] <- "\\([a-z 0-9]+\\)"
+          parenth[,"LOC_AUX"] <- "\\([a-z 0-9]+\\)"
           if(VERBOSE) print("Checking parenthetical auxilliary phrases")
           Data[rows,c(COL,cols.out)] <- Feature.Detect(Data[rows,],
                                                                  parenth,
                                                                  "NONE",
                                                                  COL,
                                                                  cols.out,
-                                                                 n.dup.cols = 1,
+                                                                 n.dup.cols = 2,
                                                                  DELETE = TRUE)
         }
 
         # statements with explicit distance, e.g., "3.5 miles from Stanford"---------
         # TODO: fix such that pulls out the location that it's related to
-        # rows <- Rows[!is.na(Data[,COL]) & grepl("[[:digit:]]",Data[,COL])]
-        # if(length(rows)>0){
-        #   relationals <- sapply(unlist(ls.RelationalKeys[c("miles","kilometers")]),
-        #                         function(dist) 
-        #                           sapply(c("",unlist(ls.CardKeys[1:8])),
-        #                                  function(card) 
-        #                                    sapply(unlist(ls.RelationalKeys[c("off","from","by","of")]),
-        #                                           function(rel)
-        #                                             paste0("[[:digit:]]+[.]?[[:digit:]]?[[:space:]]?",
-        #                                                    dist,
-        #                                                    "[[:space:]]?",
-        #                                                    card,
-        #                                                    "[[:space:]]?",
-        #                                                    rel,
-        #                                                    "[[:space:]][[:alpha:]]+")
-        #                                    )))
-        #   relationals <- data.frame(PATTERN1 = as.vector(relationals), PATTERN2 = "", 
-        #                             REGEX = TRUE, stringsAsFactors = FALSE)
-        #   relationals[,cols.out] <- relationals$PATTERN1
-        #   if(VERBOSE) print("Checking distance-relational auxilliary phrases")
-        #   Data[rows,c(COL,cols.out)] <- Feature.Detect(Data[rows,], 
-        #                                                relationals, 
-        #                                                "NONE", 
-        #                                                COL, 
-        #                                                cols.out, 
-        #                                                n.dup.cols = 1, 
-        #                                                DELETE = TRUE)
-        # }
+        rows <- Rows[!is.na(Data[,COL]) & grepl("[[:digit:]]",Data[,COL])]
+        if(length(rows)>0){
+          relationals <- sapply(unlist(ls.RelationalKeys[c("miles","kilometers")]),
+                                function(dist)
+                                  sapply(c("",unlist(ls.CardKeys[1:8])),
+                                         function(card)
+                                           sapply(c("",unlist(ls.RelationalKeys[c("off","from","by","of")])),
+                                                  function(rel)
+                                                    paste0("[[:digit:]]+[.]?[[:digit:]]?[[:space:]]?",
+                                                           dist,
+                                                           "[[:space:]]?",
+                                                           card,
+                                                           "[[:space:]]?",
+                                                           rel,
+                                                           "[[:space:]]?[[:alpha:]]+")
+                                           )))
+          relationals <- data.frame(PATTERN1 = as.vector(relationals), PATTERN2 = "",
+                                    REGEX = TRUE, stringsAsFactors = FALSE)
+          relationals$PATTERN1 <- gsub("[[:space:]]?[[:space:]]?","[[:space:]]?",relationals$PATTERN1,fixed = TRUE)
+          relationals$PATTERN1 <- sub("[[:space:]]?[[:alpha:]]+","\\> [[:alpha:]]+",relationals$PATTERN1,fixed = TRUE)
+          relationals <- relationals[!duplicated(relationals$PATTERN1),]
+          relationals[,"LOC_AUX"] <- relationals$PATTERN1
+          relationals <- relationals[order(nchar(relationals$PATTERN1),decreasing = TRUE),]
+          if(VERBOSE) print("Checking distance-relational auxilliary phrases")
+          Data[rows,c(COL,cols.out)] <- Feature.Detect(Data[rows,],
+                                                       relationals,
+                                                       "NONE",
+                                                       COL,
+                                                       cols.out,
+                                                       n.dup.cols = 2,
+                                                       DELETE = TRUE)
+        }
         
         
         # non-explicit distance relationals
@@ -241,11 +246,11 @@ Find.Features <- function(Data,
       }
     }
   }
-  Data[,c("STREAM_UNDER","STREAM_NAME_1","STREAM_TYPE_1","STREAM_TRIB_1")] <- data.frame(c("",""),
-                                                                                         c("forked deer", "sandy"),
-                                                                                         c("river","creek"),
-                                                                                         c("south fork","left fork"),
-                                                                                         stringsAsFactors = FALSE)
+  # Data[,c("STREAM_UNDER","STREAM_NAME_1","STREAM_TYPE_1","STREAM_TRIB_1")] <- data.frame(c("",""),
+                                                                                         # c("forked deer", "sandy"),
+                                                                                         # c("river","creek"),
+                                                                                         # c("south fork","left fork"),
+                                                                                         # stringsAsFactors = FALSE)
   rm(Feature.Detect, envir = .GlobalEnv)
   return(Data) #---------
 }

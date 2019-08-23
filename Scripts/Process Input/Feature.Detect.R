@@ -30,14 +30,22 @@ Feature.Detect <- function(Data,             # must contain col.in and cols.out
       else{
         matches <- sapply(df.patterns[key.index[i,],col], function(pat) regmatches(Data[i,col.in],regexpr(pat,Data[i,col.in])))
       }
+      print(matches)
       matches <- c(matches, rep(NA_character_, n.dup.cols-length(matches)))
-      
+      print(matches)
       Data[i,cols.out[grepl(col,cols.out)]] <- matches
       if(DELETE){
-        p <- ifelse(length(patterns[key.index[i,]])==1,
-                    df.patterns[key.index[i,],col],
-                    paste0("(",paste0(df.patterns[key.index[i,],col], collapse=")|("),")"))
-        Data[i,col.in] <- str_squish(sub(p,"",Data[i,col.in],ignore.case = TRUE))
+        if(length(patterns[key.index[i,]])==1) p <- df.patterns[key.index[i,],col]
+        else{
+          p <- df.patterns[key.index[i,],col]
+          if(grepl(p[1],p[2])|grepl(p[2],p[1])){
+            p <- p[which.max(nchar(p))]
+          }
+          else{
+            p <- paste0("(",paste0(p, collapse=")|("),")")
+            }
+        }
+        Data[i,col.in] <- str_squish(gsub(p,"",Data[i,col.in],ignore.case = TRUE))
       }
     }
     }
