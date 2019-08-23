@@ -207,6 +207,16 @@ Find.Features <- function(Data,
                                            COL, 
                                            n.dup.cols = 1, 
                                            DELETE = TRUE)
+          localities$PATTERN1 <- paste0("co[unty.]? of ",tolower(df.Counties[df.Counties$STFIPS_C == state, "COUNTY_NAME"]),"\\>")
+          localities$LOC      <- localities$PATTERN1
+          if(VERBOSE) print("removing county names (strict)")
+          Data[rows,COL] <- Feature.Detect(Data[rows,], 
+                                           localities, 
+                                           "NONE", 
+                                           COL, 
+                                           COL, 
+                                           n.dup.cols = 1, 
+                                           DELETE = TRUE)
         }
       }
     }
