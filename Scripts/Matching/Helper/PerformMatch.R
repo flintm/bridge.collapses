@@ -37,13 +37,17 @@ MatchColNames <-       list(bin     = c("BIN","BIN_NUM","BIN_NUM"),
                             road    = c("LOC","ROUTE_NAME_1", "ROAD_TYPE", "ROUTE_NAME_1"),
                             route   = c("ROUTE_NAME_1", "ROUTE_NAME_1", "ROUTE_NAME_2","ROUTE_TYPE_1", "ROUTE_TYPE_2"),
                             gage    = c("STREAM_NAME", "STREAM_TYPE"),
-                            dam     = c("STREAM_NAME", "STREAM_TYPE"))
+                            dam     = c("STREAM_NAME", "STREAM_TYPE"),
+                            stream_aux = c("STREAM_TRIB_1","STREAM_TRIB_2"),
+                            loc_aux = c("LOC_AUX_1","LOC_AUX_2","LOC_AUX_1","LOC_AUX_2"))
 MatchTargetColNames <- list(bin     = c("STRUCTURE_NUMBER_008","BIN_NUM", "ROUTE_NUM"),
                             stream  = rep("STREAM_UNDER", 5),
                             road    = c("ROAD", "ROAD", "ROUTE_NUM","ROAD","ROAD","ROAD"),
                             route   = c("ROUTE_NUM","ROAD","ROUTE_NUM", "ROUTE_PREFIX_ITEM5B", "ROUTE_PREFIX_ITEM5B"), #ITEM5D
                             gage    = c("STREAM_NAME_GAGE", "STREAM_TYPE_GAGE"),
-                            dam     = c("STREAM_NAME_DAM", "STREAM_TYPE_DAM"))
+                            dam     = c("STREAM_NAME_DAM", "STREAM_TYPE_DAM"),
+                            stream_aux = c("STREAM_UNDER","STREAM_UNDER"),
+                            loc_aux = c("ROAD","ROAD","LOC","LOC"))
 
 MatchColOrig   <- MatchColOrigNames[[MatchType]]
 MatchTypes     <- MatchColNames[[MatchType]]
@@ -62,8 +66,8 @@ if(is.na(CandidateMatchRows)){
 }
 
 # Loop to perform matches, from highest quality to lowest---------------------------------
+Marker <- "1"
 for (i in 1:nMatchTypes){
-  Marker <- i
   if(is.na(MatchEntry[1,MatchTypes[i]]) | MatchEntry[1,MatchTypes[i]] == "" | is.null(MatchEntry[1,MatchTypes[i]])){ 
     BoolRowMatch <- FALSE
     next
@@ -132,17 +136,34 @@ for (i in 1:nMatchTypes){
       }
       else BoolRowMatch <- FALSE
     }
-  if(any(BoolRowMatch)) break
+    # decide whether to continue to second data type ----- non-restrictive to start
+  if(any(BoolRowMatch)){
+  if(substr(MatchMarker,2,2) %in% MatchQual[c("absolute", "exact"))
+    Candidates <- MatchRowNames[BoolRowMatch]
+    if(i>1){
+      new        <- Candidates[sapply(Candidates, function(i) grepl(i, CandidateMatchRows))]
+      old        <- Candidates[!(Candidates %in% new)]
+      old.pos    <- grep(sub("[[alnum]]+[.]","",CandidateMatchRows) %in% old))
+      CandidateMatchRows[old.pos] <- paste0(MatchMarker, sub("[.][[:graph:]]+","",CandidateMatchRows[old.pos]), MatchSuffix,".",old)
+    }
+    Candidates <- paste0(MatchMarker, MatchSuffix, ".",new)
+    CandidateMatchRows <- c(CandidateMatchRows, Candidates)
+  	break
+  }
+  else{
+    Candidates <- MatchRowNames[BoolRowMatch]
+    Candidates <- paste0(MatchMarker, MatchSuffix, ".",Candidates)
+  }
+  else Marker <- as.character(as.integer(Marker) + 1)
 }
 
 # record matches: return -nMatchRows if no or very many matches ------
-CandidateMatchRows <- MatchRowNames[BoolRowMatch]
 nMatches <- length(CandidateMatchRows)
 if(nMatches==0 | nMatches > capCandPct*nMatchRows | nMatches > capCandN){
   CandidateMatchRows <- as.character(-1*nMatchRows)
   if(VERBOSE) print("    No matches found")
 }
-else CandidateMatchRows <- paste0(MatchMarker, MatchSuffix, ".",CandidateMatchRows)
+else 
 return(CandidateMatchRows)
 }
 
