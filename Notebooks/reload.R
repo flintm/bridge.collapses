@@ -1,6 +1,6 @@
 load(file.path("Data","Input","Fail.Example.RData"))
 row.names(df.Fail) <- as.character(df.Fail$ID)
-df.Fail <- df.Fail[df.Fail$ID %in% EXAMPLE_ID,]
+# df.Fail <- df.Fail[df.Fail$ID %in% EXAMPLE_ID,]
 
 # loaded to clean
 df.Fail.l  <- df.Fail

@@ -102,6 +102,7 @@ require(rjson)
                         buch        = c("buchanan", "buch"),
                         geary       = c("geary" , "greary"),
                         pottawatomie   = c("pottawatomie", "pottawotamie"),
+                        sacramento     = c("sacramento", "sacremento"),
                         saint_clair    = c("saint clair", "st. clair", "st clair"),
                         saint_louis    = c("saint louis", "st louis", "st. louis"),
                         saint_charles  = c("saint charles", "st. charles", "st charles"),
@@ -151,10 +152,10 @@ require(rjson)
                       ne     = c("northeast", "ne"), 
                       sw     = c("southwest", "sw"), 
                       se     = c("southeast", "se"), 
-                      sb     = c("southbound", "sb"), 
-                      nb     = c("northbound", "nb"), 
-                      eb     = c("eastbound", "eb"), 
-                      wb     = c("westbound", "wb"))
+                      sb     = c("southbound", "sb", "s"), 
+                      nb     = c("northbound", "nb", "n"), 
+                      eb     = c("eastbound", "eb", "e"), 
+                      wb     = c("westbound", "wb", "w"))
   save(ls.CardKeys, file = file.path("Data","Input","Dictionaries","ls.CardKeys.RData"))
   cat(toJSON(ls.CardKeys), file = file.path("Data","Input","Dictionaries","CardKeys.json"))
   
@@ -248,6 +249,8 @@ require(rjson)
   #                        function(i) sub("^\\[\\[\\:space\\:\\]\\]","",ls.TribKeys[[i]]))
   ls.TribKeys  <- str_squish(gsub("\\<\\>","",ls.TribKeys,fixed = TRUE))
   ls.TribKeys  <- ls.TribKeys[grepl("\\<", sub("\\<","",ls.TribKeys, fixed = TRUE), fixed = TRUE)]
+  ls.TribKeys  <- unlist(ls.TribKeys)
+  ls.TribKeys  <- c(ls.TribKeys, paste0("\\<",c("n","s","e","w","m","r","l"),"f\\>"))
   # for (i in 1:length(Cards)){
   #   for (j in 1:length(Tribs)){
   #     ls.TribKeys[[paste0(names(Cards)[i],"_",names(Tribs)[j])]] <- paste(Cards[[i]],Tribs[[j]])

@@ -13,7 +13,7 @@ PreProcess.Structure.Fields <- function(Data,             # Supported option is 
   
   # clean up and separate material and support type (simple or continuous)
   Data[,c("MATER","TYPE_STRUCT")] <- sapply(c(MAT,TYPE), function(j) str_squish(Data[,j]))
-  cols <- c("SUPPORT","ITEM43A","ITEM43A_ALT","ITEM43B","ITEM43B_ALT")
+  cols <- c("SUPPORT","ITEM43A_1","ITEM43A_2","ITEM43B_1","ITEM43B_2")
   Data[,cols] <-  NA_character_
 
   # FIX ERRORS AND CROSS-LISTINGS----------
@@ -111,14 +111,14 @@ PreProcess.Structure.Fields <- function(Data,             # Supported option is 
                          "1" = which(key.index))
     type <- names(ls.ITEM43B.Ont)[j]
     for (i in match.keys){
-      col  <- ifelse(is.na(Data[nonEmptyRows[i],"ITEM43B"]),
-                     "ITEM43B",
-                     "ITEM43B_ALT")
+      col  <- ifelse(is.na(Data[nonEmptyRows[i],"ITEM43B_1"]),
+                     "ITEM43B_1",
+                     "ITEM43B_2")
       Data[nonEmptyRows[i],col] <- type
     }
   }
   # for truss and arch, ALT may be duplicative
-  Data[grepl("_",Data$ITEM43B_ALT),"ITEM43B_ALT"] <- NA_character_
+  Data[grepl("_",Data$ITEM43B_2),"ITEM43B_2"] <- NA_character_
   if(VERBOSE) print("Finished assignment of ITEM43B")
   
   # ASSIGN MATERIAL BASED ON NBI CLASSIFICATION (INCLUDES SUPPORT INFORMTION)-------
@@ -130,9 +130,9 @@ PreProcess.Structure.Fields <- function(Data,             # Supported option is 
                          "2" = which(apply(key.index, MARGIN = 1, any)),
                          "1" = which(key.index))
     for (i in match.keys){
-      col  <- ifelse(is.na(Data[nonEmptyRows[i],"ITEM43A"]),
-                     "ITEM43A",
-                     "ITEM43A_ALT")
+      col  <- ifelse(is.na(Data[nonEmptyRows[i],"ITEM43A_1"]),
+                     "ITEM43A_1",
+                     "ITEM43A_2")
       # first tackle those with support explicitly described in NBI and for rows where included
       if(j %in% matsWithSupport){
         if(!is.na(Data[nonEmptyRows[i],"SUPPORT"])){

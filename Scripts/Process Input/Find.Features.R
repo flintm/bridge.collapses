@@ -5,10 +5,10 @@ Find.Features <- function(Data,
 
   ## Determine which types of features are to be detected
   Rows  <- rownames(Data)
-  ls.cols.out <- list(COUNTY = as.vector(sapply(1:2, 
+  ls.cols.out <- list(COUNTY = as.vector(sapply(1:3, 
                                                 function(i) 
                                                   paste0(c("COUNTY_NAME_","FIPS_"),i))),
-                      CITY   = as.vector(sapply(1:2, 
+                      CITY   = as.vector(sapply(1:3, 
                                               function(i) 
                                                 paste0(c("CITY_NAME_","FIPS_FROM_CITY_","ANSICODE_","GNIS_ID_"),i))),
                       LOCATION = c("LOC_AUX_1","LOC_AUX_2","BRIDGE_NAME"),
@@ -20,7 +20,7 @@ Find.Features <- function(Data,
   
   ## Loop over features
   for(f in names(Features)){
-    if(VERBOSE) print(f)
+    if(VERBOSE) print(paste("CHECKING FEATURE:",f,"--------------"))
     COL        <- Features[f]
     cols.out   <- ls.cols.out[[f]]
     names.out  <- unique(sub("_[[:digit:]]+","",cols.out))
@@ -59,8 +59,9 @@ Find.Features <- function(Data,
           if(VERBOSE) print(paste("Checking for state-specific pattern",pattern,"in state:",df.States[state,"STATE_FULL"]))
           match.keys <- grep(pattern,Data[rows,COL])
           for(i in match.keys){
-            str <- regmatches(Data[rows[i],COL],regexpr(pattern,Data[rows[i],COL]))
+            # str <- regmatches(Data[rows[i],COL],regexpr(pattern,Data[rows[i],COL]))
             if(!is.na(ls.DOT.Keys[[state]][[f]]["MOVE"])){ 
+              str <- regmatches(Data[rows[i],COL],regexpr(ls.DOT.Keys[[state]][[f]]["MVPTRN"],Data[rows[i],COL]))
               Data[rows[i],ls.DOT.Keys[[state]][[f]]["MOVE"]] <- ifelse(!is.na(Data[rows[i],ls.DOT.Keys[[state]][[f]]["MOVE"]]),
                                                                         paste(Data[rows[i],ls.DOT.Keys[[state]][[f]]["MOVE"]],
                                                                               str),
@@ -77,29 +78,70 @@ Find.Features <- function(Data,
                                                                                                                  
             if(!is.na(ls.DOT.Keys[[state]][[f]]["SUB"])){ 
               if(VERBOSE) print(paste('Deleted in col',COL))
-              Data[rows[i],COL] <- sub(ls.DOT.Keys[[state]][[f]][["SUBPTRN"]],ls.DOT.Keys[[state]][[f]][["SUB"]],Data[rows[i],COL])
+              Data[rows[i],COL] <- sub(ls.DOT.Keys[[state]][[f]]["SUBPTRN"],ls.DOT.Keys[[state]][[f]]["SUB"],Data[rows[i],COL])
             }
           }
         } 
       }
-      # state-specific route naming -------
+      # state-specific and general route naming: strict -------
       if(f=="ROUTE"){
         ls.RteKeysState <- ls.RteKeys
         ls.RteKeysState$state <- tolower(df.States[state,"STATE_CODE"])
         ls.RteKeysState$statefull <- tolower(df.States[state,"STATE_FULL"])
-        
-        if(VERBOSE) print(paste("Checking for",tolower(f),"in state:",df.States[state,"STATE_FULL"]))
-        routes     <- data.frame(PATTERN1 = unlist(ls.RteKeysState), PATTERN2 = "", REGEX = TRUE)
-        routes$PATTERN1 <- paste0(routes$PATTERN1,"[[:space:]]?[[:punct:]]?[[:digit:]]+")
-        routes$ROUTE_NAME <- "[[:digit:]]+"
-        routes$ROUTE_TYPE <- unlist(ls.RteKeysState)
-        Data[rows,c(COL,cols.out)] <- Feature.Detect(Data[rows,], 
-                                                     routes, 
-                                                     "NONE", 
-                                                     COL, 
-                                                     cols.out, 
-                                                     n.dup.cols = n.dup.cols, 
-                                                     DELETE = TRUE)
+        rows <- Rows[Data$STFIPS==state & !is.na(Data[,COL]) & Data[,COL]!="" &
+                       (grepl("[[:digit:]]",Data[,COL]) | any(sapply(unlist(ls.RteKeysState),
+                                                                     function(r) grepl(r, Data[,COL]))))]
+        if(length(rows) > 0){
+          if(VERBOSE) print(paste("Checking for",tolower(f),"in state:",df.States[state,"STATE_FULL"]))
+          # full: route type (prefix), digit, and direction
+          rows   <- rows[grepl("[[:digit:]]+[[:space:]]?[nsew]{1}",Data[rows,COL])]
+          if(length(rows) > 0){
+            if(VERBOSE) print("Looking for route number with direction (nb/sb/eb/wb)")
+            routes <- as.vector(sapply(unlist(ls.CardKeys[grepl("b",names(ls.CardKeys))]),
+                                       function(card)
+                                         paste0(unlist(ls.RteKeysState),
+                                                "[[:space:]]?[[:punct:]]?[[:space:]]?[[:digit:]]+[[:space:]]?",
+                                                card,"\\>")))
+            routes     <- data.frame(PATTERN1 = routes, PATTERN2 = "", REGEX = TRUE, stringsAsFactors = FALSE)
+            routes$ROUTE_NAME <- "[[:digit:]]+"
+            routes$ROUTE_TYPE <- unlist(ls.RteKeysState)
+            routes$ROUTE_DIRECTION <- sapply(1:nrow(routes), function(i) 
+              gsub("[[:punct:]]","",regmatches(routes[i,"PATTERN1"],
+                                               regexpr("([snew]{1}[ouraseth]{0,4}[b]{1}[ound]{0,4})|([snew]{1}[\\\\>]{2})",
+                                                       routes[i,"PATTERN1"],
+                                                       perl = TRUE, useBytes = TRUE))))
+            routes     <- routes[order(nchar(routes$PATTERN1)),]
+            Data[rows,c(COL,cols.out)] <- Feature.Detect(Data[rows,], 
+                                                         routes, 
+                                                         "NONE", 
+                                                         COL, 
+                                                         cols.out, 
+                                                         n.dup.cols = n.dup.cols, 
+                                                         DELETE = TRUE)
+          }
+          
+          # route type and digit only
+          rows <- Rows[Data$STFIPS==state & !is.na(Data[,COL]) & Data[,COL]!="" &
+                         (grepl("[[:digit:]]",Data[,COL]) & 
+                            apply(sapply(unlist(ls.RteKeysState),
+                                         function(r) grepl(r, Data[,COL])),
+                                  MARGIN = 1, any))]
+          if(length(rows) > 0){
+            if(VERBOSE) print("Looking for route number without direction")
+            routes     <- data.frame(PATTERN1 = unlist(ls.RteKeysState), PATTERN2 = "", REGEX = TRUE)
+            routes$PATTERN1 <- paste0(routes$PATTERN1,"[[:space:]]?[[:punct:]]?[[:space:]]?[[:digit:]]+\\>")
+            routes$ROUTE_NAME <- "[[:digit:]]+"
+            routes$ROUTE_TYPE <- unlist(ls.RteKeysState)
+            routes     <- routes[order(nchar(routes$PATTERN1)),]
+            Data[rows,c(COL,cols.out)] <- Feature.Detect(Data[rows,], 
+                                                         routes, 
+                                                         "NONE", 
+                                                         COL, 
+                                                         cols.out, 
+                                                         n.dup.cols = n.dup.cols, 
+                                                         DELETE = TRUE)
+          }
+        }
       }
     }
     
@@ -213,7 +255,7 @@ Find.Features <- function(Data,
                          MARGIN = 1, any)]
       if(length(rows)>0){
         if(VERBOSE) print("Checking for tributaries, forks, branches")
-        tribs <- data.frame(PATTERN1 = unlist(ls.TribKeys), PATTERN2 = "", REGEX = TRUE, stringsAsFactors = FALSE)
+        tribs <- data.frame(PATTERN1 = ls.TribKeys, PATTERN2 = "", REGEX = TRUE, stringsAsFactors = FALSE)
         tribs$STREAM_TRIB <- tribs$PATTERN1
         tribs <- tribs[order(nchar(tribs$PATTERN1),decreasing = TRUE),]
         Data[rows,c(COL,"STREAM_TRIB_1","STREAM_TRIB_2")] <- Feature.Detect(Data[rows,], 
@@ -226,21 +268,33 @@ Find.Features <- function(Data,
       }
     }
     
+    # road name, type, direction, aux  ------
+    if(f=="ROAD"){
+      rows <- Rows[!is.na(Data[,COL]) & Data[,COL]!=""]
+      if(length(rows)>0){
+        roads <- unlist(ls.RoadKeys)
+      }
+    }
+    
     # return to state-specific for strict cleanup of city and county -------------
-    if(f %in% c("LOCATION", "STREAM")){
+    if(f %in% c("LOCATION", "STREAM", "BRIDGE")){
       for(state in unique(Data$STFIPS)){
       # clean up explicitly named counties or cities
       rows  <- Rows[!is.na(Data[,COL]) & Data[,COL]!="" & Data$STFIPS==state & 
                       (!is.na(Data[,"FIPS_1"]) | !is.na(Data[,"ANSICODE_1"]))] 
       if(length(rows)>0){
         # end with county, or county and not county road/route ------
+        rows  <- Rows[!is.na(Data[,COL]) & Data[,COL]!="" & Data$STFIPS==state & 
+                        !is.na(Data[,"FIPS_1"]) & sapply(Rows, function(i) grepl(Data[i,"COUNTY_NAME_1"],Data[i,COL]))]
+        if(length(rows)>0){
         localities <- data.frame(PATTERN1 = tolower(df.Counties[df.Counties$STFIPS_C == 
                                                                   state, "COUNTY_NAME"]),
                                  PATTERN2 = "",
                                  REGEX   = TRUE, stringsAsFactors = FALSE)
         notMatch   <- switch(f,
-                             "LOCATION" =  " (?!((road)|(rd[.]?)|(ro[.]?$)|(route)|(rt[e.]?))))",
-                             "STREAM"   =  " (?!((stream)|(str[.]?)|(f[or]?k[.]?$)|(route)|(creek))))")
+                             "LOCATION" = " (?!((road)|(rd[.]?)|(ro[.]?$)|(route)|(rt[e.]?))))",
+                             "STREAM"   = " (?!((stream)|(str[.]?)|(f[or]?k[.]?$)|(route)|(creek))))",
+                             "BRIDGE"   = "  (?!((bridge)|(br[.]?))))")
         localities$PATTERN1 <- paste0("(",
                                       localities$PATTERN1,
                                       "\\Z)|(",
@@ -265,11 +319,9 @@ Find.Features <- function(Data,
                                          useBytes = TRUE,
                                          n.dup.cols = 1, 
                                          DELETE = TRUE)
-      }
+        }
       # county of ----
-      rows  <- Rows[!is.na(Data[,COL]) & Data[,COL]!="" & 
-                      Data$STFIPS==state & !is.na(Data[,"FIPS_1"]) &
-                      grepl("\\<of\\>",Data[,COL])] 
+      rows  <- rows[grepl("\\<of\\>",Data[rows,COL])] 
       if(length(rows)>0){
         localities$PATTERN1 <- paste0("co[unty.]? of ",
                                       tolower(df.Counties[df.Counties$STFIPS_C 
@@ -287,7 +339,7 @@ Find.Features <- function(Data,
       # city of ----
       rows  <- Rows[!is.na(Data[,COL]) & Data[,COL]!="" & Data$STFIPS==state & 
                       !is.na(Data[,"ANSICODE_1"]) &
-                      grepl("\\<of\\>",Data[,COL])] 
+                      grepl("\\<of\\>",Data[,COL]) & sapply(Rows, function(i) grepl(Data[i,"CITY_NAME_1"],Data[i,COL]))] 
       if(length(rows)>0){
         localities <- data.frame(PATTERN1 = as.vector(sapply(
           unlist(ls.JurisKeys[c("city", "town", 
@@ -306,7 +358,9 @@ Find.Features <- function(Data,
                                          DELETE = TRUE)
       }
       # __ city or __ at end of line -----
-      rows  <- Rows[!is.na(Data[,COL]) & Data[,COL]!="" & Data$STFIPS==state & !is.na(Data[,"ANSICODE_1"])] 
+      rows  <- Rows[!is.na(Data[,COL]) & Data[,COL]!="" & Data$STFIPS==state & 
+                      !is.na(Data[,"ANSICODE_1"]) &
+                      sapply(Rows, function(i) grepl(Data[i,"CITY_NAME_1"],Data[i,COL]))]
       if(length(rows)>0){
         localities <- data.frame(PATTERN1 = as.vector(sapply(
           unlist(ls.JurisKeys[c("city", "town", 
@@ -336,7 +390,10 @@ Find.Features <- function(Data,
       
       # may be excess punctuation and spacing, clean up
       Data[,COL] <- str_squish(gsub("[[:punct:]]"," ",Data[,COL]))
+      }
     }
+    
+    # now detecting feature name and type
   }
   rm(Feature.Detect, envir = .GlobalEnv)
   return(Data) #---------
@@ -407,70 +464,6 @@ Find.Features <- function(Data,
 #   }
 #   
 
-#   # find alphabet route numbers (i.e., supplemental or secondary routes in Missouri)
-#   HasRteTypeBool <- sapply(paste("\\<",RteKeys,"\\>[[:punct:]]?[[:space:]]?\\<[[:alpha:]]{1,2}\\>",sep=""), grepl, FailDataFrame[rowsForState,"ROAD_NAME"])
-#   if (length(rowsForState)==1) HasRteTypeBool <- t(HasRteTypeBool) 
-#   RowsWithRteTypeIndex   <- which(rowSums(HasRteTypeBool) != 0)
-#   RowsWithRteTypeMatch   <- rowsForState[RowsWithRteTypeIndex]
-#   nRowsWithMatch         <- length(RowsWithRteTypeMatch)
-#   if (nRowsWithMatch >= 1){
-#     MatchedRteTypeIndex  <- sapply(1:length(RowsWithRteTypeMatch), function(i) max(which(HasRteTypeBool[RowsWithRteTypeIndex[i],])))
-#     if (class(MatchedRteTypeIndex) == "list") MatchedRteTypeIndex <- unlist(MatchedRteTypeIndex)
-#     for (i in 1:nRowsWithMatch){
-#       RteType <- RteKeys[MatchedRteTypeIndex[i]]
-#       rte_start   <- regexpr(paste("\\<",RteType,"\\>[[:punct:]]?[[:space:]]?\\<[[:alpha:]]{1,2}\\>",sep=""),FailDataFrame[RowsWithRteTypeMatch[i],"ROAD_NAME"])
-#       rte_last    <- rte_start + attr(rte_start, "match.length") - 1
-#       rte_temp    <- substr(FailDataFrame[RowsWithRteTypeMatch[i],"ROAD_NAME"], rte_start, rte_last)
-#       FailDataFrame[RowsWithRteTypeMatch[i],"ROUTE_NO"]    <- gsub("[[:space:]]","",gsub("[[:punct:]]","",substr(rte_temp,nchar(RteType)+1,nchar(rte_temp))))
-#       FailDataFrame[RowsWithRteTypeMatch[i], "RTE_PREFIX"] <- ls.RteKeysState[[RteKeyIndex[MatchedRteTypeIndex[i]]]][1]
-#       FailDataFrame[RowsWithRteTypeMatch[i], "ROAD_NAME"]  <- paste(substr(FailDataFrame[RowsWithRteTypeMatch[i], "ROAD_NAME"],1,rte_start-1),substr(FailDataFrame[RowsWithRteTypeMatch[i], "ROAD_NAME"],rte_last+1,nchar(FailDataFrame[RowsWithRteTypeMatch[i], "ROAD_NAME"])), sep=", ")
-#     }
-#   }  
-#   
-#   # ROUTE DIRECTION - GRAB FROM ROUTE NO, THEN FROM OTHER PLACES 
-#   HasDirectionBool <- sapply(paste("[[:digit:]]",CardinalKeys,sep=""), grepl, FailDataFrame[rowsForState,"ROUTE_NO"])
-#   if (length(rowsForState)==1) HasDirectionBool <- t(as.vector(unlist(HasDirectionBool))) 
-#   RowsWithDirectionRowsWithMatchIndex <- which(rowSums(HasDirectionBool) != 0)
-#   RowsWithDirectionRowsWithMatch <- rowsForState[RowsWithDirectionRowsWithMatchIndex]
-#   nRowsWithMatch <- length(RowsWithDirectionRowsWithMatch)
-#   if (length(RowsWithDirectionRowsWithMatch)>=1){
-#     MatchedDirectionIndex  <- sapply(1:nRowsWithMatch, function(i) min(which(HasDirectionBool[RowsWithDirectionRowsWithMatchIndex[i],])))     
-#     FailDataFrame[RowsWithDirectionRowsWithMatch,"RTE_DIRECTION"]   <- sapply(1:nRowsWithMatch, function(i) ls.CardinalKeys[[CardinalKeyIndex[MatchedDirectionIndex[i]]]][1])
-#     FailDataFrame[RowsWithDirectionRowsWithMatch,"ROUTE_NO"]   <- sapply(1:nRowsWithMatch, function(i) gsub(paste(CardinalKeys[MatchedDirectionIndex[i]],"\\>",sep=""),"", FailDataFrame[RowsWithDirectionRowsWithMatch[i],"ROUTE_NO"]))
-#   }
-#   # check for nb/wb/eb/sb in ROAD_NAME
-#   HasDirectionBool <- sapply(paste("\\<",CardBoundKeys,"\\>",sep=""), grepl, FailDataFrame[rowsForState,"ROAD_NAME"])
-#   if (length(rowsForState)==1) HasDirectionBool <- t(as.vector(unlist(HasDirectionBool))) 
-#   RowsWithDirectionRowsWithMatchIndex <- which(rowSums(HasDirectionBool) != 0)
-#   RowsWithDirectionRowsWithMatch <- rowsForState[RowsWithDirectionRowsWithMatchIndex]
-#   nRowsWithMatch <- length(RowsWithDirectionRowsWithMatch)
-#   if (length(RowsWithDirectionRowsWithMatch)>=1){
-#     MatchedDirectionIndex  <- sapply(1:nRowsWithMatch, function(i) min(which(HasDirectionBool[RowsWithDirectionRowsWithMatchIndex[i],])))     
-#     FailDataFrame[RowsWithDirectionRowsWithMatch,"RTE_DIRECTION"]   <- sapply(1:nRowsWithMatch, function(i) ls.CardinalKeys[[CardBoundKeyIndex[MatchedDirectionIndex[i]]]][1])
-#     FailDataFrame[RowsWithDirectionRowsWithMatch,"ROAD_NAME"]   <- sapply(1:nRowsWithMatch, function(i) gsub(paste("\\<",CardBoundKeys[MatchedDirectionIndex[i]],"\\>",sep=""),"", FailDataFrame[RowsWithDirectionRowsWithMatch[i],"ROAD_NAME"]))
-#   }
-#   
-
-#   # RIVER DATA - MIDDLE FORK, ETC
-#   HasTribStringBool <- sapply(paste("\\<",TribRelatKeys,"\\>",sep=""), grepl, gsub("^ *|(?<= ) | *$", "", gsub("[[:punct:]]"," ",FailDataFrame[rowsForState, "ROAD_NAME"]), perl=TRUE))
-#   if (nRowsState==1) HasTribStringBool <- t(HasTribStringBool)
-#   RowsWithTribIndex <- which(rowSums(HasTribStringBool) != 0)
-#   RowsWithTribMatch <- rowsForState[RowsWithTribIndex]
-#   nRowsWithMatch <- length(RowsWithTribMatch)
-#   if (nRowsWithMatch > 0){
-#     MatchedTribIndex    <- sapply(1:nRowsWithMatch, function(i) min(which(HasTribStringBool[RowsWithTribIndex[i],])))
-#     # nRowsWithMatchesRow <- sapply(1:nRowsWithMatch, function(i) length(MatchedTribIndex[[i]]))
-#     for (i in 1:nRowsWithMatch){
-#       temp_entry  <- gsub("^ *|(?<= ) | *$", "", gsub("[[:punct:]]","",FailDataFrame[RowsWithTribMatch[i],"ROAD_NAME"]), perl=TRUE)
-#       match_start <- regexpr(paste("\\<",TribRelatKeys[MatchedTribIndex[i]],"\\>",sep=""),temp_entry)
-#       match_last  <- match_start + attr(match_start,"match.length") - 1
-#       HasRoadBool   <- sapply(paste("\\<",RoadKeys,"\\>",sep=""), grepl, substr(temp_entry,match_last+1,match_last+5))
-#       if (all(!HasRoadBool)){
-#         FailDataFrame[RowsWithTribMatch[i],"STREAM_TRIB"] <- paste(FailDataFrame[RowsWithTribMatch[i],"STREAM_TRIB"], TribRelatKeys[MatchedTribIndex[i]], "-", sep = " ")
-#         FailDataFrame[RowsWithTribMatch[i],"ROAD_NAME"] <- gsub(paste("\\<",TribRelatKeys[MatchedTribIndex[i]],"\\>",sep=""),"",gsub("^ *|(?<= ) | *$", "",gsub("[[:punct:]]"," ",FailDataFrame[RowsWithTribMatch[i],"ROAD_NAME"]),perl=TRUE))
-#       }
-#     }
-#   }
 #   
 #   # STREAM NAMES AS CAN BE INFERRED, REMOVE IF NO ROAD WORD
 #   HasStreamStringBool <- sapply(paste("[[:print:]]{3,}\\<",StreamKeys,"\\>",sep=""), grepl, FailDataFrame[rowsForState,"LOCATION"])  
@@ -484,28 +477,6 @@ Find.Features <- function(Data,
 #     for (i in 1:nRowsWithMatch){
 #       for (k in 1:nRowsWithMatchesRow[RowsWithStreamMatch[i]]){
 #         FailDataFrame[rowsForState[RowsWithStreamMatch[i]],LocProcessColsOut] <- GetAndRemoveLocationForStream(FailDataFrame[rowsForState[RowsWithStreamMatch[i]],LocProcessColsIn], StreamKeys[MatchedStreamIndex[[i]][k]], ls.StreamKeys[[StreamKeyIndex[MatchedStreamIndex[[i]][k]]]][1], LocProcessColsOut,ls.JurisdictionKeys, ls.RoadKeys, ls.StreamKeys)
-#       }
-#     }
-#   }
-#   print("    Finished stream (in location field) identification")
-#   
-#   
-#   # FINAL TRIBS CLEANUP
-#   HasTribStringBool <- sapply(paste("\\<",unlist(ls.TribsKeys),"\\>",sep=""), grepl, gsub("^ *|(?<= ) | *$", "", gsub("[[:punct:]]"," ",FailDataFrame[rowsForState, "ROAD_NAME"]), perl=TRUE))
-#   if (nRowsState==1) HasTribStringBool <- t(HasTribStringBool)
-#   RowsWithTribIndex <- which(rowSums(HasTribStringBool) != 0)
-#   RowsWithTribMatch <- rowsForState[RowsWithTribIndex]
-#   nRowsWithMatch <- length(RowsWithTribMatch)
-#   if (nRowsWithMatch > 0){
-#     MatchedTribIndex    <- sapply(1:nRowsWithMatch, function(i) min(which(HasTribStringBool[RowsWithTribIndex[i],])))
-#     for (i in 1:nRowsWithMatch){
-#       temp_entry  <- gsub("^ *|(?<= ) | *$", "", gsub("[[:punct:]]","",FailDataFrame[RowsWithTribMatch[i],"ROAD_NAME"]), perl=TRUE)
-#       match_start <- regexpr(paste("\\<",unlist(ls.TribsKeys)[MatchedTribIndex[i]],"\\>",sep=""),temp_entry)
-#       match_last  <- match_start + attr(match_start,"match.length") - 1
-#       HasRoadBool   <- sapply(paste("\\<",RoadKeys,"\\>",sep=""), grepl, substr(temp_entry,match_last+1,match_last+5))
-#       if (all(!HasRoadBool)){
-#         FailDataFrame[RowsWithTribMatch[i],"STREAM_TRIB"] <- paste(FailDataFrame[RowsWithTribMatch[i],"STREAM_TRIB"], unlist(ls.TribsKeys)[MatchedTribIndex[i]], "-", sep = " ")
-#         FailDataFrame[RowsWithTribMatch[i],"ROAD_NAME"] <- gsub(paste("\\<",unlist(ls.TribsKeys)[MatchedTribIndex[i]],"\\>",sep=""),"",gsub("^ *|(?<= ) | *$", "",gsub("[[:punct:]]"," ",FailDataFrame[RowsWithTribMatch[i],"ROAD_NAME"]),perl=TRUE))
 #       }
 #     }
 #   }

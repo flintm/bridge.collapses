@@ -8,8 +8,7 @@ Feature.Detect <- function(Data,               # must contain col.in and cols.ou
                            n.dup.cols = 1,     # when multiple matches are expected, increase value
                            DELETE  = TRUE,     # whether to delete identified string
                            VERBOSE = FALSE){
-  print("incoming to Feature.Detect")
-  print(Data[,col.in])
+  # print(paste("***incoming to Feature.Detect:",Data[,col.in]))
   ls.pattern.types <- list(NONE = c("","",""),
                            WORD = c("\\<","\\>",""),
                            COMPOUND = c("\\<","\\>","[[:punct:]]?[[:space:]]+\\<","\\>"))
@@ -39,24 +38,31 @@ Feature.Detect <- function(Data,               # must contain col.in and cols.ou
                                                perl = perl,
                                                useBytes = useBytes)))
       }
-      print("matches:")
-      print(paste(matches,collapse = "-"))
+      # print(paste("     matches:",paste(matches,collapse = "-")))
       if(length(matches) > n.dup.cols){
         if(matches[1]==matches[2]) matches <- matches[1] # assumes all are duplicated
-        if(grepl(matches[2],matches[1])) matches <- matches[1] # assumes all are substrings of first
+        else if(grepl(matches[2],matches[1]) | grepl(matches[1],matches[2])) matches <- matches[which.max(nchar(matches))] # assumes longest substring
+        else if(length(matches) > n.dup.cols) stop("not enough fields provided to contain all matches")
+      }
+      else{ # don't put in extraneous information, regardless
+        if(length(matches) == n.dup.cols & n.dup.cols > 1){
+          if(matches[1]==matches[2]) matches <- matches[1] # assumes all are duplicated
+          else if(grepl(matches[2],matches[1]) | grepl(matches[1],matches[2])) matches <- matches[which.max(nchar(matches))] # assumes longest substring
+        }
       }
       matches <- c(matches, rep(NA_character_, n.dup.cols-length(matches)))
-      print("matches consolidation")
-      print(paste(matches,collapse = "-"))
+      # print(paste("     matches consolidation:",paste(matches,collapse = "-")))
       Data[i,cols.out[grepl(col,cols.out) & !grepl(col.in,cols.out)]] <- matches
       
       # delete from string
       if(DELETE){
-        print("before and after deletion:")
-        print(Data[i, col.in])
         if(length(patterns[key.index[i,]])==1) p <- df.patterns[key.index[i,],col]
+        # print("one pattern only")}
         else{
-          p <- df.patterns[key.index[i,],col]
+          p <- as.character(df.patterns[key.index[i,],col])
+          # print("multiple patterns")
+          # print(class(p))
+          # print(paste("pattenrs are:", paste(p,collapse="-")))
           if(grepl(p[1],p[2],fixed = TRUE)|grepl(p[2],p[1], fixed = TRUE)){
             p <- p[which.max(nchar(p))]
           }
@@ -64,11 +70,12 @@ Feature.Detect <- function(Data,               # must contain col.in and cols.ou
             p <- paste0("(",paste0(p, collapse=")|("),")")
             }
         }
+        # print(paste("    with delete key:", p))
         Data[i,col.in] <- str_squish(gsub(p,"",Data[i,col.in],
                                           ignore.case = TRUE,
                                           perl = perl,
                                           useBytes = useBytes))
-        print(Data[i, col.in])
+        # print(paste("     after deletion:",Data[i, col.in]))
       }
     }
     }
