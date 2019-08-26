@@ -8,6 +8,7 @@ Feature.Detect <- function(Data,               # must contain col.in and cols.ou
                            n.dup.cols = 1,     # when multiple matches are expected, increase value
                            DELETE  = TRUE,     # whether to delete identified string
                            VERBOSE = FALSE){
+  print("incoming to Feature.Detect")
   print(Data[,col.in])
   ls.pattern.types <- list(NONE = c("","",""),
                            WORD = c("\\<","\\>",""),
@@ -38,13 +39,16 @@ Feature.Detect <- function(Data,               # must contain col.in and cols.ou
                                                perl = perl,
                                                useBytes = useBytes)))
       }
-      print(matches)
+      print("matches:")
+      print(paste(matches,collapse = "-"))
       if(length(matches) > n.dup.cols){
-        if(matches[1]==matches[2]) matches <- matches[1]
+        if(matches[1]==matches[2]) matches <- matches[1] # assumes all are duplicated
+        if(grepl(matches[2],matches[1])) matches <- matches[1] # assumes all are substrings of first
       }
       matches <- c(matches, rep(NA_character_, n.dup.cols-length(matches)))
-      print(matches)
-      Data[i,cols.out[grepl(col,cols.out)]] <- matches
+      print("matches consolidation")
+      print(paste(matches,collapse = "-"))
+      Data[i,cols.out[grepl(col,cols.out) & !grepl(col.in,cols.out)]] <- matches
       
       # delete from string
       if(DELETE){
