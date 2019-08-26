@@ -1,12 +1,14 @@
-Feature.Detect <- function(Data,             # must contain col.in and cols.out
-                           df.patterns,      # the main string to be matched
-                           type,             # pattern type to choose prefix and suffix for patterns, NONE, WORD, or COMPOUND
-                           col.in,           # field to be searched for pattern
-                           cols.out,         # fields to put identified features
-                           n.dup.cols = 1,   # when multiple matches are expected, increase value
-                           DELETE  = TRUE,   # whether to delete identified string
+Feature.Detect <- function(Data,               # must contain col.in and cols.out
+                           df.patterns,        # the main string to be matched
+                           type,               # pattern type to choose prefix and suffix for patterns, NONE, WORD, or COMPOUND
+                           col.in,             # field to be searched for pattern
+                           cols.out,           # fields to put identified features
+                           perl       = FALSE, # use perl in grepl
+                           useBytes   = FALSE, #
+                           n.dup.cols = 1,     # when multiple matches are expected, increase value
+                           DELETE  = TRUE,     # whether to delete identified string
                            VERBOSE = FALSE){
-  
+  print(Data[,col.in])
   ls.pattern.types <- list(NONE = c("","",""),
                            WORD = c("\\<","\\>",""),
                            COMPOUND = c("\\<","\\>","[[:punct:]]?[[:space:]]+\\<","\\>"))
@@ -17,7 +19,7 @@ Feature.Detect <- function(Data,             # must contain col.in and cols.out
                        df.patterns[,"PATTERN2"],
                        ls.pattern.types[[type]][3])
 
-  key.index      <- sapply(patterns,grepl,Data[,col.in],ignore.case=TRUE)
+  key.index      <- sapply(patterns,grepl,Data[,col.in],ignore.case=TRUE, perl = perl, useBytes = useBytes)
   dim(key.index) <- c(nrow(Data), length(patterns)) # force into matrix form if necessary
   match.keys     <- which(apply(key.index, MARGIN = 1, any))
   
@@ -28,24 +30,41 @@ Feature.Detect <- function(Data,             # must contain col.in and cols.out
         matches <- tolower(df.patterns[key.index[i,],col])
       }
       else{
-        matches <- sapply(df.patterns[key.index[i,],col], function(pat) regmatches(Data[i,col.in],regexpr(pat,Data[i,col.in])))
+        matches <- sapply(df.patterns[key.index[i,],col], 
+                          function(pat) 
+                            regmatches(Data[i,col.in],
+                                       regexpr(pat,Data[i,col.in],
+                                               ignore.case = TRUE,
+                                               perl = perl,
+                                               useBytes = useBytes)))
       }
       print(matches)
+      if(length(matches) > n.dup.cols){
+        if(matches[1]==matches[2]) matches <- matches[1]
+      }
       matches <- c(matches, rep(NA_character_, n.dup.cols-length(matches)))
       print(matches)
       Data[i,cols.out[grepl(col,cols.out)]] <- matches
+      
+      # delete from string
       if(DELETE){
+        print("before and after deletion:")
+        print(Data[i, col.in])
         if(length(patterns[key.index[i,]])==1) p <- df.patterns[key.index[i,],col]
         else{
           p <- df.patterns[key.index[i,],col]
-          if(grepl(p[1],p[2])|grepl(p[2],p[1])){
+          if(grepl(p[1],p[2],fixed = TRUE)|grepl(p[2],p[1], fixed = TRUE)){
             p <- p[which.max(nchar(p))]
           }
           else{
             p <- paste0("(",paste0(p, collapse=")|("),")")
             }
         }
-        Data[i,col.in] <- str_squish(gsub(p,"",Data[i,col.in],ignore.case = TRUE))
+        Data[i,col.in] <- str_squish(gsub(p,"",Data[i,col.in],
+                                          ignore.case = TRUE,
+                                          perl = perl,
+                                          useBytes = useBytes))
+        print(Data[i, col.in])
       }
     }
     }
