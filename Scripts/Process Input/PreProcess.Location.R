@@ -36,19 +36,19 @@ PreProcess.Location <- function(Data,
       
       if(DATA_SET=="FAIL"){
         # Special, variable duplicated county abbreviations
-        ls.GreenCounty <- sapply(df.States$STFIPS, function(s) df.Counties[df.Counties$STFIPS==s & 
+        ls.GreenCounty <- sapply(df.States$STFIPS_C, function(s) df.Counties[df.Counties$STFIPS_C==s & 
                                                                              grepl("green",df.Counties$COUNTY_NAME,ignore.case = TRUE),]$COUNTY_NAME,
                                  USE.NAMES = TRUE, simplify = FALSE)
         ls.GreenCounty <- ls.GreenCounty[sapply(1:length(ls.GreenCounty), function(i) length(ls.GreenCounty[[i]])>0)]
         ls.GreenCounty <- sapply(names(ls.GreenCounty), function(i) tolower(ls.GreenCounty[[i]][order(nchar(ls.GreenCounty[[i]]),ls.GreenCounty[[i]], decreasing = TRUE)]),
                                  simplify = FALSE, USE.NAMES = TRUE)
-        ls.WebCounty <- sapply(df.States$STFIPS, function(s) df.Counties[df.Counties$STFIPS==s & 
+        ls.WebCounty <- sapply(df.States$STFIPS_C, function(s) df.Counties[df.Counties$STFIPS_C==s & 
                                                                            grepl("web",df.Counties$COUNTY_NAME,ignore.case = TRUE),]$COUNTY_NAME,
                                USE.NAMES = TRUE, simplify = FALSE)
         ls.WebCounty <- ls.WebCounty[sapply(1:length(ls.WebCounty), function(i) length(ls.WebCounty[[i]])>0)]
         ls.WebCounty <- sapply(names(ls.WebCounty), function(i) tolower(ls.WebCounty[[i]][order(nchar(ls.WebCounty[[i]]),ls.WebCounty[[i]], decreasing = TRUE)]),
                                simplify = FALSE, USE.NAMES = TRUE)
-        ls.FredCounty <- sapply(df.States$STFIPS, function(s) df.Counties[df.Counties$STFIPS==s & 
+        ls.FredCounty <- sapply(df.States$STFIPS_C, function(s) df.Counties[df.Counties$STFIPS_C==s & 
                                                                             grepl("fred",df.Counties$COUNTY_NAME,ignore.case = TRUE),]$COUNTY_NAME,
                                 USE.NAMES = TRUE, simplify = FALSE)
         ls.FredCounty <- ls.FredCounty[sapply(1:length(ls.FredCounty), function(i) length(ls.FredCounty[[i]])>0)]
@@ -59,17 +59,19 @@ PreProcess.Location <- function(Data,
         StatesWithCounty <- unique(c(names(ls.GreenCounty), names(ls.WebCounty), names(ls.FredCounty)))
         for(k in StatesWithCounty){
           Counties <- list(green = ls.GreenCounty[[k]], web = ls.WebCounty[[k]], fred =ls.FredCounty[[k]])
-          Counties <- Counties[sapply(names(Counties), function(i) length(Counties[[i]])>0)]
+          Counties <- Counties[sapply(names(Counties), function(i) length(Counties[[i]])>0 & !is.null(Counties[[i]][1]))]
           for(j in names(Counties)){
             rowsForState <- Rows[Data$STFIPS == k]
             key.index    <- grepl(paste0("\\<",j,"[[:alpha:]]?\\>[[:punct:]]?[[:space:]]?\\<co"), Data[rowsForState,"TEMP"],ignore.case = TRUE)
             match.keys   <- which(key.index)
             for(i in match.keys){ # has a match to a partial county name
-              key.index  <- sapply(Counties[[j]], function(cn) grepl(paste0("\\<",cn,"[[:alpha:]]?\\>[[:punct:]]?[[:space:]]?\\<co"), 
+              print(paste("has a match in row:",rowsForState[i]))
+              key.index.2  <- sapply(Counties[[j]], function(cn) grepl(paste0("\\<",cn,"[[:alpha:]]?\\>[[:punct:]]?[[:space:]]?\\<co"), 
                                                                      Data[rowsForState[i],"TEMP"],ignore.case = TRUE))
-              no.match   <- which(!key.index)
+              no.match   <- which(!key.index.2)
               for(n in no.match){ # does not have a full county name
                 if(length(no.match)==1){ # only one matching county, safe to fill in
+                  print(paste("supposedly subbing county name for row:",rowsForState[i]))
                   Data[rowsForState[n],"TEMP"] <- sub(paste0("\\<",j,"[[:alpha:]]?\\>[[:punct:]]?[[:space:]]?\\<co[unty]?[[:punct:]]?"), 
                                                       paste(Counties[[j]][1],"county"),
                                                       Data[rowsForState[i],"TEMP"],

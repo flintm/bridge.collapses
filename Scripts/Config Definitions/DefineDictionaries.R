@@ -114,7 +114,8 @@ require(rjson)
                         valencia       = c("valencia", "velencia"),
                         bedford        = c("bedford", "beford"),
                         louisa         = c("louisa", "lousia"),
-                        mercer         = c("mercer", "mercert"))
+                        mercer         = c("mercer", "mercert"),
+                        cattaraugus    = c("cattaraugus", "catt"))
   save(ls.CountyKeys, file = file.path("Data","Input","Dictionaries","ls.CountyKeys.RData"))
   cat(toJSON(ls.CountyKeys), file = file.path("Data","Input","Dictionaries","CountyKeys.json"))
   
@@ -134,7 +135,7 @@ require(rjson)
                        bismarck       = c("bismarck", "bismark"),
                        saint_ann      = c("saint ann", "st. ann", "st ann"),
                        saint_john     = c("saint john", "st. john", "st john"),
-                       saint_helen   = c("saint helens","st. helen's","saint helen", "st. helen", "st helen"),
+                       saint_helen   = c("saint helens","st. helen's","st. helens","saint helen", "st. helen", "st helen"),
                        nicolaus       = c("nicolaus", "nicholaus"),
                        denison        = c("denison", "denisen"))
   
@@ -325,8 +326,8 @@ require(rjson)
                        "1304" = c("s4\\&5","s4\\-5","LOC"),
                        "1061" = c("razrhon","razor hone","LOC", "STREAM"),
                        "1557" = c("\\(","","LOC"),
-                       "218"  = c("sf-oak", "san francisco oakland","LOC"),
-                       "240"  = c("sf-oak", "san francisco oakland","LOC"),
+                       "218"  = c("sf-oak bay br", "san francisco oakland bay bridge","LOC"),
+                       "240"  = c("sf-oak bay br", "san francisco oakland bay bridge","LOC"),
                        "1331" = c("rcb", "reinforced concrete box culvert", "MAT"),
                        "1191" = c("pend.","pendleton", "LOC"),
                        "1269" = c("balt co.", "baltimore county ", "LOC"))

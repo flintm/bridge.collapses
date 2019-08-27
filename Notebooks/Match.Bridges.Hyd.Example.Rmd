@@ -298,7 +298,7 @@ I analyzed the quality of the entries for each bridge and field to determine the
 # remove unneeded rows 
 if(REDUCE[["Fail"]]["Example"]) df.Fail <- df.Fail[df.Fail$ID %in% EXAMPLE_ID,]
 if(REDUCE[["NBI"]]["States"]){
-  MatchStates <- unique(df.Fail[,paste0('STFIPS')])
+  MatchStates <- unique(df.Fail$STFIPS)
   df.NBI  <- df.NBI[df.NBI$STFIPS %in% MatchStates,]
   rm(MatchStates)
 }
