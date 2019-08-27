@@ -75,7 +75,7 @@ ls.DOT.Keys <-list("29" = list(ROUTE    = c(PATTERN = "(\\<rt[e.]{0,2} [[:alpha:
                                             MOVE    = "BRIDGE_NAME",
                                             MVPTRN  = "[[:alpha:]]{1,2}[[:space:]]?[[:digit:]]{1,4}-[[:graph:]]{1,}",
                                             ADDTO   = NA,
-                                            ADD     = NA)),
+                                            ADD     = NA)),# Arkansas
                    # ROUTE    = c(PATTERN = "[[:alpha:]]{1,2}[[:space:]]?[[:digit:]]{1,4}",
                    #              SUBPTRN = NA,
                    #              SUB     = NA,

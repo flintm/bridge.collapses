@@ -81,10 +81,11 @@ require(rjson)
   cat(toJSON(ls.JurisKeys), file = file.path("Data","Input","Dictionaries","JurisKeys.json"))
   
   # Place abbreviations and misspellings
-  ls.CountyKeys <- list(prince_georges = c("prince george s","prince george's", "prince georges", "p geor", "p geo", "prince george", "prince georg", "p. geor", "prin geor"),
+  ls.CountyKeys <- list(prince_george = c("prince georges","prince george's", "prince george s","prince george", 
+                                           "prince georg", "prin georges","prin george", "prin georg","prin geor", "p. geor","p geor", "p geo" ),
                         prince_william = c("prince william", "pr. william", "pr william"),
-                        prince      = c("prince", "prin"),
-                        montgomery  = c("montgomery", "montgomry", "montgom", "mongomery","mont"),
+                        # prince      = c("prince", "prin"),
+                        montgomery  = c("montgomery", "montgomry", "montgom", "mongomery","mont."),
                         baltimore   = c("baltimore", "balt"),
                         le_sueur    = c("le sueur", "lesueur"),
                         lewis       = c("lewis", "lewisco"),
@@ -330,7 +331,8 @@ require(rjson)
                        "240"  = c("sf-oak bay br", "san francisco oakland bay bridge","LOC"),
                        "1331" = c("rcb", "reinforced concrete box culvert", "MAT"),
                        "1191" = c("pend.","pendleton", "LOC"),
-                       "1269" = c("balt co.", "baltimore county ", "LOC"))
+                       "1269" = c("balt co.", "baltimore county ", "LOC"),
+                       "3565" = c("eldorado","el dorado","LOC"))
   save(ls.Fail.Keys, file = file.path("Data","Input","Dictionaries","ls.Fail.Keys.RData"))
   cat(toJSON(ls.Fail.Keys), file = file.path("Data","Input","Dictionaries","Fail.Keys.json"))
   
