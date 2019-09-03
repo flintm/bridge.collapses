@@ -297,7 +297,7 @@ I analyzed the quality of the entries for each bridge and field to determine the
 
 ```{r exampleSetup, include = FALSE, echo = FALSE}
 # remove unneeded rows 
-if(REDUCE[["Fail"]]["Example"]) df.Fail <- df.Fail[df.Fail$ID %in% EXAMPLE_ID,]
+# if(REDUCE[["Fail"]]["Example"]) df.Fail <- df.Fail[df.Fail$ID %in% EXAMPLE_ID,]
 if(REDUCE[["NBI"]]["States"]){
   MatchStates <- unique(df.Fail$STFIPS)
   df.NBI  <- df.NBI[df.NBI$STFIPS %in% MatchStates,]
@@ -314,6 +314,7 @@ if (RUN["CLEAN"]){
   
   FieldNames <- sapply(opts[["Fields"]][["Fail"]], function(i) ls.Fail.Ont[[i]][1],
                      USE.NAMES = TRUE)
+  # FieldNames <- c(LOCATION = "LOCATION", ID = "ID")
   df.Fail.cl  <- Clean.Fields(df.Fail.l, NULL,
                              DATA_SET     = "Fail",
                              FieldNames   = FieldNames,

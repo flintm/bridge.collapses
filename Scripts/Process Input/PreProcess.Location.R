@@ -112,7 +112,7 @@ PreProcess.Location <- function(Data,
                                    "2" = which(apply(key.index, MARGIN = 1, any)),
                                    "1" = which(key.index))
               for (i in match.keys){  
-                # print("matching")
+                print("matching")
                 pattern <- ifelse(useFix,
                                   ls.CountyKeys[[j]][which(key.index[i,])[1]+1],
                                   paste0("\\<",
@@ -121,7 +121,7 @@ PreProcess.Location <- function(Data,
                 str     <- regmatches(Data[rowsForState[i],"TEMP"], 
                                       regexpr(pattern, 
                                               Data[rowsForState[i],"TEMP"], fixed = useFix))
-                # print(str)
+                print(str)
                 if(grepl(paste0(str,"[.]? city"), Data[rowsForState[i],"TEMP"]) |
                    length(str)==0) next # not a county
                 str.out <- ls.CountyKeys[[j]][1]
@@ -134,7 +134,7 @@ PreProcess.Location <- function(Data,
                                                                ignore.case = TRUE) &
                                                          df.Counties$COUNTY_SUFFIX!="City","COUNTY_SUFFIX"]))
                 }
-                # print(str.out)
+                print(str.out)
                 if(length(str.out)>1) str.out <- str.out[1]
                 # print(Data[rowsForState[i],"TEMP"])
                 Data[rowsForState[i],"TEMP"] <- ifelse(useFix,
@@ -154,31 +154,32 @@ PreProcess.Location <- function(Data,
         # for places
         if(VERBOSE) print("Checking for place mispellings and abbreviations from dictionary.")
         for (j in c(1:length(ls.PlaceKeys))){
-          StatesWithPlace <- unique(df.Cities[grepl(sub("_"," ", names(ls.PlaceKeys)[j], fixed = TRUE),
-                                                       df.Cities$CITY_NAME,
-                                                       ignore.case=TRUE),"STFIPS_C"])
-          StatesWithPlace <- StatesWithPlace[StatesWithPlace %in% Data$STFIPS]
-          for(state in StatesWithPlace){
+          # StatesWithPlace <- unique(df.Cities[grepl(sub("_"," ", names(ls.PlaceKeys)[j], fixed = TRUE),
+                                                       # df.Cities$CITY_NAME,
+                                                       # ignore.case=TRUE),"STFIPS_C"])
+          # StatesWithPlace <- StatesWithPlace[StatesWithPlace %in% Data$STFIPS]
+          # for(state in StatesWithPlace){
             # print(ls.PlaceKeys[[j]][1])
-            rowsForState <- Rows[Data$STFIPS %in% state]
-            if(length(rowsForState)>0){
+            # rowsForState <- Rows[Data$STFIPS %in% state]
+            # if(length(rowsForState)>0){
               # print("checking match")
               key.index <- sapply(paste0("\\<",
                                          ls.PlaceKeys[[j]][c(2:length(ls.PlaceKeys[[j]]))],
                                          "\\>[[:punct:]]?( ci[ty.]{0,2}\\>)?"),
                                   grepl,
-                                  Data[rowsForState,"TEMP"],ignore.case = TRUE)
+                                  Data$TEMP,ignore.case = TRUE)
+                                  # Data[rowsForState,"TEMP"],ignore.case = TRUE)
               if(sum(key.index)==0){ 
                 # print("no match")
                 key.index <- sapply(ls.PlaceKeys[[j]][c(2:length(ls.PlaceKeys[[j]]))],
-                                    function(cn) grepl(cn, Data[rowsForState,"TEMP"], fixed = TRUE) &
-                                      !grepl(ls.PlaceKeys[[j]][1], Data[rowsForState,"TEMP"], fixed = TRUE))
+                                    function(cn) grepl(cn, Data[,"TEMP"], fixed = TRUE) & #
+                                      !grepl(ls.PlaceKeys[[j]][1], Data[,"TEMP"], fixed = TRUE)) # rowsForState
                 # key.index <- sapply(ls.PlaceKeys[[j]][c(2:length(ls.PlaceKeys[[j]]))],grepl,Data[rowsForState,"TEMP"], fixed = TRUE)
                 useFix <- TRUE
                 }
               else useFix <- FALSE
               # print(as.character(length(dim(key.index))))
-              dim(key.index) <- c(length(rowsForState), length(ls.PlaceKeys[[j]])-1)
+              dim(key.index) <- c(nrow(Data), length(ls.PlaceKeys[[j]])-1)
               # print(as.character(length(dim(key.index))))
               match.keys <- switch(as.character(length(dim(key.index))),
                                    "2" = which(apply(key.index, MARGIN = 1, any)),
@@ -189,25 +190,25 @@ PreProcess.Location <- function(Data,
                                    paste0("\\<",
                                           ls.PlaceKeys[[j]][which(key.index[i,])[1]+1],
                                           "\\>"))
-                str     <- regmatches(Data[rowsForState[i],"TEMP"], 
+                str     <- regmatches(Data[i,"TEMP"], 
                                       regexpr(pattern, 
-                                              Data[rowsForState[i],"TEMP"],fixed = useFix))
+                                              Data[i,"TEMP"],fixed = useFix))
                 # print(str)
                 if(grepl(paste0(str,"[.]? co"), 
-                         Data[rowsForState[i],"TEMP"]) |
+                         Data[i,"TEMP"]) |
                         length(str)==0) next # no match or not a city
                 str.out <- ls.PlaceKeys[[j]][1]
                 # print(str.out)
-                Data[rowsForState[i],"TEMP"] <- ifelse(useFix,
+                Data[i,"TEMP"] <- ifelse(useFix,
                                                        sub(str,
                                                            str.out,
-                                                           Data[rowsForState[i],"TEMP"],
+                                                           Data[i,"TEMP"],
                                                            fixed = TRUE),
                                                        sub(paste0("(",str,"[[:punct:]]?)"),
                                                     str.out,
-                                                    Data[rowsForState[i],"TEMP"]))
-              }
-            }
+                                                    Data[i,"TEMP"]))
+              # }
+            # }
           }
         }
         # for (j in c(1:length(ls.PlaceKeys))){

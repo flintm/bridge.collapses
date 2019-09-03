@@ -129,11 +129,12 @@ Find.Features <- function(Data,
           # Eg US Route 1 Alternate, US Route 1A, US Route 1A Business
           # AT = Alternate Truck, TB = Truck Business, Business, Spur, Connector, Scenic
           # Inner/Outler Loop, Bypass. Alt., Bus. Truck, Byp, Temp., Conn., Spur, 
-          rows   <- rows[grepl("([[:digit:]]+[abtcs]{1})|
+          rows   <- Rows[Data$STFIPS==state & !is.na(Data[,COL]) & Data[,COL]!="" &
+                        grepl("([[:digit:]]+[abtcs]{1})|
                                ([[:digit:]]+ alt)|([[:digit:]]+ byp)|
                                ([[:digit:]]+ bus)|([[:digit:]]+ spur)|
                                ([[:digit:]]+ conn)|([[:digit:]]+ truck)|
-                               ([[:digit:]]+ scenic)|([[:digit:]]+ temp)",Data[rows,COL])]
+                               ([[:digit:]]+ scenic)|([[:digit:]]+ temp)",Data[,COL])]
           if(length(rows) > 0){
             if(VERBOSE) print("Looking for special route number (bypass, business,...)")
             routes <- as.vector(sapply(unlist(ls.SpecKeys),
@@ -156,8 +157,9 @@ Find.Features <- function(Data,
           }
           # Modified/aux preceding route prefix and number
           rows <- Rows[Data$STFIPS==state & !is.na(Data[,COL]) & Data[,COL]!="" &
-                         (grepl("[[:digit:]]",Data[,COL]) | any(sapply(unlist(ls.RteKeysState),
-                                                                       function(r) grepl(r, Data[,COL])))),
+                         (grepl("[[:digit:]]",Data[,COL]) | apply(sapply(unlist(ls.RteKeysState),
+                                                                       function(r) grepl(r, Data[,COL])),
+                                                                  MARGIN = 1, any)) &
                        grepl("[abtcs]{1}[[:print:]]{1,12}[[:digit:]]+[[:alpha:]]?\\>",
                              Data[,COL])]
           
