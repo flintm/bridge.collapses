@@ -47,7 +47,9 @@ ls.DOT.Keys <-list("29" = list(ROUTE    = c(PATTERN = "(\\<rt[e.]{0,2} [[:alpha:
                                             MOVE    = "ROUTE_NAME_1",
                                             MVPTRN  = "(\\<[[:alpha:]]{1,2}\\>(-[[:alnum:]]{1,3})?,)|(\\<[[:alpha:]]{1,2}\\>(-[[:alnum:]]{1,3})?$)",
                                             ADDTO   = "ROUTE_TYPE_1",
-                                            ADD     = "route")),
+                                            ADD     = "route")), # Missouri, supplemental rountes
+                   # can be A-F,H,J,K,M-P,T,U,Y,Z or AA-FF,etc., AA-AZ, BA, R(A-Z mins GILQSX). No bypass but Spur Routes
+                   # they are state routes but sometimes called county road
                    "39" = list(LOCATION = c(PATTERN = "\\<[[:alnum:]]{1,3}-[[:alnum:]]{1,5}[[:punct:]]?[[:alnum:]]{0,3}[[:punct:]]?[[:alnum:]]{0,3}\\>",
                                             SUBPTRN = "\\<[[:alnum:]]{1,3}-[[:alnum:]]{1,5}[[:punct:]]?[[:alnum:]]{0,3}[[:punct:]]?[[:alnum:]]{0,3}\\>",
                                             SUB     = "",
@@ -69,13 +71,13 @@ ls.DOT.Keys <-list("29" = list(ROUTE    = c(PATTERN = "(\\<rt[e.]{0,2} [[:alpha:
                                             MVPTRN  = "\\<fau[[:space:]]?[[:alpha:]]{0,3}[[:space:]]?[[:digit:]]{1,5}\\>",
                                             ADDTO   = NA,
                                             ADD     = NA)), # Tenessee
-                   "05" = list(LOCATION = c(PATTERN = "[[:alpha:]]{1,2}[[:space:]]?[[:digit:]]{1,4}-[[:graph:]]{1,}",
-                                            SUBPTRN = "-[[:graph:]]{1,}",
+                   "05" = list(LOCATION = c(PATTERN = "[[:alpha:]]{1,2}[[:space:]]?[[:digit:]]{1,4}-[[:graph:]]{1,}( [0-9\\(\\)]{3,4})?",
+                                            SUBPTRN = "-[[:graph:]]{1,}( [0-9\\(\\)]{3,4})?",
                                             SUB     = "",
                                             MOVE    = "BRIDGE_NAME",
-                                            MVPTRN  = "[[:alpha:]]{1,2}[[:space:]]?[[:digit:]]{1,4}-[[:graph:]]{1,}",
+                                            MVPTRN  = "[[:alpha:]]{1,2}[[:space:]]?[[:digit:]]{1,4}-[[:graph:]]{1,}( [0-9\\(\\)]{3,4})?",
                                             ADDTO   = NA,
-                                            ADD     = NA)),# Arkansas
+                                            ADD     = "")),# Arkansas
                    # ROUTE    = c(PATTERN = "[[:alpha:]]{1,2}[[:space:]]?[[:digit:]]{1,4}",
                    #              SUBPTRN = NA,
                    #              SUB     = NA,

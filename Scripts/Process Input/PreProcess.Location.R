@@ -107,7 +107,7 @@ PreProcess.Location <- function(Data,
                 useFix <- TRUE
               }
               else useFix <- FALSE
-              key.index <- matrix(key.index, nrow = length(rowsForState), ncol = (length(ls.CountyKeys[[j]])-1))
+              dim(key.index) <- c(length(rowsForState), length(ls.CountyKeys[[j]])-1)
               match.keys <- switch(as.character(length(dim(key.index))),
                                    "2" = which(apply(key.index, MARGIN = 1, any)),
                                    "1" = which(key.index))
@@ -178,7 +178,7 @@ PreProcess.Location <- function(Data,
                 }
               else useFix <- FALSE
               # print(as.character(length(dim(key.index))))
-              key.index <- matrix(key.index, nrow = length(rowsForState), ncol = (length(ls.PlaceKeys[[j]])-1))
+              dim(key.index) <- c(length(rowsForState), length(ls.PlaceKeys[[j]])-1)
               # print(as.character(length(dim(key.index))))
               match.keys <- switch(as.character(length(dim(key.index))),
                                    "2" = which(apply(key.index, MARGIN = 1, any)),

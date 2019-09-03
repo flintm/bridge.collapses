@@ -61,7 +61,9 @@ Find.Features <- function(Data,
           for(i in match.keys){
             # str <- regmatches(Data[rows[i],COL],regexpr(pattern,Data[rows[i],COL]))
             if(!is.na(ls.DOT.Keys[[state]][[f]]["MOVE"])){ 
-              str <- regmatches(Data[rows[i],COL],regexpr(ls.DOT.Keys[[state]][[f]]["MVPTRN"],Data[rows[i],COL]))
+              str <- regmatches(Data[rows[i],COL],
+                                regexpr(ls.DOT.Keys[[state]][[f]]["MVPTRN"],
+                                        Data[rows[i],COL]))
               Data[rows[i],ls.DOT.Keys[[state]][[f]]["MOVE"]] <- ifelse(!is.na(Data[rows[i],ls.DOT.Keys[[state]][[f]]["MOVE"]]),
                                                                         paste(Data[rows[i],ls.DOT.Keys[[state]][[f]]["MOVE"]],
                                                                               str),
@@ -75,22 +77,25 @@ Find.Features <- function(Data,
                                                                          ls.DOT.Keys[[state]][[f]]["ADD"])
               if(VERBOSE) print(paste('added to col',ls.DOT.Keys[[state]][[f]]["ADDTO"]))
               }
-                                                                                                                 
             if(!is.na(ls.DOT.Keys[[state]][[f]]["SUB"])){ 
               if(VERBOSE) print(paste('Deleted in col',COL))
-              Data[rows[i],COL] <- sub(ls.DOT.Keys[[state]][[f]]["SUBPTRN"],ls.DOT.Keys[[state]][[f]]["SUB"],Data[rows[i],COL])
+              Data[rows[i],COL] <- sub(ls.DOT.Keys[[state]][[f]]["SUBPTRN"],
+                                       ls.DOT.Keys[[state]][[f]]["SUB"],
+                                       Data[rows[i],COL])
             }
           }
         } 
       }
+      
       # state-specific and general route naming: strict -------
       if(f=="ROUTE"){
         ls.RteKeysState <- ls.RteKeys
         ls.RteKeysState$state <- tolower(df.States[state,"STATE_CODE"])
         ls.RteKeysState$statefull <- tolower(df.States[state,"STATE_FULL"])
         rows <- Rows[Data$STFIPS==state & !is.na(Data[,COL]) & Data[,COL]!="" &
-                       (grepl("[[:digit:]]",Data[,COL]) | any(sapply(unlist(ls.RteKeysState),
-                                                                     function(r) grepl(r, Data[,COL]))))]
+                       (grepl("[[:digit:]]",Data[,COL]) | apply(sapply(unlist(ls.RteKeysState),
+                                                                     function(r) grepl(r, Data[,COL])),
+                                                                MARGIN = 1, any))]
         if(length(rows) > 0){
           if(VERBOSE) print(paste("Checking for",tolower(f),"in state:",df.States[state,"STATE_FULL"]))
           # full: route type (prefix), digit, and direction
@@ -119,6 +124,42 @@ Find.Features <- function(Data,
                                                          n.dup.cols = n.dup.cols, 
                                                          DELETE = TRUE)
           }
+          
+          # with modified/aux: route type (prefix), digit, and business/bypass/etc. suffix
+          # Eg US Route 1 Alternate, US Route 1A, US Route 1A Business
+          # AT = Alternate Truck, TB = Truck Business, Business, Spur, Connector, Scenic
+          # Inner/Outler Loop, Bypass. Alt., Bus. Truck, Byp, Temp., Conn., Spur, 
+          rows   <- rows[grepl("([[:digit:]]+[abtcs]{1})|
+                               ([[:digit:]]+ alt)|([[:digit:]]+ byp)|
+                               ([[:digit:]]+ bus)|([[:digit:]]+ spur)|
+                               ([[:digit:]]+ conn)|([[:digit:]]+ truck)|
+                               ([[:digit:]]+ scenic)|([[:digit:]]+ temp)",Data[rows,COL])]
+          if(length(rows) > 0){
+            if(VERBOSE) print("Looking for special route number (bypass, business,...)")
+            routes <- as.vector(sapply(unlist(ls.SpecKeys),
+                                       function(alt)
+                                         paste0(unlist(ls.RteKeysState),
+                                                "[[:space:]]?[[:punct:]]?[[:space:]]?[[:digit:]]+[[:space:]]?",
+                                                alt,"\\>")))
+            routes     <- data.frame(PATTERN1 = routes, PATTERN2 = "", REGEX = TRUE, stringsAsFactors = FALSE)
+            routes$ROUTE_NAME <- "[[:digit:]]+"
+            routes$ROUTE_TYPE <- unlist(ls.RteKeysState)
+            routes$ROUTE_AUX  <- paste0("(\\<",paste(unlist(ls.SpecKeys),collapse = "\\>)|(\\<"),"\\>)")
+            routes     <- routes[order(nchar(routes$PATTERN1)),]
+            Data[rows,c(COL,cols.out)] <- Feature.Detect(Data[rows,], 
+                                                         routes, 
+                                                         "NONE", 
+                                                         COL, 
+                                                         cols.out, 
+                                                         n.dup.cols = n.dup.cols, 
+                                                         DELETE = TRUE)
+          }
+          # Modified/aux preceding route prefix and number
+          rows <- Rows[Data$STFIPS==state & !is.na(Data[,COL]) & Data[,COL]!="" &
+                         (grepl("[[:digit:]]",Data[,COL]) | any(sapply(unlist(ls.RteKeysState),
+                                                                       function(r) grepl(r, Data[,COL])))),
+                       grepl("[abtcs]{1}[[:print:]]{1,12}[[:digit:]]+[[:alpha:]]?\\>",
+                             Data[,COL])]
           
           # route type and digit only
           rows <- Rows[Data$STFIPS==state & !is.na(Data[,COL]) & Data[,COL]!="" &
@@ -268,7 +309,7 @@ Find.Features <- function(Data,
       }
     }
     
-    # road name, type, direction, aux  ------
+    # road name, type, direction, aux !! Add business/bypass/...!! ------
     if(f=="ROAD"){
       rows <- Rows[!is.na(Data[,COL]) & Data[,COL]!=""]
       if(length(rows)>0){
@@ -306,9 +347,12 @@ Find.Features <- function(Data,
                                       " co([unty.]{0,4})",
                                       notMatch)
         
-        localities$LOC      <- paste0(tolower(df.Counties[df.Counties$STFIPS_C == 
+        localities$LOC      <- paste0("(",tolower(df.Counties[df.Counties$STFIPS_C == 
                                                             state, "COUNTY_NAME"]),
-                                      " co([unty.]{0,4})")
+                                      " co([unty.]{0,4}))|(",
+                                      tolower(df.Counties[df.Counties$STFIPS_C == 
+                                                            state, "COUNTY_NAME"]),
+                                      "\\Z)")
         if(VERBOSE) print("removing '___ county' names (strict)")
         Data[rows,COL] <- Feature.Detect(Data[rows,], 
                                          localities, 

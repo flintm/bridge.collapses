@@ -53,6 +53,17 @@ require(rjson)
   save(ls.RteKeys, file = file.path("Data","Input","Dictionaries","ls.RteKeys.RData"))
   cat(toJSON(ls.RteKeys), file = file.path("Data","Input","Dictionaries","RteKeys.json"))
   
+  # Special routes
+  ls.SpecKeys <- list(alt      = c("alternate", "alt", "a"),
+                      bypass   = c("bypass","byp"),
+                      business = c("business", "bus", "b"),
+                      conn     = c("connector", "conn", "con", "c"),
+                      temp     = c("temporary", "temp"),
+                      truck    = c("truck", "t"),
+                      spur     = c("spur"))
+  save(ls.SpecKeys, file = file.path("Data","Input","Dictionaries","ls.SpecKeys.RData"))
+  cat(toJSON(ls.SpecKeys), file = file.path("Data","Input","Dictionaries","SpecKeys.json"))
+  
   # Bridges
   ls.BridgeKeys <- list( pedBridge  = c("pedestrian bridge","poc", "pedestrian br","pedestrian overpass","pedestrian walkway", 
                                         "ped overpass","ped br","pedest overpass","pedestrain bridge","pedestrain"),
@@ -332,7 +343,8 @@ require(rjson)
                        "1331" = c("rcb", "reinforced concrete box culvert", "MAT"),
                        "1191" = c("pend.","pendleton", "LOC"),
                        "1269" = c("balt co.", "baltimore county ", "LOC"),
-                       "3565" = c("eldorado","el dorado","LOC"))
+                       "3565" = c("eldorado","el dorado","LOC"),
+                       "79"   = c("pederstrain", "pedestrian", "LOC"))
   save(ls.Fail.Keys, file = file.path("Data","Input","Dictionaries","ls.Fail.Keys.RData"))
   cat(toJSON(ls.Fail.Keys), file = file.path("Data","Input","Dictionaries","Fail.Keys.json"))
   
