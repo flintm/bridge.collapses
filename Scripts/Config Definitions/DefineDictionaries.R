@@ -83,20 +83,41 @@ require(rjson)
 ## JURISDICTION, COUNTY, CITY, PLACE -----------------
   # Jurisdiction/Municipalities
   ls.JurisKeys <- list(city     = c("city", "cty"),
+                       acres    = c("acres"),
+                       arbor    = c("arbor"),
+                       bay      = c("bay"),
                        county   = c("county", "co", "cnty", "cnt"),
+                       estates  = c("estates"),
+                       beach    = c("beach"),
+                       mountain = c("mountain"),
+                       lake     = "lake",
+                       island   = "island",
+                       ranch    = "ranch",
+                       cave     = "cave",
+                       springs  = "springs",
+                       camp     = "camp",
+                       park     = "park",
+                       forest   = "forest",
+                       falls    = "falls",
+                       heights  = "heights",
+                       hills    = "hills",
+                       junction = "junction",
+                       ferry    = "ferry",
+                       corner   = "corner",
+                       mills    = "mills",
                        state    = c("state"),
-                       town     = c("town", "twn"),
+                       town     = c("town", "towns","towne","twn"),
                        township = c("township", "twnshp","twnsp","twsp", "twp"),
                        village  = c("village", "villlage"))
   save(ls.JurisKeys, file = file.path("Data","Input","Dictionaries","ls.JurisKeys.RData"))
   cat(toJSON(ls.JurisKeys), file = file.path("Data","Input","Dictionaries","JurisKeys.json"))
   
   # Place abbreviations and misspellings
-  ls.CountyKeys <- list(prince_george = c("prince george","prince george's", "prince george s","prince george", 
+  ls.CountyKeys <- list(prince_georges = c("prince georges","prince george's", "prince george s","prince george", 
                                            "prince georg", "prin georges","prin george", "prin georg","prin geor", "p. geor","p geor", "p geo" ),
                         prince_william = c("prince william", "pr. william", "pr william"),
                         # prince      = c("prince", "prin"),
-                        anne_arundel = c("anne arundel", "anne arundal"),
+                        anne_arundel = c("anne arundel", "anne arundal", "arundel"),
                         montgomery  = c("montgomery", "montgomry", "montgom", "mongomery","mont.", "mont"),
                         baltimore   = c("baltimore", "balt"),
                         le_sueur    = c("le sueur", "lesueur"),
@@ -133,7 +154,8 @@ require(rjson)
   save(ls.CountyKeys, file = file.path("Data","Input","Dictionaries","ls.CountyKeys.RData"))
   cat(toJSON(ls.CountyKeys), file = file.path("Data","Input","Dictionaries","CountyKeys.json"))
   
-  ls.PlaceKeys <- list(washington = c("washington", "wash."),
+  ls.PlaceKeys <- list(baltimore  = c("baltimore", "balt.", "balt"),
+                       washington = c("washington", "wash."),
                        illinois   = c("illinois", "ill"),
                        american   = c("american", "amer","amer."),
                        savannah   = c("savannah", "savanah"),
@@ -337,6 +359,10 @@ require(rjson)
   
 ## DATABASE-SPECIFIC MISSPELLINGS AND CORRECTIONS
   ls.Fail.Keys <- list("671"  = c("richmond","richland","LOC"),
+                       "1101" = c("psh1salmon", "psh 1 salmon", "LOC"),
+                       "871"  = c("florence", "flrnce","LOC"),
+                       "536"  = c("roanoke", "roanoke rapids","LOC"),
+                       "1482" = c("garrett", "garretts mill", "LOC"),
                        "1345" = c("wash.", "washington ","LOC"),
                        "212"  = c("amer.", "american ", "LOC"),
                        "1304" = c("s4\\&5","s4\\-5","LOC"),
@@ -344,6 +370,8 @@ require(rjson)
                        "1557" = c("\\(","","LOC"),
                        "218"  = c("sf-oak bay br", "san francisco oakland bay bridge","LOC"),
                        "240"  = c("sf-oak bay br", "san francisco oakland bay bridge","LOC"),
+                       "241"  = c("sf-oak bay br oakland", "san francisco oakland bay bridge to oakland","LOC"),
+                       "3603"  = c("sf-oak bay br, oakland/sf", "san francisco oakland bay bridge","LOC"),
                        "1331" = c("rcb", "reinforced concrete box culvert", "MAT"),
                        "1191" = c("pend.","pendleton", "LOC"),
                        "1269" = c("balt co.", "baltimore county ", "LOC"),

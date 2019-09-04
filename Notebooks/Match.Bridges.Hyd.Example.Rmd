@@ -315,6 +315,7 @@ if (RUN["CLEAN"]){
   FieldNames <- sapply(opts[["Fields"]][["Fail"]], function(i) ls.Fail.Ont[[i]][1],
                      USE.NAMES = TRUE)
   # FieldNames <- c(LOCATION = "LOCATION", ID = "ID")
+  df.Fail.l <- df.Fail
   df.Fail.cl  <- Clean.Fields(df.Fail.l, NULL,
                              DATA_SET     = "Fail",
                              FieldNames   = FieldNames,
@@ -358,6 +359,10 @@ if(RUN["FEATURE"]){
                      USE.NAMES = TRUE)
   Features <- sub("LOCATION","LOC",Features)
   Features["STREAM"] <- "STREAM_UNDER"
+  Features <- Features[-6]
+  df.Fail  <- Find.Features(df.Fail.cl[df.Fail.cl$STFIPS==state,], 
+                              Features,
+                              VERBOSE = VERB)
   df.Fail  <- Find.Features(df.Fail.cl, 
                               Features,
                               VERBOSE = VERB)

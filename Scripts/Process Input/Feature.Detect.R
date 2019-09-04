@@ -19,12 +19,13 @@ Feature.Detect <- function(Data,               # must contain col.in and cols.ou
                        df.patterns[,"PATTERN2"],
                        ls.pattern.types[[type]][3])
 
-  key.index      <- sapply(patterns,grepl,Data[,col.in],ignore.case=TRUE, perl = perl, useBytes = useBytes)
+  key.index      <- sapply(patterns,grepl,Data[,col.in], perl = perl, useBytes = useBytes)
   dim(key.index) <- c(nrow(Data), length(patterns)) # force into matrix form if necessary
   match.keys     <- which(apply(key.index, MARGIN = 1, any))
   
   # loop over all rows in Data that have a match
   for(i in match.keys){
+    # print("has match")
     for(col in colnames(df.patterns)[!grepl("PATTERN",colnames(df.patterns)) & !grepl("REGEX",colnames(df.patterns))]){
       if(!df.patterns[1,"REGEX"]){
         matches <- tolower(df.patterns[key.index[i,],col])
@@ -56,13 +57,10 @@ Feature.Detect <- function(Data,               # must contain col.in and cols.ou
       
       # delete from string
       if(DELETE){
-        if(length(patterns[key.index[i,]])==1) p <- df.patterns[key.index[i,],col]
-        # print("one pattern only")}
+        if(length(patterns[key.index[i,]])==1){ p <- df.patterns[key.index[i,],col]
+        }
         else{
           p <- as.character(df.patterns[key.index[i,],col])
-          # print("multiple patterns")
-          # print(class(p))
-          # print(paste("pattenrs are:", paste(p,collapse="-")))
           if(grepl(p[1],p[2],fixed = TRUE)|grepl(p[2],p[1], fixed = TRUE)){
             p <- p[which.max(nchar(p))]
           }
@@ -70,7 +68,6 @@ Feature.Detect <- function(Data,               # must contain col.in and cols.ou
             p <- paste0("(",paste0(p, collapse=")|("),")")
             }
         }
-        # print(paste("    with delete key:", p))
         Data[i,col.in] <- str_squish(gsub(p,"",Data[i,col.in],
                                           ignore.case = TRUE,
                                           perl = perl,
