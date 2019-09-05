@@ -20,7 +20,7 @@ PreProcess.Location <- function(Data,
       Data$TEMP    <- str_squish(gsub("[\\&\\*]+"," ", gsub("'","",Data$TEMP)))
       
       # Dataset-specific corrections
-      if(VERBOSE) print("Implementing dataset-specific corrections")
+      if(VERBOSE) print("Implementing dataset-specific corrections for location.")
       ls.Keys   <- get(paste0("ls.",sub("Data","",DATA_SET),".Keys"))
       if(length(ls.Keys)>0){
         ls.TEMP <- ls.Keys[sapply(1:length(ls.Keys), function(i) col %in% ls.Keys[[i]])]
@@ -29,7 +29,10 @@ PreProcess.Location <- function(Data,
             IDs    <- names(ls.TEMP)[names(ls.TEMP) %in% Data[,FieldNames["ID"]]]
             ls.TEMP <- ls.TEMP[IDs]
             Data[IDs,"TEMP"] <- sapply(IDs, 
-                                     function(i) sub(ls.TEMP[[i]][1],ls.TEMP[[i]][2],Data[i,"TEMP"]))
+                                     function(i) sub(ls.TEMP[[i]][1],
+                                                     ls.TEMP[[i]][2],
+                                                     Data[i,"TEMP"], 
+                                                     fixed = TRUE))
           }
         }
       }
@@ -63,15 +66,15 @@ PreProcess.Location <- function(Data,
           Counties <- Counties[sapply(names(Counties), function(i) length(Counties[[i]])>0 & !is.null(Counties[[i]][1]))]
           for(j in names(Counties)){
             rowsForState <- Rows[Data$STFIPS == k]
-            key.index    <- grepl(paste0("\\<",j,"[[:alpha:]]?\\>[[:punct:]]?[[:space:]]?\\<co"), Data[rowsForState,"TEMP"],ignore.case = TRUE)
+            key.index    <- grepl(paste0("\\<",j,"[[:alpha:]]?\\>[.,-]?[[:space:]]?\\<co"), Data[rowsForState,"TEMP"],ignore.case = TRUE)
             match.keys   <- which(key.index)
             for(i in match.keys){ # has a match to a partial county name
-              key.index.2  <- sapply(Counties[[j]], function(cn) grepl(paste0("\\<",cn,"[[:alpha:]]?\\>[[:punct:]]?[[:space:]]?\\<co"), 
+              key.index.2  <- sapply(Counties[[j]], function(cn) grepl(paste0("\\<",cn,"[[:alpha:]]?\\>[.,-]?[[:space:]]?\\<co"), 
                                                                      Data[rowsForState[i],"TEMP"],ignore.case = TRUE))
               
               no.match   <- which(!key.index.2) # does not have a full county name
               if(length(no.match)==1){ # only one matching county, safe to fill in
-                Data[rowsForState[i],"TEMP"] <- sub(paste0("\\<",j,"[[:alpha:]]?\\>(([[:punct:]]?[[:space:]]?co([unty.]){0,6})?)"), 
+                Data[rowsForState[i],"TEMP"] <- sub(paste0("\\<",j,"[[:alpha:]]?\\>(([.,-]?[[:space:]]?co([unty.]){0,6})?)"), 
                                                     paste(Counties[[j]][1],"county"),
                                                     Data[rowsForState[i],"TEMP"])
               }
@@ -93,7 +96,7 @@ PreProcess.Location <- function(Data,
             if(length(rowsForState)>0){
               key.index <- sapply(paste0("\\<",
                                          ls.CountyKeys[[j]][c(2:length(ls.CountyKeys[[j]]))],
-                                         "\\>[[:punct:]]?( co[unty.]{0,4}\\>)?"),
+                                         "\\>[.,-]?( co[unty.]{0,4}\\>)?"),
                                   grepl,
                                   Data[rowsForState,"TEMP"])
               if(sum(key.index)==0){
@@ -120,7 +123,7 @@ PreProcess.Location <- function(Data,
                 if(grepl(paste0(str,"[.]? city"), Data[rowsForState[i],"TEMP"]) |
                    length(str)==0) next # not a county
                 str.out <- ls.CountyKeys[[j]][1]
-                if(grepl("\\<co[unty.]{0,4}\\>", Data[rowsForState[i],"TEMP"]) |
+                if(grepl("\\<co[unty.]{0,5}\\>", Data[rowsForState[i],"TEMP"]) |
                    grepl(paste0(str,"co\\>"), Data[rowsForState[i],"TEMP"])){ 
                   str.out <- paste(str.out,
                                    tolower(df.Counties[df.Counties$STFIPS_C==state &
@@ -135,7 +138,7 @@ PreProcess.Location <- function(Data,
                                                            str.out,
                                                            Data[rowsForState[i],"TEMP"],
                                                            fixed = TRUE),
-                                                       sub(paste0("(",str,"[[:punct:]]?)( co[unty.]{0,4}\\>)?"),
+                                                       sub(paste0("(",str,"[,.-]?)(( co\\>)|( county\\>)|( co.))?"),
                                                            str.out,
                                                            Data[rowsForState[i],"TEMP"]))
               }
@@ -148,7 +151,7 @@ PreProcess.Location <- function(Data,
         for (j in c(1:length(ls.PlaceKeys))){
               key.index <- sapply(paste0("\\<",
                                          ls.PlaceKeys[[j]][c(2:length(ls.PlaceKeys[[j]]))],
-                                         "\\>[[:punct:]]?( ci[ty.]{0,2}\\>)?"),
+                                         "\\>[.]?( ci[ty.]{0,2}\\>)?"),
                                   grepl,
                                   Data$TEMP,ignore.case = TRUE)
               if(sum(key.index)==0){ 
@@ -180,7 +183,7 @@ PreProcess.Location <- function(Data,
                                                            str.out,
                                                            Data[i,"TEMP"],
                                                            fixed = TRUE),
-                                                       sub(paste0("(",str,"[[:punct:]]?)"),
+                                                       sub(paste0("(",str,"[.]?)"),
                                                     str.out,
                                                     Data[i,"TEMP"]))
           }
@@ -194,7 +197,7 @@ PreProcess.Location <- function(Data,
       }
       
       # final cleanup for Fail or NBI data
-      Data$TEMP <- gsub("(\\A[[:punct:]]+)|([[:punct:]]+\\Z)","",Data$TEMP, perl = TRUE)
+      Data$TEMP <- gsub("(\\A[.,-]+)|([.,-]+\\Z)","",Data$TEMP, perl = TRUE)
       Data$TEMP <- str_squish(gsub("[[:blank:]]{1}[\\,]",",",Data$TEMP))
       
       colnames(Data)[colnames(Data)=="TEMP"] <- col

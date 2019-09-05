@@ -14,6 +14,7 @@ require(rjson)
 ## ROADS, ROUTES, RAILS & BRIDGES --------------
   # Road: note that order is set so that the most complete match is found
   ls.RoadKeys <- list(countyRoad = c("county road", "co road", "co rd", "county rd", "c r", "cr"),
+                      countyRoute = c("county route", "county rte", "co rte", "co rt"),
                       parkRoad   = c("national park road", "park road", "park rd"),
                       stateLands = c("state lands road", "state lands rd", "state lands"),
                       countyHighway = c("county highway", "co highway", "co hwy"),
@@ -25,6 +26,7 @@ require(rjson)
                       stateSecondary=c("state secondary", "st secondary"),
                       cityRoute  = c("city route","city rt", "city rte"),
                       thruway    = c("thruway","thwy","th"),
+                      expressway = c("expressway", "expway","expwy"),
                       usHighway  = c("us highway", "us route", "us rte", "us"),
                       avenue     = c("avenue", "ave"),
                       court      = c("court", "crt", "ct"),
@@ -40,42 +42,69 @@ require(rjson)
                       road       = c("road", "rd"),
                       route      = c("route", "rte", "rt", "r"),
                       street     = c("street", "strt", "st"),
-                      state      = c(tolower(df.States$STATE_CODE),"k"),
+                      state      = c(tolower(df.States$STATE_CODE)),
                       statefull  = tolower(df.States$STATE_FULL))
   save(ls.RoadKeys, file = file.path("Data","Input","Dictionaries","ls.RoadKeys.RData"))
   cat(toJSON(ls.RoadKeys), file = file.path("Data","Input","Dictionaries","RoadKeys.json"))
   
   # Route (see also ITEM5B)
-  ls.RteKeys <- ls.RoadKeys[c("freeway","highway","interstate","countyRoad",
-                                      "stateRoute","stateHighway","usHighway",
-                              "countyHighway", "stateSecondary", "thruway","state", "statefull",
-                              "route")]
+  ls.RteKeys <- ls.RoadKeys[c("countyRoad","countyRoute", "countyHighway",
+                              "cityRoute",
+                              "stateRoute","stateHighway", "stateSecondary",
+                              "nfs", "stateLands", "parkRoad",
+                              "usHighway", "interstate",
+                              "thruway","freeway","highway",
+                              "expressway","route")]
   save(ls.RteKeys, file = file.path("Data","Input","Dictionaries","ls.RteKeys.RData"))
   cat(toJSON(ls.RteKeys), file = file.path("Data","Input","Dictionaries","RteKeys.json"))
   
   # Special routes
   ls.SpecKeys <- list(alt      = c("alternate", "alt", "a"),
-                      bypass   = c("bypass","byp"),
+                      bypass   = c("bypass","byp","bp"),
+                      extension = c("extension", "ext"),
                       business = c("business", "bus", "b"),
-                      conn     = c("connector", "conn", "con", "c"),
+                      conn     = c("connector", "conn", "con", "cn", "c"),
                       temp     = c("temporary", "temp"),
                       truck    = c("truck", "t"),
-                      spur     = c("spur"))
+                      sep      = c("separator", "sep"),
+                      scenic   = c("scenic", "scen"),
+                      old      = "old",
+                      inner    = c("inner", "in"),
+                      outer    = c("outer", "out"),
+                      loop     = "loop",
+                      spur     = "spur")
   save(ls.SpecKeys, file = file.path("Data","Input","Dictionaries","ls.SpecKeys.RData"))
   cat(toJSON(ls.SpecKeys), file = file.path("Data","Input","Dictionaries","SpecKeys.json"))
   
   # Bridges
   ls.BridgeKeys <- list( pedBridge  = c("pedestrian bridge","poc", "pedestrian br","pedestrian overpass","pedestrian walkway", 
-                                        "ped overpass","ped br","pedest overpass","pedestrain bridge","pedestrain"),
-                         bridge     = c("bridge", "brdge", "brdg", "br"),
-                         overcross  = c("overcrossing","oc")
-  )
+                                        "ped overpass","ped br","pedest overpass","pedestrain bridge","pedestrain", "footbridge",
+                                        "canopy walk"),
+                         covered    = c("covered bridge", "covered"),
+                         overcross  = c("overcrossing","oc"),
+                         overpass   = c("overpass", "ohp", "op"),
+                         entrance   = c("entrance"),
+                         overhead   = c("overhead", "oh"),
+                         viaduct    = c("viaduct", "vaduct"),
+                         mta        = "mta",
+                         railBridge = c("railroad bridge", "railroad br", "rail road bridge", "rr bridge", "rr br", "rail bridge"),
+                         ramp       = c("ramp", "rmp"),
+                         bridge     = c("bridge", "brdge", "brdg", "br"))
   ls.BridgeKeys$bridgeNo <- c(paste(ls.BridgeKeys$bridge,"no",sep=" "), "no")
   save(ls.BridgeKeys, file = file.path("Data","Input","Dictionaries","ls.BridgeKeys.RData"))
   cat(toJSON(ls.BridgeKeys), file = file.path("Data","Input","Dictionaries","BridgeKeys.json"))
   
   # Rail
   ls.RailKeys <- list(railway = c("railway", "railroad", "rlwy", "rail","rr"),
+                      csx     = c("csx transportation","csx"),
+                      burl_santa = c("burlington north & santa fe", "burlington north santa fe"),
+                      canadian_pac = c("inactive canadian pacific", "canadian pacific"),
+                      new_york_central = ("new york central"),
+                      alabama = "alabama",
+                      cedar_iowa = c("cedar rapids & iowa city", "cedar rapids iowa city"),
+                      indiana_s = c("indiana southern"),
+                      eric      = "eric",
+                      southern = c("southern"),
                       amtrack = c("amtrack","amtrak"))
   save(ls.RailKeys, file = file.path("Data","Input","Dictionaries","ls.RailKeys.RData"))
   cat(toJSON(ls.RailKeys), file = file.path("Data","Input","Dictionaries","RailKeys.json"))
@@ -87,9 +116,10 @@ require(rjson)
                        arbor    = c("arbor"),
                        bay      = c("bay"),
                        county   = c("county", "co", "cnty", "cnt"),
-                       estates  = c("estates"),
+                       estates  = c("estates", "est"),
                        beach    = c("beach"),
-                       mountain = c("mountain"),
+                       mountain = c("mountain", "mtn"),
+                       point    = c("point", "pt"),
                        lake     = "lake",
                        island   = "island",
                        ranch    = "ranch",
@@ -99,11 +129,16 @@ require(rjson)
                        park     = "park",
                        forest   = "forest",
                        falls    = "falls",
-                       heights  = "heights",
+                       heights  = c("heights", "hght"),
                        hills    = "hills",
-                       junction = "junction",
+                       junction = c("junction","junct","jnctn"),
+                       mountain   = c("mountain", "mtn"),
+                       school     = c("school", "schl","sch"),
+                       hill       = c("hill", "hil"),
+                       valley     = c("valley", "valey","vly"),
+                       plantation = c("plantation", "plnt","plt"),
                        ferry    = "ferry",
-                       corner   = "corner",
+                       corner   = c("corner","crnr"),
                        mills    = "mills",
                        state    = c("state"),
                        town     = c("town", "towns","towne","twn"),
@@ -154,19 +189,17 @@ require(rjson)
   save(ls.CountyKeys, file = file.path("Data","Input","Dictionaries","ls.CountyKeys.RData"))
   cat(toJSON(ls.CountyKeys), file = file.path("Data","Input","Dictionaries","CountyKeys.json"))
   
-  ls.PlaceKeys <- list(baltimore  = c("baltimore", "balt.", "balt"),
+  ls.PlaceKeys <- list(new_york  = c("new york", "nyc"),
+                       cyr_plantation = c("cyr plantation", "cyr plt"),
+                       baltimore  = c("baltimore", "balt.", "balt"),
                        washington = c("washington", "wash."),
                        illinois   = c("illinois", "ill"),
                        american   = c("american", "amer","amer."),
                        savannah   = c("savannah", "savanah"),
                        montgomery  = c("montgomery", "montgomry", "montgom", "mongomery"),
-                       mountain   = c("mountain", "mtn"),
-                       school     = c("school", "schl","sch"),
-                       hill       = c("hill", "hil"),
-                       valley     = c("valley", "valey","vly"),
                        platte     = c("platte", "plat"),
-                       plantation = c("plantation", "plnt","plt"),
                        saint_george   = c("saint george", "st. george", "st george"),
+                       saint_croix    = c("saint croix", "st. croix","st croix"),
                        arrington      = c("arrington", "arrinton"),
                        bismarck       = c("bismarck", "bismark"),
                        saint_ann      = c("saint ann", "st. ann", "st ann"),
@@ -358,20 +391,26 @@ require(rjson)
   cat(toJSON(ls.TypeKeys), file = file.path("Data","Input","Dictionaries","TypeKeys.json"))
   
 ## DATABASE-SPECIFIC MISSPELLINGS AND CORRECTIONS
-  ls.Fail.Keys <- list("671"  = c("richmond","richland","LOC"),
+  ls.Fail.Keys <- list("228" = c("br. tule", "branch tule river", "LOC", "STREAM"),
+                       "231" = c("br. tule", "branch tule river", "LOC", "STREAM"),
+                       "236"  = c("br.", "branch", "LOC"),
+                       "476"  = c("sangerv","sangerville","LOC"),
+                       "671"  = c("richmond","richland","LOC"),
+                       "832"  = c("wst side hwy", "west side highway", "LOC"),
                        "1101" = c("psh1salmon", "psh 1 salmon", "LOC"),
                        "871"  = c("florence", "flrnce","LOC"),
                        "536"  = c("roanoke", "roanoke rapids","LOC"),
                        "1482" = c("garrett", "garretts mill", "LOC"),
                        "1345" = c("wash.", "washington ","LOC"),
                        "212"  = c("amer.", "american ", "LOC"),
-                       "1304" = c("s4\\&5","s4\\-5","LOC"),
+                       "1304" = c("s4&5","s4-5","LOC"),
                        "1061" = c("razrhon","razor hone","LOC", "STREAM"),
-                       "1557" = c("\\(","","LOC"),
                        "218"  = c("sf-oak bay br", "san francisco oakland bay bridge","LOC"),
                        "240"  = c("sf-oak bay br", "san francisco oakland bay bridge","LOC"),
                        "241"  = c("sf-oak bay br oakland", "san francisco oakland bay bridge to oakland","LOC"),
                        "3603"  = c("sf-oak bay br, oakland/sf", "san francisco oakland bay bridge","LOC"),
+                       "1557" = c("(br. 1-813","(br. 1-813)", "LOC"),
+                       "1658" = c("(10-bc/1", "(10-bc/1)", "LOC"),
                        "1331" = c("rcb", "reinforced concrete box culvert", "MAT"),
                        "1191" = c("pend.","pendleton", "LOC"),
                        "1269" = c("balt co.", "baltimore county ", "LOC"),

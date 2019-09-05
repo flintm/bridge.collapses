@@ -9,6 +9,8 @@ Feature.Detect <- function(Data,               # must contain col.in and cols.ou
                            DELETE  = TRUE,     # whether to delete identified string
                            VERBOSE = FALSE){
   # print(paste("***incoming to Feature.Detect:",Data[,col.in]))
+  # print(paste("cols out are", paste(cols.out, collapse = ", ")))
+  # print(paste("pattern colnames are", paste(colnames(df.patterns), collapse = ", ")))
   ls.pattern.types <- list(NONE = c("","",""),
                            WORD = c("\\<","\\>",""),
                            COMPOUND = c("\\<","\\>","[[:punct:]]?[[:space:]]+\\<","\\>"))
@@ -27,33 +29,47 @@ Feature.Detect <- function(Data,               # must contain col.in and cols.ou
   for(i in match.keys){
     # print("has match")
     for(col in colnames(df.patterns)[!grepl("PATTERN",colnames(df.patterns)) & !grepl("REGEX",colnames(df.patterns))]){
-      if(!df.patterns[1,"REGEX"]){
-        matches <- tolower(df.patterns[key.index[i,],col])
-      }
-      else{
-        matches <- sapply(df.patterns[key.index[i,],col], 
-                          function(pat) 
-                            regmatches(Data[i,col.in],
-                                       regexpr(pat,Data[i,col.in],
-                                               ignore.case = TRUE,
-                                               perl = perl,
-                                               useBytes = useBytes)))
-      }
-      # print(paste("     matches:",paste(matches,collapse = "-")))
-      if(length(matches) > n.dup.cols){
-        if(matches[1]==matches[2]) matches <- matches[1] # assumes all are duplicated
-        else if(grepl(matches[2],matches[1]) | grepl(matches[1],matches[2])) matches <- matches[which.max(nchar(matches))] # assumes longest substring
-        else if(length(matches) > n.dup.cols) stop("not enough fields provided to contain all matches")
-      }
-      else{ # don't put in extraneous information, regardless
-        if(length(matches) == n.dup.cols & n.dup.cols > 1){
+      cols <- cols.out[grepl(col,cols.out) & cols.out!=col.in] # in case of more than one column available
+      if(length(cols) > 0){
+        # print(paste("cols are:",paste(cols, collapse = ", ")))
+        n.empty.cols <- sum(is.na(Data[i,cols])) # assumes filled in from left
+        if(n.empty.cols==0 & !DELETE){
+          stop("Insufficient empty fields.")
+        }
+        # print(paste("empty cols:", n.empty.cols))
+        if(!df.patterns[1,"REGEX"]){
+          matches <- tolower(df.patterns[key.index[i,],col])
+        }
+        else{
+          matches <- sapply(df.patterns[key.index[i,],col], 
+                            function(pat) 
+                              regmatches(Data[i,col.in],
+                                         regexpr(pat,Data[i,col.in],
+                                                 ignore.case = TRUE,
+                                                 perl = perl,
+                                                 useBytes = useBytes)))
+        }
+        # print(paste("     matches:",paste(matches,collapse = ", ")))
+        # print(length(matches))
+        if(length(matches) > n.empty.cols){
+          # print("excess matches")
           if(matches[1]==matches[2]) matches <- matches[1] # assumes all are duplicated
           else if(grepl(matches[2],matches[1]) | grepl(matches[1],matches[2])) matches <- matches[which.max(nchar(matches))] # assumes longest substring
+          else if(length(matches) > n.empty.cols) stop("not enough fields provided to contain all matches")
         }
+        else{ # don't put in extraneous information, regardless
+          # print("non-excess matches")
+          if(length(matches) == n.empty.cols & n.empty.cols > 1){
+            if(matches[1]==matches[2]) matches <- matches[1] # assumes all are duplicated
+            else if(grepl(matches[2],matches[1]) | grepl(matches[1],matches[2])) matches <- matches[which.max(nchar(matches))] # assumes longest substring
+          }
+        }
+        matches <- c(matches, rep(NA_character_, n.empty.cols-length(matches)))
+        if(n.empty.cols < n.dup.cols) matches <- c(Data[i,cols][!is.na(Data[i,cols]) & Data[i,cols]!=""], matches)
+        # print(paste("     matches consolidation:",paste(matches,collapse = "-")))
+        Data[i,cols] <- c(matches)
+        # print(paste(Data[i,cols], collapse = "-"))
       }
-      matches <- c(matches, rep(NA_character_, n.dup.cols-length(matches)))
-      # print(paste("     matches consolidation:",paste(matches,collapse = "-")))
-      Data[i,cols.out[grepl(col,cols.out) & !grepl(col.in,cols.out)]] <- matches
       
       # delete from string
       if(DELETE){

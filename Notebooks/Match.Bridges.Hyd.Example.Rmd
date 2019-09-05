@@ -363,6 +363,9 @@ if(RUN["FEATURE"]){
   df.Fail  <- Find.Features(df.Fail.cl[df.Fail.cl$STFIPS==state,], 
                               Features,
                               VERBOSE = VERB)
+  df.Fail  <- Find.Features(df.Fail.cl[df.Fail.cl$ID %in% IDs,], 
+                              Features,
+                              VERBOSE = VERB)
   df.Fail  <- Find.Features(df.Fail.cl, 
                               Features,
                               VERBOSE = VERB)

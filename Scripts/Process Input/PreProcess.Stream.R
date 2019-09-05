@@ -15,9 +15,8 @@ PreProcess.Stream <- function(Data,
                                                                        grepl, Data[,STREAM], ignore.case = TRUE),
                                                   MARGIN = 1, any)) & 
                                            !is.na(Data[,STREAM]),]),
-                 "NBI"  = row.names(Data[!is.na(Data[,grepl("38",FieldNames)]),]))
+                 "NBI"  = row.names(Data[!is.na(Data[,grepl("38",FieldNames)]) | !is.na(Data[,grepl("FEAT",FieldNames)]),]))
   
-  punct <- c("'","&","*")
   Data$STREAM_UNDER    <- str_squish(gsub("[\\&\\*]+"," ", gsub("'","",Data[,STREAM])))
   Data$STREAM_NO       <- NA_character_
   Data$ROUTE_UNDER     <- NA_character_
@@ -25,6 +24,7 @@ PreProcess.Stream <- function(Data,
   # Dataset-specific corrections
   ls.Keys   <- get(paste0("ls.",sub("Data","",DATA_SET),".Keys"))
   if(length(ls.Keys) > 0){
+    if(VERBOSE) print("Implementing dataset-specific corrections for streams.")
     ls.Stream <- ls.Keys[sapply(1:length(ls.Keys), function(i) "STREAM" %in% ls.Keys[[i]])]
     if(length(ls.Stream)>0){
       if(any(names(ls.Stream) %in% Rows)){
@@ -32,8 +32,50 @@ PreProcess.Stream <- function(Data,
         Data[rowsID,"STREAM_UNDER"] <- sapply(1:length(ls.Stream), 
                                               function(i) sub(ls.Stream[[i]][1],
                                                               ls.Stream[[i]][2],
-                                                              Data[rowsID[i],"STREAM_UNDER"]))
+                                                              Data[rowsID[i],"STREAM_UNDER"],
+                                                              fixed = TRUE))
       }
+    }
+  }
+  
+  # for places
+  if(VERBOSE) print("Checking for place mispellings and abbreviations from dictionary.")
+  for (j in c(1:length(ls.PlaceKeys))){
+    key.index <- sapply(paste0("\\<",
+                               ls.PlaceKeys[[j]][c(2:length(ls.PlaceKeys[[j]]))],
+                               "\\>[[:punct:]]?"),
+                        grepl,
+                        Data[Rows,"STREAM_UNDER"])
+    if(sum(key.index)==0){ 
+      key.index <- sapply(ls.PlaceKeys[[j]][c(2:length(ls.PlaceKeys[[j]]))],
+                          function(cn) grepl(cn, Data[Rows,"STREAM_UNDER"], fixed = TRUE) & 
+                            !grepl(ls.PlaceKeys[[j]][1], Data[Rows,"STREAM_UNDER"], fixed = TRUE))
+      useFix <- TRUE
+    }
+    else useFix <- FALSE
+    dim(key.index) <- c(length(Rows), length(ls.PlaceKeys[[j]])-1)
+    match.keys <- switch(as.character(length(dim(key.index))),
+                         "2" = which(apply(key.index, MARGIN = 1, any)),
+                         "1" = which(key.index))
+    for (i in match.keys){
+      pattern <- ifelse(useFix,
+                        ls.PlaceKeys[[j]][which(key.index[i,])[1]+1],
+                        paste0("\\<",
+                               ls.PlaceKeys[[j]][which(key.index[i,])[1]+1],
+                               "\\>"))
+      str     <- regmatches(Data[Rows[i],"STREAM_UNDER"], 
+                            regexpr(pattern, 
+                                    Data[Rows[i],"STREAM_UNDER"],fixed = useFix))
+      if(length(str)==0) next # no match
+      str.out <- ls.PlaceKeys[[j]][1]
+      Data[Rows[i],"STREAM_UNDER"] <- ifelse(useFix,
+                               sub(str,
+                                   str.out,
+                                   Data[Rows[i],"STREAM_UNDER"],
+                                   fixed = TRUE),
+                               sub(paste0("(",str,"[[:punct:]]?)"),
+                                   str.out,
+                                   Data[Rows[i],"STREAM_UNDER"]))
     }
   }
   
@@ -89,5 +131,9 @@ PreProcess.Stream <- function(Data,
       }
     }
   }
+  
+  # cleanup
+  Data$STREAM_UNDER <- gsub("(\\A[.,-]+)|([.,-]+\\Z)","",Data$STREAM_UNDER, perl = TRUE)
+  Data$STREAM_UNDER <- str_squish(gsub("[[:blank:]]{1}[\\,]",",",Data$STREAM_UNDER))
   return(Data)
 }
