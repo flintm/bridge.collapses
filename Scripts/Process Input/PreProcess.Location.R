@@ -14,10 +14,13 @@ PreProcess.Location <- function(Data,
     if(!is.na(get(col))){
       Data$TEMP <- Data[,get(col)]
       
-      # Basic cleanup, including symbols that will cause regex errors
+      # Basic cleanup, including symbols that will cause regex errors and other
+      # problems down the line
       # get rid of all possessives ("stabler's road")
       Data$TEMP <- sub("\\'s\\>","s", Data$TEMP)
-      Data$TEMP    <- str_squish(gsub("[\\&\\*]+"," ", gsub("'","",Data$TEMP)))
+      Data$TEMP <- str_squish(gsub("[\\&\\*]+"," ", gsub("'","",Data$TEMP)))
+      Data$TEMP <- sub("co. rd.","co rd", Data$TEMP, fixed = TRUE)
+      Data$TEMP <- sub("co.rd.","co rd", Data$TEMP, fixed = TRUE)
       
       # Dataset-specific corrections
       if(VERBOSE) print("Implementing dataset-specific corrections for location.")

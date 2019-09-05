@@ -168,6 +168,7 @@ require(rjson)
                         audubon     = c("audubon", "audabon"),
                         atchison    = c("atchison", "atchinson"),
                         buena_vista = c("buena vista", "buean vista"),
+                        feliciana  = c("feliciana", "feleciana"),
                         buchanan    = c("buchanan", "buch"),
                         geary       = c("geary" , "greary"),
                         pottawatomie   = c("pottawatomie", "pottawotamie","pott.","pott"),
@@ -176,6 +177,7 @@ require(rjson)
                         saint_clair    = c("saint clair", "st. clair", "st clair"),
                         saint_louis    = c("saint louis", "st louis", "st. louis"),
                         saint_charles  = c("saint charles", "st. charles", "st charles"),
+                        sainte_genevieve   = c("sainte genevieve", "ste genevieve"),
                         burleigh       = c("burleigh", "bruliegh", "bruleigh"),
                         northumberland = c("northumberland", "no umberland"),
                         añasco         = c("añasco", "anasco"),
@@ -190,6 +192,9 @@ require(rjson)
   cat(toJSON(ls.CountyKeys), file = file.path("Data","Input","Dictionaries","CountyKeys.json"))
   
   ls.PlaceKeys <- list(new_york  = c("new york", "nyc"),
+                       hoosick   = c("hoosick", "hoosic"),
+                       boston    = c("boston","west roxbury"),
+                       east_glacier_park = c("east glacier park", "east glacier"),
                        cyr_plantation = c("cyr plantation", "cyr plt"),
                        baltimore  = c("baltimore", "balt.", "balt"),
                        washington = c("washington", "wash."),
@@ -415,7 +420,8 @@ require(rjson)
                        "1191" = c("pend.","pendleton", "LOC"),
                        "1269" = c("balt co.", "baltimore county ", "LOC"),
                        "3565" = c("eldorado","el dorado","LOC"),
-                       "79"   = c("pederstrain", "pedestrian", "LOC"))
+                       "79"   = c("pederstrain", "pedestrian", "LOC"),
+                       "351"  = c("lk pontcht(3)", "lk pontchartrain (3)", "LOC"))
   save(ls.Fail.Keys, file = file.path("Data","Input","Dictionaries","ls.Fail.Keys.RData"))
   cat(toJSON(ls.Fail.Keys), file = file.path("Data","Input","Dictionaries","Fail.Keys.json"))
   

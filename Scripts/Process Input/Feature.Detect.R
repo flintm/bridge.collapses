@@ -85,7 +85,6 @@ Feature.Detect <- function(Data,               # must contain col.in and cols.ou
             }
         }
         Data[i,col.in] <- str_squish(gsub(p,"",Data[i,col.in],
-                                          ignore.case = TRUE,
                                           perl = perl,
                                           useBytes = useBytes))
         # print(paste("     after deletion:",Data[i, col.in]))
