@@ -84,13 +84,21 @@ ls.DOT.Keys <-list("29" = list(ROUTE    = c(PATTERN = "(\\<rt[e.]{0,2} [[:alpha:
                    #              MOVE    = NA,
                    #              ADDTO   = "ROUTE_TYPE_1",
                    #              ADD     = "county highway")), # Arkansas
-                   "19" = list(LOCATION = c(PATTERN = "[[:alpha:]]{1,2}[[:space:]]?[[:digit:]]{1,4}-[[:graph:]]{1,}",
-                                            SUBPTRN = "-[[:graph:]]{1,}",
+                   "19" = list(#BRIDGE = c(PATTERN = "[[:alpha:]]{1,2}[[:space:]]?[[:digit:]]{1,4}[-][[:graph:]]{1,}",
+                                            # SUBPTRN = "[-][[:graph:]]{1,}",
+                                            # SUB     = "",
+                                            # MOVE    = "BRIDGE_NAME",
+                                            # MVPTRN  = "[[:alpha:]]{1,2}[[:space:]]?[[:digit:]]{1,4}[-][[:graph:]]{1,}",
+                                            # ADDTO   = NA,
+                                            # ADD     = NA), # Iowa bridge numbering
+                               LOCATION = c(PATTERN = "(t[-]?[[:digit:]]{1,3}[nsew]{1,2}[,]? r[-]?[[:digit:]]{1,2}[nsew]{1,2}[,]?)|(s[[:digit:]]{1,2}([-][[:digit:]]{1,2})?([-][[:digit:]]{1,2})?)",
+                                            SUBPTRN = "(t[-]?[[:digit:]]{1,3}[nsew]{1,2}[,]? r[-]?[[:digit:]]{1,2}[nsew]{1,2}[,]?)|(s[[:digit:]]{1,2}([-][[:digit:]]{1,2})?([-][[:digit:]]{1,2})?)",
                                             SUB     = "",
-                                            MOVE    = "BRIDGE_NAME",
-                                            MVPTRN  = "[[:alpha:]]{1,2}[[:space:]]?[[:digit:]]{1,4}-[[:graph:]]{1,}",
+                                            MOVE    = "LOC_AUX_1",
+                                            MVPTRN  = "(t[-]?[[:digit:]]{1,3}[nsew]{1,2}[,]? r[-]?[[:digit:]]{1,2}[nsew]{1,2}[,]?)|(s[[:digit:]]{1,2}([-][[:digit:]]{1,2})?([-][[:digit:]]{1,2})?)",
                                             ADDTO   = NA,
-                                            ADD     = NA))) # Iowa
+                                            ADD     = NA)) # Iowa Public Land Survey System numering
+                   )
 save(ls.DOT.Keys, file = file.path("Data","Input","Ontologies","ls.DOT.Keys.RData"))
 cat(toJSON(ls.DOT.Keys), file = file.path("Data","Input","Ontologies","DOT.Keys.json"))
 

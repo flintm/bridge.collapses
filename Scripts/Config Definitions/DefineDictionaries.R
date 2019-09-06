@@ -186,12 +186,15 @@ require(rjson)
                         valencia       = c("valencia", "velencia"),
                         bedford        = c("bedford", "beford"),
                         louisa         = c("louisa", "lousia"),
+                        shelby         = c("shelby", "selby"),
                         mercer         = c("mercer", "mercert"),
                         cattaraugus    = c("cattaraugus", "catt"))
   save(ls.CountyKeys, file = file.path("Data","Input","Dictionaries","ls.CountyKeys.RData"))
   cat(toJSON(ls.CountyKeys), file = file.path("Data","Input","Dictionaries","CountyKeys.json"))
   
   ls.PlaceKeys <- list(new_york  = c("new york", "nyc"),
+                       sulphur   = c("sulphur", "sulpher"),
+                       prestonsburg = c("prestonsburg", "prestonburg"),
                        hoosick   = c("hoosick", "hoosic"),
                        boston    = c("boston","west roxbury"),
                        east_glacier_park = c("east glacier park", "east glacier"),
@@ -400,6 +403,9 @@ require(rjson)
                        "231" = c("br. tule", "branch tule river", "LOC", "STREAM"),
                        "236"  = c("br.", "branch", "LOC"),
                        "476"  = c("sangerv","sangerville","LOC"),
+                       "340"  = c("-yates"," county, yatesville","LOC"),
+                       "343"  = c("louiseville","louisville","LOC"),
+                       "515"  = c("chateau", "choteau", "LOC"),
                        "671"  = c("richmond","richland","LOC"),
                        "832"  = c("wst side hwy", "west side highway", "LOC"),
                        "1101" = c("psh1salmon", "psh 1 salmon", "LOC"),
@@ -408,7 +414,7 @@ require(rjson)
                        "1482" = c("garrett", "garretts mill", "LOC"),
                        "1345" = c("wash.", "washington ","LOC"),
                        "212"  = c("amer.", "american ", "LOC"),
-                       "1304" = c("s4&5","s4-5","LOC"),
+                       "1304" = c("s4 5","s4-5","LOC"),
                        "1061" = c("razrhon","razor hone","LOC", "STREAM"),
                        "218"  = c("sf-oak bay br", "san francisco oakland bay bridge","LOC"),
                        "240"  = c("sf-oak bay br", "san francisco oakland bay bridge","LOC"),
@@ -416,6 +422,7 @@ require(rjson)
                        "3603"  = c("sf-oak bay br, oakland/sf", "san francisco oakland bay bridge","LOC"),
                        "1557" = c("(br. 1-813","(br. 1-813)", "LOC"),
                        "1658" = c("(10-bc/1", "(10-bc/1)", "LOC"),
+                       "1324" = c("otter cr", "otter creek", "LOC"),
                        "1331" = c("rcb", "reinforced concrete box culvert", "MAT"),
                        "1191" = c("pend.","pendleton", "LOC"),
                        "1269" = c("balt co.", "baltimore county ", "LOC"),

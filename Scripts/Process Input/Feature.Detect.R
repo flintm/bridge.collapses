@@ -1,6 +1,5 @@
 Feature.Detect <- function(Data,               # must contain col.in and cols.out
                            df.patterns,        # the main string to be matched
-                           type,               # pattern type to choose prefix and suffix for patterns, NONE, WORD, or COMPOUND
                            col.in,             # field to be searched for pattern
                            cols.out,           # fields to put identified features
                            perl       = FALSE, # use perl in grepl
@@ -11,15 +10,8 @@ Feature.Detect <- function(Data,               # must contain col.in and cols.ou
   # print(paste("***incoming to Feature.Detect:",Data[,col.in]))
   # print(paste("cols out are", paste(cols.out, collapse = ", ")))
   # print(paste("pattern colnames are", paste(colnames(df.patterns), collapse = ", ")))
-  ls.pattern.types <- list(NONE = c("","",""),
-                           WORD = c("\\<","\\>",""),
-                           COMPOUND = c("\\<","\\>","[[:punct:]]?[[:space:]]+\\<","\\>"))
   
-  patterns   <- paste0(ls.pattern.types[[type]][1],
-                       df.patterns[,"PATTERN1"],
-                       ls.pattern.types[[type]][2],
-                       df.patterns[,"PATTERN2"],
-                       ls.pattern.types[[type]][3])
+  patterns   <- df.patterns[,"PATTERN"]
 
   key.index      <- sapply(patterns,grepl,Data[,col.in], perl = perl, useBytes = useBytes)
   dim(key.index) <- c(nrow(Data), length(patterns)) # force into matrix form if necessary
@@ -76,7 +68,7 @@ Feature.Detect <- function(Data,               # must contain col.in and cols.ou
         if(length(patterns[key.index[i,]])==1){ p <- df.patterns[key.index[i,],col]
         }
         else{
-          p <- as.character(df.patterns[key.index[i,],col])
+          p <- as.character(df.patterns[key.index[i,],col]) # vectorize
           if(grepl(p[1],p[2],fixed = TRUE)|grepl(p[2],p[1], fixed = TRUE)){
             p <- p[which.max(nchar(p))]
           }
@@ -84,10 +76,13 @@ Feature.Detect <- function(Data,               # must contain col.in and cols.ou
             p <- paste0("(",paste0(p, collapse=")|("),")")
             }
         }
+        print(Data[i,col.in])
+        print(p)
         Data[i,col.in] <- str_squish(gsub(p,"",Data[i,col.in],
                                           perl = perl,
                                           useBytes = useBytes))
-        # print(paste("     after deletion:",Data[i, col.in]))
+        Data[i, col.in] <- sub("[,-]$","", Data[i, col.in])
+        print(paste("     after deletion:",Data[i, col.in]))
       }
     }
     }

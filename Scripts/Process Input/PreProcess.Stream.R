@@ -1,9 +1,8 @@
 # Sub-function to process NYSDOT Bridge Failure Database FEAT_UND and NBI ITEM6A fields
-# Particularly looks to expand branch and tributary abbreviations to aid feature identification
 
 PreProcess.Stream <- function(Data,             
                               DATA_SET,
-                              FieldNames,         # FieldNames is a character of form c(STREAM = "STREAM_COL_NAME")
+                              FieldNames,       # FieldNames is a character of form c(STREAM = "STREAM_COL_NAME")
                               VERBOSE = FALSE){ #
   
   if(!("STREAM") %in% names(FieldNames)) stop("Stream column name not properly specified.")
@@ -15,7 +14,7 @@ PreProcess.Stream <- function(Data,
                                                                        grepl, Data[,STREAM], ignore.case = TRUE),
                                                   MARGIN = 1, any)) & 
                                            !is.na(Data[,STREAM]),]),
-                 "NBI"  = row.names(Data[!is.na(Data[,grepl("38",FieldNames)]) | !is.na(Data[,grepl("FEAT",FieldNames)]),]))
+                 "NBI"  = row.names(Data[!is.na(Data[,grepl("(38)|(NAV)",colnames(Data))]),])) # Navigation control only
   
   Data$STREAM_UNDER    <- str_squish(gsub("[\\&\\*]+"," ", gsub("'","",Data[,STREAM])))
   Data$STREAM_NO       <- NA_character_
