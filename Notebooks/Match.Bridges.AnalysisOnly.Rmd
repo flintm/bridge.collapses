@@ -1,0 +1,542 @@
+---
+title: 'Example: Geolocating and Cross-Database Matching of US Hydraulic Bridge Collapses'
+author: '[Madeleine Flint](http://www.madeleinemflint.com)'
+date: "`r format(Sys.Date(), '%B %e, %Y')`"
+output:
+  html_notebook:
+    css: style.css
+    toc: no
+  html_document:
+    css: style.css
+    df_print: paged
+    toc: no
+params:
+  eval: no
+  mstyle: 'PAR'
+  verbose: TRUE
+---
+
+```{r setup, include=FALSE, eval=params$eval}
+library(knitr)
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+opts_chunk$set(fig.width=12, fig.height=4, fig.path='Plots/',message=FALSE)
+```
+
+```{r installLoadPackages, include=FALSE, eval=params$eval}
+# Hidden: install and load packages
+packages <- c("ggplot2","stringr", "rjson", "knitr", "devtools", 
+              "english", "stringdist", "reshape2", "formattable") 
+new.pkg <- packages[!(packages %in% installed.packages())]
+if (length(new.pkg)){
+    repo <- "http://cran.us.r-project.org"
+    install.packages(new.pkg, dependencies = TRUE, repos = repo)
+}
+invisible(sapply(packages, require, character.only = TRUE))
+rm(packages, new.pkg)
+```
+
+```{r userExampleControls, echo = TRUE, eval=params$eval}
+EXAMPLE_ID   <- c(3, 31, 63, 77, 81, 175, 513, 1191, 1269) 
+# Matching options
+M_STYLE <- params$mstyle 
+  # PAR: Runs for each M_TYPE in parallel (i.e., run independently and then combined)
+  # SEQ: Sequential runs (i.e., narrowing down by each match type in order)?
+M_TYPE  <- c("bin",     # Determines how data should be matched, and supports: 
+             "stream",   # 'road', 'route', 'stream', and 'bin' (Bridge Id No). 
+             "route",    # Order in vector determines the prioritization in ranking. 
+             "road")
+```
+
+
+```{r advancedUserControls, include=FALSE, eval=params$eval}
+# Controls for data use and data storage (memory)
+DATA   <- list(MatchData  = "Fail", # not currently modifiable
+               TargetData = "NBI",  # not currently modifiable
+               Dictionary = c("Stream", "Road", "ITEM5","ITEM43", 
+                              "Cardinal", "Relational", "HydraulicCollapse"),
+               StdData    = c("STFIPS", "FIPS", "GNIS"), # Standard data sets
+               SuppTarget = c("USGS","GRAND"))           # Additional analysis
+REDUCE <- list(Fail = c(Example = TRUE,    # only pulls the entry with ID EXAMPLE_ID
+                        Fields  = FALSE),  # Extraneous fields deleted?
+               NBI  = c(Fields  = TRUE,   
+                        States  = TRUE))  # Target data of states not present 
+                                          # in match data deleted?
+
+
+# Controls which parts of Notebook/Analysis are run and data storage (disk)
+STEPS <- c("LOAD", "CLEAN", "FEATURE", "MATCH", "RANK", "CONFIRM")
+RUN   <- c(FALSE, rep(TRUE, 5))   # Which of the steps above to be run?
+SAVE  <- c(rep(FALSE, 6))  # If/when intermediate results to be saved &        
+                           # subsequently loaded?
+names(RUN)  <- STEPS
+names(SAVE) <- STEPS
+
+M_STORE <- TRUE       # List of potential matches for each entry is stored on disk,
+                      # rather than held in memory and returned to the notebook.
+
+# Subfunction controls for messages 
+VERB <- params$verbose # Subfunctions to print intermediate results (e.g., # of matches 
+             # completed). Mainly useful for debugging with a small set of MatchData.
+
+# Features      : which types of data will be cleaned and undergo feature detection
+# Match         : controls for string matching and sorting
+# maxStringDist : for approximate string matching, max distance that will count as 
+#                 "approximately" matched, i.e., number of substitutions, deletions, 
+#                 insertions, and BLAH.
+# capCand*      : when the list of candidate matches (of the potential match targets) 
+#                 grows too long the algorithm will assume that none of the candidates are
+#                 sufficiently strong, and will return all potential targets.
+#   *N          : if number of candidate matches is > capCandN, revoke candidacy
+#   *Pct        : if number of candidate matches is > capCandPct*nTargetRows, revoke 
+opts <-list(Fields   =list(Fail =c("MAT", "TYPE", "LOCATION", "STREAM", "BIN", "ID"),
+                           NBI  =c("ROUTE","LOCATION","ROAD","STREAM", "BIN", "ID")),
+            Features =list(Fail =c("COUNTY", "CITY","LOCATION","ROAD","ROUTE","STREAM"),
+                           NBI  =NULL),
+            Keys     =list(Fail =list(LOCATION = c("Relational"),
+                                      ROAD     = c("Road"),
+                                      ROUTE    = c("Rte"),
+                                      BRIDGE   = c("Bridge"),
+                                      STREAM   = c("Stream", "Trib", "Bridge", "Near")
+            )),
+            Match=list(maxDist    =c(road =1, stream =2, route =0, bin = 2),
+                       capCandN   =c(road =200, stream =100, route =100, bin =200),
+                       capCandPct =c(road =0.7, stream =0.7, route =0.7, bin =0.7)))
+```
+
+
+```{r loadFormat, include = FALSE, eval=params$eval, error=FALSE, message=FALSE}
+fp <- file.path("Data","Input")
+inputs<-list(Fail       = c(Fail=file.path(fp,"Fail.Example.RData")),
+             NBI        = c(NBI=file.path(fp,"Datasets","NBI.USDOT.2018.Min.RData")),
+             Dictionary = c(Stream=file.path(fp,"Dictionaries","ls.StreamKeys.RData"),
+                            Trib=file.path(fp,"Dictionaries","ls.TribKeys.RData"),
+                            Road=file.path(fp,"Dictionaries","ls.RoadKeys.RData"),
+                            Rte=file.path(fp,"Dictionaries","ls.RteKeys.RData"),
+                            Rail=file.path(fp,"Dictionaries","ls.RailKeys.RData"),
+                            Bridge=file.path(fp,"Dictionaries","ls.BridgeKeys.RData"),
+                            Cardinal=file.path(fp,"Dictionaries","ls.CardKeys.RData"),
+                            Spec=file.path(fp,"Dictionaries","ls.SpecKeys.RData"),
+             Relational   = file.path(fp,"Dictionaries","ls.RelationalKeys.RData"),
+             Place        = file.path(fp,"Dictionaries","ls.PlaceKeys.RData"),
+             Jurisdiction = file.path(fp,"Dictionaries","ls.JurisKeys.RData"),
+             County       = file.path(fp,"Dictionaries","ls.CountyKeys.RData"),
+             Mat          = file.path(fp,"Dictionaries","ls.MatKeys.RData"),
+             Type         = file.path(fp,"Dictionaries","ls.TypeKeys.RData"),
+             Sup          = file.path(fp,"Dictionaries","ls.SupKeys.RData"),
+             Fail         = file.path(fp,"Dictionaries","ls.Fail.Keys.RData"),
+             NBI          = file.path(fp,"Dictionaries","ls.NBI.Keys.RData")),
+             Ontologies = c(Fail= file.path(fp,"Ontologies","ls.Fail.Ont.RData"),
+                            NBI = file.path(fp,"Ontologies","ls.NBI.Ont.RData"),
+                            FailFields = file.path(fp,"Ontologies","ls.Fail.Fields.RData"),
+                            NBI.Fields = file.path(fp,"Ontologies","ls.NBI.Fields.RData"),
+                            ITEM5B = file.path(fp,"Ontologies","ls.ITEM5B.Ont.RData"),
+                            ITEM5BRev = 
+                              file.path(fp,"Ontologies","ls.ITEM5B.OntRev.RData"),
+                            ITEM43A = file.path(fp,"Ontologies","ls.ITEM43A.Ont.RData"),
+                            ITEM43B = file.path(fp,"Ontologies","ls.ITEM43B.Ont.RData"),
+                            ITEM43BRev =
+                              file.path(fp,"Ontologies","ls.ITEM43B.OntRev.RData"),
+                            DOT = file.path(fp,"Ontologies","ls.DOT.Keys.RData")),
+             StdData    = c(STFIPS= file.path(fp,"Standard","df.States.RData"),
+                            FIPS= file.path(fp,"Standard","df.Counties.RData"),
+                            CITY= file.path(fp,"Standard","df.Cities.RData"),
+                            GNIS= file.path(fp,"Standard","df.GNIS.RData")),
+             SuppTarget = c(USGS="",
+                            GRAND=""))
+if (RUN["LOAD"]){
+source(file.path("Scripts","Load Input","Load.Format.Input.Data.R"))
+df.Fail  <- Load.Format.Input.Data(inputs[["Fail"]],
+                                     DATA_SET    = "Fail",
+                                     REDUCE_SIZE = REDUCE[["Fail"]]["Fields"],
+                                     VERB     = VERB)
+df.NBI <- Load.Format.Input.Data(inputs[["NBI"]],
+                                     DATA_SET    = "NBI",
+                                     REDUCE_SIZE = REDUCE[["NBI"]]["Fields"],
+                                     VERB     = VERB)
+rm(Load.Format.Input.Data,fp)
+}
+# as there are dozens of lists used as dictionaries, they are loaded into their own environment
+# so they don't clutter up the workspace
+lenv <- new.env()
+invisible(lapply(unlist(inputs[c("Dictionary","Ontologies","StdData")]), load, lenv))
+attach(lenv)
+invisible(lapply(unlist(inputs[c("Fail","NBI")]), load, .GlobalEnv))
+row.names(df.Fail) <- as.character(df.Fail$ID)
+df.NBI$OBJECTID_new[duplicated(df.NBI$OBJECTID_new)] <- paste0(df.NBI$OBJECTID_new[duplicated(df.NBI$OBJECTID_new)],".1")
+row.names(df.NBI) <- df.NBI$OBJECTID_new
+```
+
+
+```{r exampleSetup, include = FALSE, echo = FALSE}
+# remove unneeded rows 
+# if(REDUCE[["Fail"]]["Example"]) df.Fail <- df.Fail[df.Fail$ID %in% EXAMPLE_ID,]
+if(REDUCE[["NBI"]]["States"]){
+  MatchStates <- unique(df.Fail$STFIPS)
+  df.NBI  <- df.NBI[df.NBI$STFIPS %in% MatchStates,]
+  rm(MatchStates)
+}
+```
+
+```{r cleanData, include = FALSE, eval=params$eval, message=FALSE}
+if (RUN["CLEAN"]){
+  source(file.path("Scripts","Process Input","Clean.Fields.R"))
+  
+  FieldNames <- sapply(opts[["Fields"]][["Fail"]], function(i) ls.Fail.Ont[[i]][1],
+                     USE.NAMES = TRUE)
+  # FieldNames <- c(LOCATION = "LOCATION", ID = "ID")
+  df.Fail.l <- df.Fail
+  df.Fail.cl  <- Clean.Fields(df.Fail.l, NULL,
+                             DATA_SET     = "Fail",
+                             FieldNames   = FieldNames,
+                             VERB      = VERB)
+  
+  FieldNames <- sapply(opts[["Fields"]][["NBI"]], function(i) ls.NBI.Ont[[i]][1],
+                     USE.NAMES = TRUE)[c("ID","BIN","ROUTE","LOCATION","STREAM","ROAD")]
+  df.NBI  <- Clean.Fields(df.NBI, NULL,
+                              DATA_SET     = "NBI",
+                              FieldNames  = FieldNames,
+                              VERB      = VERB)
+
+  rm(Clean.Fields, FieldNames)
+}
+```
+
+
+```{r echo = FALSE}
+print(df.Fail[df.Fail$ID %in% EXAMPLE_ID,
+              c("LOC","STREAM_UNDER", "ROUTE_UNDER",
+                "BIN_NUM","MATER","TYPE_STRUCT", "SUPPORT", "ITEM43A",
+                "ITEM43B")])
+```
+
+```{R featureDetection, include = FALSE, eval=params$eval}
+if(RUN["FEATURE"]){
+  source(file.path("Scripts","Process Input","Find.Features.R"))
+  
+  Features <- sapply(opts[["Features"]][["Fail"]], 
+                     function(i) ls.Fail.Ont[[i]][1],
+                     USE.NAMES = TRUE)
+  Features <- sub("LOCATION","LOC",Features)
+  Features["STREAM"] <- "STREAM_UNDER"
+  Features <- Features[-6]
+  state    <- "21"
+  df.Fail  <- Find.Features(df.Fail.cl[df.Fail.cl$STFIPS==state,], 
+                              Features,
+                              VERBOSE = VERB)
+  IDs <- c("874","875","864")
+  df.Fail  <- Find.Features(df.Fail.cl[df.Fail.cl$ID %in% IDs,], 
+                              Features,
+                              VERBOSE = VERB)
+  df.Fail  <- Find.Features(df.Fail.cl, 
+                              Features,
+                              VERBOSE = VERB)
+  rm(Find.Features, Features)
+}
+```
+
+# 4. Structured feature and string matching
+Identify NBI bridges that could be linked to failed bridges. Matching style is controlled by `M_STYLE`. Parallel matching searches for the types separately and then combines the match pools.
+```{r matching, include=TRUE, eval=params$eval, error=FALSE}
+if (RUN["MATCH"]){
+  source(file.path("Scripts","Matching","Helper","GenerateMatches.R"))
+  source(file.path("Scripts","Matching","Helper","PerformMatch.R"))
+  ls.Matches<-sapply(M_TYPE, 
+                     function(m)
+                      sapply(row.names(df.Fail),
+                             function(i) 
+                              GenerateMatches(
+                                df.Fail[i,],
+                                m,
+                                maxStringDist= opts$Match$maxDist[m],
+                                capCandPct   = opts$Match$capCandPct[m],
+                                capCandN     = opts$Match$capCandN[m],
+                                SAVE         = M_STORE,
+                                OutPath      = 'Data/Analysis',
+                                LoadFromFile = c(PAR=FALSE,
+                                                 SEQ= TRUE)[M_STYLE],
+                                LoadPath     = 'Data/Analysis',
+                                VERBOSE      = VERB), 
+                             USE.NAMES = TRUE, simplify = FALSE),
+                     USE.NAMES = TRUE, simplify = FALSE)
+  rm(GenerateMatches, PerformMatch)
+}
+```
+
+Analyzing the number of candidate matches returned by each run allows me to assess the performance of the algorithm.
+```{r analyzeNMatch, echo=FALSE, warning=FALSE, message=FALSE}
+  nMatches <- sapply(names(ls.Matches), 
+                     function(m)
+                       sapply(names(ls.Matches[[m]]), 
+                              function(i)
+                                ifelse(!is.na(as.integer(ls.Matches[[m]][[i]][3])),
+                                       -1*as.integer(ls.Matches[[m]][[i]][3]),
+                                       sum(!grepl("IDENT",ls.Matches[[m]][[i]]))),
+                              USE.NAMES = TRUE, simplify = TRUE), 
+                     USE.NAMES = TRUE, simplify = FALSE)
+ nMatches$state   <- sapply(row.names(df.Fail), 
+                            function(i) sum(df.NBI$STFIPS==df.Fail[i,"STFIPS"]))
+ nMatches$county  <- sapply(row.names(df.Fail), 
+                            function(i) 
+                              sum(df.NBI$COUNTY_CODE_003== df.Fail[i,"FIPS_1"] |  
+                                      df.NBI$STFIPS==df.Fail[i,"FIPS_2"],na.rm = T))
+ nMatches         <- as.data.frame(nMatches)
+ nMatches$ID      <- row.names(nMatches)
+ nMatches.melt    <- melt(nMatches, id.vars="ID", variable.name="Match", value.name= "Count")
+ nMatches.melt$Match <- factor(nMatches.melt$Match, levels = c("state", "county",M_TYPE))
+ 
+ 
+```
+
+```{r plotNMatch, echo = FALSE}
+# Make plot
+ nBar <- ggplot(nMatches.melt, aes(x = ID, y = Count, fill = Match)) + 
+   geom_col(position = position_dodge()) +
+   geom_text(aes(label = Count, y = Count + 0.05), 
+             position = position_dodge(0.9), vjust = 0, size = sizesP$Reg["PRES"])
+ nBar + scale_fill_manual(values = c(state = "gray65", 
+                                     county = "black", 
+                                     road = "red",
+                                     stream = "blue", 
+                                     route = "orange",
+                                     bin = "green")) + 
+   getTheme(outputType = "PRES") + 
+   labs(title = "Number of candidate matches by match type", x = "Collapsed Bridge ID")+
+   theme(axis.ticks.x = element_blank(), axis.ticks.y = element_blank())
+
+```
+
+
+# 5. Automated collating and ranking of potential matches
+The match quality is automatically recorded by match type, which field of that type was matched, and whether the match was absolute (a perfect match to the original field), exact (perfect match to cleaned field), full (all words), partial (some words), or fuzzy (low string distance). In parallel mode, the matches can be combined across `M_TYPE` to bring multi-matched candidates to the front.
+```{r collateRanking, include=FALSE, eval=params$eval}
+if (RUN["RANK"]){
+  source(file.path("Scripts","Matching","Rank.Matched.Bridges.R"))
+  ls.Matches.Comb <- Rank.Matched.Bridges(ls.Matches)
+  rm(Rank.Matched.Bridges)
+}
+```
+
+# 6. Supervised match confirmation
+```{r confirmation, include = FALSE, echo=FALSE}
+if (RUN["CONFIRM"]){
+  source(file.path("Scripts","Matching","Confirm.Matched.Bridges.R"))
+  ls.Conf <- lapply(row.names(df.Fail), 
+                    function(i)
+                      Confirm.Matched.Bridges(
+                        df.Fail[i,], 
+                        df.NBI, ls.Matches.Comb[[i]]))
+  tab <-
+    lapply(
+      1:length(ls.Conf),
+      function(i)
+        formattable(
+          ls.Conf[[i]][1:10,],
+          list(Q_BIN = FALSE, Q_STREAM = FALSE, Q_COUNTY = FALSE,
+               Q_ROAD = FALSE, Q_ROUTE = FALSE, Q_ALL = FALSE,
+               BIN_NBI =
+                 formatter(
+                   "span",
+                   style = ~ 
+                     style(color = 
+                             ifelse(Q_BIN<1,
+                                    "white",
+                                    "black"),
+                           "background-color"=
+                             sapply(Q_BIN,
+                                    function(x) 
+                                      if (x < 0.76) "#32a852"
+                                    else if (x < 0.8) "#86c287"
+                                    else if (x < 0.9) "#dbc832"
+                                    else if (x < 1) "#dbb132"
+                                    else "white"),
+                           "padding-right" = "4px", 
+                           "padding-left" = "2px")),
+               COUNTY_NBI = 
+                 formatter(
+                   "span",
+                   style = ~ 
+                     style(color = 
+                             sapply(COUNTY_NBI, 
+                                    function(y) 
+                                      ifelse(
+                                        grepl(y,  
+                                              ls.Conf[[i]][1,"LOCATION"],
+                                              ignore.case = TRUE),
+                                        "#32a852",
+                                        "black"))),
+                   "padding-right" = "4px", 
+                   "padding-left" = "2px"),
+               ROAD_NBI = 
+                 formatter(
+                   "span",
+                   style = ~ 
+                     style(color = 
+                             ifelse(Q_ROAD<1,
+                                    "white",
+                                    "black"),
+                           "background-color"=
+                             sapply(Q_ROAD,
+                                    function(x) if (x < 0.25) "#32a852"
+                                    else if (x < 0.5) "#86c287"
+                                    else if (x < 0.75) "#dbc832"
+                                    else if (x < 1) "#dbb132"
+                                    else "white"),
+                           "padding-right" = "4px", 
+                           "padding-left" = "2px")),
+               ROUTE_NBI=formatter(
+                 "span",
+                 style = ~ 
+                   style(color = 
+                           ifelse(Q_ROUTE<1,
+                                  "white",
+                                  "black"),
+                         "background-color" = 
+                           sapply(Q_ROUTE,
+                                  function(x) if (x < 0.25) "#32a852"
+                                  else if (x < 0.5) "#86c287"
+                                  else if (x < 0.75) "#dbc832"
+                                  else if (x < 1) "#dbb132"
+                                  else "white"),
+                         "padding-right" = "4px", 
+                         "padding-left" = "2px")),
+               FEAT_NBI = 
+                 formatter(
+                   "span",
+                   style = ~ 
+                     style(color = 
+                             ifelse(Q_STREAM<1,
+                                    "white",
+                                    "black"),
+                           "background-color" = 
+                             sapply(Q_STREAM,
+                                    function(x) if (x < 0.8) "#32a852"
+                                    else if (x < 0.9) "#86c287"
+                                    else if (x < 0.95) "#dbc832"
+                                    else if (x < 1) "#dbb132"
+                                    else "white"),
+                           "padding-right" = "4px", 
+                           "padding-left" = "2px")),
+               YR_BLT_NBI = 
+                 formatter(
+                   "span",
+                   style = ~ 
+                     style(color = 
+                             sapply(YR_BLT_NBI,
+                                    function(x) 
+                                      if(
+                                        is.na(ls.Conf[[i]]$YR_BLT[1])
+                                      ) "black"
+                                    else if(x == 
+                                            ls.Conf[[i]]$YR_BLT[1]
+                                    ) "#32a852"
+                                    else if(x > ls.Conf[[i]]$YR_BLT[1]
+                                    ) "red"
+                                    else if(x < ls.Conf[[i]]$YR_BLT[1] &
+                                            is.na(ls.Conf[[i]]$FAIL_TYPE[1])
+                                    ) "#dbb132"
+                                    else if(x < ls.Conf[[i]]$YR_BLT[1] &
+                                            ls.Conf[[i]]$FAIL_TYPE[1]=="TC"
+                                    ) "red"
+                                    else "black")))
+          )
+        )
+    )
+}
+```
+Now let's check the matches.
+```{r confirm1, echo=FALSE}
+  tab[[1]]
+```
+
+```{r confirm2, echo = FALSE}
+  tab[[2]]
+```
+# Assessment
+As the main goal is recall but precision currently causes issues with the amount of person-time needed to verify matches, I will take a look at false positives/negatives and true positives/negatives.
+```{r assessMatching, echo = FALSE, warning=FALSE, message=FALSE}
+# load data.frame of confirmed matches
+load(file.path("Data","df.Fail.NBI.Gage.Active.RData"))
+df.MatchMetrics <- data.frame(matrix(NA,5,9),
+                              row.names = c("combined", M_TYPE))
+colnames(df.MatchMetrics) <- c("tp","fp","tn","fn","recall", "precision", "f1","f2","d2m")
+# Overall
+Conf <- c("175"="490332","31"="590310")
+d2m  <- c(1,1)
+p    <- c(1,1)
+n    <- c(0,0)
+tp   <- sum(p)
+fn   <- sum(n)
+fp   <- sum(unlist(lapply(ls.Conf, nrow))) - tp
+tn   <- sum(n)
+recall    = tp/(tp+fn)
+precision = tp/(tp+fp)
+f1 <- 2*recall*precision/(recall+precision)
+f2 <- 5*recall*precision/(recall+4*precision)
+df.MatchMetrics["combined",] <- c(tp, fp, tn, fn, recall, precision, f1, f2, mean(d2m))
+
+# for individual parallel runs
+for (m in M_TYPE){
+  tp  <- sapply(row.names(df.Fail), function(i) sum(grepl(Conf[i], ls.Matches[[m]][[i]])))
+  d2m <- sapply(row.names(df.Fail), function(i) ifelse(tp[i]==1,
+                                                       which(grepl(Conf[i], ls.Matches[[m]][[i]])),
+                                                       nMatches[i,m]))
+  tp  <- sum(tp)
+  fn  <- sum(p) - tp
+  fp  <- sum(nMatches[,m]) - tp
+  recall    <- tp/(tp+fn)
+  precision <- tp/(tp+fp)
+  f1 <- 2*recall*precision/(recall+precision)
+  f2 <- 5*recall*precision/(recall+4*precision)
+  df.MatchMetrics[m,] <- c(tp, fp, tn, fn, recall, precision, f1, f2, mean(d2m))
+}
+df.MatchMetrics$type <- row.names(df.MatchMetrics)
+df.MatchMetrics$fp   <- -1*df.MatchMetrics$fp
+df.MatchMetrics$fn   <- -1*df.MatchMetrics$fn
+df.Metrics.melt      <- melt(df.MatchMetrics[,c(1:4,10)], id.vars = "type", variable.name = "stat", value.name = "y")
+df.Metrics.melt$x    <- factor(grepl("p",df.Metrics.melt$stat), 
+                               levels = c(TRUE, FALSE), 
+                               labels = c("positives", "negatives"))
+df.Metrics.melt$tf   <- factor(grepl("t",df.Metrics.melt$stat), 
+                               levels = c(TRUE, FALSE),
+                               labels = c("TRUE", "FALSE"))
+df.Metrics.melt$type <- factor(as.character(df.Metrics.melt$type), levels = c("combined","bin","stream","road","route")[5:1])
+ylimn <- -75
+df.Metrics.melt[df.Metrics.melt$y==0 & df.Metrics.melt$tf == "TRUE","y"] <- 0.1
+df.Metrics.melt[df.Metrics.melt$y==0 & df.Metrics.melt$tf == "FALSE","y"] <- -0.1
+df.Metrics.melt$y[df.Metrics.melt$y < ylimn] <- ylimn
+rm(ylimn,n,p,precision,recall,f1,f2,tp,tn,fp,fn,m)
+```
+
+```{r plotStats, echo = FALSE}
+Flag <- ggplot(data = subset(df.Metrics.melt), 
+               aes(x = x, fill = type, y = y, alpha = tf)) + geom_col(position = position_dodge()) + coord_flip() 
+Flag + ylim(c(ylimn,10)) + 
+  scale_alpha_manual(values = c("TRUE" = 1, "FALSE" = 0.5), guide = FALSE) + 
+  scale_x_discrete(limits = c("negatives","positives")) +
+  labs(y = "count (false <- -> true)", x = "error category", title = "Visual check of recall and precision") + 
+  getTheme(outputType = "PRES")
+```
+
+It appears that with the parallel format, I have managed to achieve high recall at the expense of precision, which is in line with my goals. That said, more work is certainly needed, especially in match ranking and confirmation. While I have not yet finished the confirmation process on the updated version of the matching algorithm, the results confirmed from the previous version are shown below (387 bridges of 1172 hydraulic collapses were located).
+
+```{r plotMap, echo = FALSE, warning=FALSE, message=FALSE}
+source(file.path("Plotting","PlotFailedBridgesMap.R"))
+map <- PlotFailedBridgesMap(df.Fail.NBI.Gage, size = "none", SHOW_HURR = FALSE, outputType = "PRES")
+map
+```
+
+
+# Notebook metadata
+```{r sessionInfo, include=TRUE, echo=TRUE, results='markup'}
+devtools::session_info()
+```
+
+```{r cleanup, include=FALSE, echo=FALSE, error=FALSE, eval=params$eval}
+# Hidden: clear temporary files and environment
+if(M_STORE){
+  DeleteList <- list.files(path = file.path("Analysis","Temp"), full.names = TRUE)
+  file.remove(DeleteList)
+}
+# rm(list = ls())
+```
+
