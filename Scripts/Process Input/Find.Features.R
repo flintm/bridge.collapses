@@ -1,24 +1,28 @@
 Find.Features <- function(Data,
                           Features, # Types of features to be extracted and their associated field (column) name (e.g., CITY = "LOCATION_COL_NAME")
+                          DATASET = "Fail",
                           VERBOSE = VERBOSE){
   source(file.path("Scripts","Process Input","Feature.Detect.R"))
+  source(file.path("Scripts","Process Input","Find.Localities.R"))
 
   ## Determine which types of features are to be detected
   Rows  <- rownames(Data)
   FLAG  <- rep(FALSE, length(unique(Features)))
   names(FLAG) <- unique(Features)
-  ls.cols.out <- list(COUNTY = as.vector(sapply(1:3, 
-                                                function(i) 
-                                                  paste0(c("COUNTY_NAME_","FIPS_"),i))),
-                      CITY   = as.vector(sapply(1:40, 
-                                              function(i) 
-                                                paste0(c("CITY_NAME_","FIPS_FROM_CITY_","ANSICODE_","GNIS_ID_"),i))),
-                      LOCATION = c("LOC_AUX_1","LOC_AUX_2","BRIDGE_NAME"),
-                      ROAD     = paste0("ROAD_",c("NAME","TYPE","DIRECTION","AUX")),
-                      ROUTE    = as.vector(sapply(1:2, 
-                                               function(i) paste0(paste0("ROUTE_",c("NAME_","TYPE_","DIR_","AUX_")),i))),
-                      STREAM   = as.vector(sapply(1:2, 
-                                                function(i) paste0(paste0("STREAM_",c("NAME_","TYPE_","TRIB_","AUX_")),i))))
+  
+  if(DATASET=="Fail"){
+    n.cols.out <- c(COUNTY = 3,
+                       CITY   = 10,
+                       LOCATION = 2,
+                       ROAD     = 2,
+                       ROUTE    = 2,
+                       STREAM   = 2)[names(Features)]
+    ls.cols.out <- sapply(names(Features), function(f)
+      as.vector(sapply(1:n.cols.out[f], function(i) 
+        paste(ls.Fail.Ont[["Feature"]][[f]], i, sep = "_"))))
+      
+  }
+  else stop("NBI Feature Detection not currently supported.")
   
   ## Loop over features
   for(f in names(Features)){
@@ -26,58 +30,16 @@ Find.Features <- function(Data,
     COL        <- Features[f]
     cols.out   <- ls.cols.out[[f]]
     names.out  <- unique(sub("_[[:digit:]]+","",cols.out))
-    n.dup.cols <- ifelse(any(grepl("[[:digit:]]",ls.cols.out[[f]])),
-                         max(as.numeric(gsub("[A-Z_]+","",ls.cols.out[[f]])),na.rm = T),
-                         1)
+    n.dup.cols <- n.cols.out[f]
     Data[,cols.out] <- NA_character_
+    # print(c(COL,cols.out))
+    if(f %in% c("CITY", "COUNTY")){
+      Data <- Find.Localities(Data,f,COL,cols.out,n.dup.cols, DELETION = FALSE, VERBOSE = VERBOSE)
+    }
 
     # state-dependent checks for possible county and city names and special processing -------
     for(state in unique(Data$STFIPS)){
-      rows <- Rows[Data$STFIPS==state & !is.na(Data[,COL])]
-      if(f %in% c("COUNTY", "CITY")){
-        if(VERBOSE) print(paste("Checking for",tolower(f),"in state:",df.States[state,"STATE_FULL"]))
-        localities <- switch(f,
-                             COUNTY = df.Counties[df.Counties$STFIPS_C == state, c("county", "FIPS_C")],
-                             CITY   = df.Cities[df.Cities$STFIPS_C == state, c("city", "FIPS_C", "GNIS_ID", "ANSICODE")])
-        colnames(localities)[1] <- "NAME"
-        colnames(localities)[colnames(localities)=="FIPS_C"] <- "FIPS"
-        localities$REGEX    <- FALSE
-        localities$PATTERN <- localities$NAME
-        localities2 <- localities[grepl("(\\<north\\>)|(\\<south\\>)|(\\<east\\>)|(\\<west\\>)|(\\<new\\>)|(\\<old\\>)",
-                                        localities$PATTERN),]
-        localities2$PATTERN <- str_squish(sub("(\\<north\\>)|(\\<south\\>)|(\\<east\\>)|(\\<west\\>)|(\\<new\\>)|(\\<old\\>)","",
-                                    localities2$PATTERN))
-        localities <- rbind(localities, localities2)
-        
-        # look for other populated places
-        if(f=="CITY"){ 
-          localities[localities$ANSICODE=="-999","ANSICODE"] <- NA_character_
-          localities[localities$GNIS_ID=="-999", "GNIS_ID"] <- NA_character_
-          localities3 <- df.GNIS[df.GNIS$STFIPS==state & df.GNIS$FEATURE_CLASS %in% c("Civil"), c("name","FIPS","GNIS_ID")]
-          colnames(localities3)[1] <- "NAME"
-          localities3$ANSICODE <- NA_character_
-          localities3$PATTERN  <- localities3$NAME
-          localities3$REGEX    <- FALSE
-          
-          # delete those already present by GNIS
-          localities3 <- localities3[!(localities3$GNIS_ID %in% c(localities$GNIS_ID,localities$ANSICODE)) & !grepl("county",localities3$NAME),]
-    
-          localities <- rbind(localities, localities3)
-          rm(localities2, localities3)
-          localities <- localities[order(nchar(localities$NAME), decreasing = TRUE),]
-        }
-        localities$PATTERN <- paste0("\\<",localities$PATTERN,"\\>")
-        
-        # check for presence of locality name and record name and FIPS or other standard codes
-        Data[rows,c(COL,cols.out)] <- Feature.Detect(Data[rows,], 
-                                                     localities, 
-                                                     COL, 
-                                                     cols.out, 
-                                                     n.dup.cols = n.dup.cols, 
-                                                     DELETE = FALSE)
-        
-      }
-      # state-specific, not city or county --------
+      # state-specific special processing --------
       if(state %in% names(ls.DOT.Keys)){
         if(f %in% names(ls.DOT.Keys[[state]])){
           pattern <- ls.DOT.Keys[[state]][[f]]["PATTERN"]
@@ -371,209 +333,11 @@ Find.Features <- function(Data,
     if(f %in% c("LOCATION", "STREAM", "BRIDGE")){
       if(!FLAG[COL]){
         FLAG[COL] <- TRUE # only need to do this once per each original field
-        for(state in unique(Data$STFIPS)){
-          # city of ----
-          rows  <- Rows[!is.na(Data[,COL]) & Data[,COL]!="" & Data$STFIPS==state & 
-                          !is.na(Data$CITY_NAME_1) &
-                          grepl("\\<of\\>",Data[,COL])]
-          cities <- unique(c(df.Cities[df.Cities$STFIPS_C==state,"city"],
-                             df.GNIS[df.GNIS$STFIPS==state & df.GNIS$FEATURE_CLASS =="Civil","name"]))
-          print(cities[grepl("(\\<madison)|(\\<middle)",cities)])
-          if(length(rows)>0){
-            
-            localities <- data.frame(PATTERN = as.vector(sapply(
-              unlist(ls.JurisKeys[c("city", "town", 
-                                    "township", "village")]),
-              function(l) paste0(l,"[.]? of ",
-                                 cities))),
-              REGEX = TRUE, stringsAsFactors = FALSE)
-            
-            localities$LOC      <- localities$PATTERN
-            if(VERBOSE) print("removing 'city of ___' names (strict)")
-            Data[rows,COL] <- Feature.Detect(Data[rows,], 
-                                             localities, 
-                                             COL, 
-                                             COL, 
-                                             n.dup.cols = 1, 
-                                             DELETE = TRUE)
-          }
-          print(Data[rows,COL])
-          # city __ OR __ city OR __ at end of line/end of clause -----
-          rows  <- Rows[!is.na(Data[,COL]) & Data[,COL]!="" & Data$STFIPS==state & 
-                          !is.na(Data$CITY_NAME_1)]
-          if(length(rows)>0){
-            localities <- data.frame(PATTERN = as.vector(sapply(
-              unlist(ls.JurisKeys[c("city", "town", 
-                                    "township", "village")]),
-              function(l) paste0("\\b",
-                                 cities,
-                                 "\\b ",l,"[.]?\\b"))),
-              REGEX = TRUE, stringsAsFactors = FALSE)
-            localities <- rbind(localities,
-                                data.frame(PATTERN = as.vector(sapply(
-                                  unlist(ls.JurisKeys[c("city", "town", 
-                                                        "township", "village")]),
-                                  function(l) paste0("\\b",l,"[.]?\\b \\b",
-                                                     cities,
-                                                     "\\b"))),
-                                  REGEX = TRUE, stringsAsFactors = FALSE))
-            localities <- rbind(localities,
-                                data.frame(PATTERN = 
-                                             paste0("(",cities,"\\Z)|(",
-                                                    cities,",)"),
-                                           REGEX = TRUE, stringsAsFactors = FALSE))
-            localities$LOC <- localities$PATTERN
-            if(VERBOSE) print("removing '___ city' names (strict)")
-            Data[rows,COL] <- Feature.Detect(Data[rows,], 
-                                             localities, 
-                                             COL, 
-                                             COL, 
-                                             perl = TRUE,
-                                             useBytes = TRUE,
-                                             n.dup.cols = 1, 
-                                             DELETE = TRUE)
-          }
-          print(Data[rows,COL])
-          
-          # clean up explicitly named counties or cities
-          rows  <- Rows[!is.na(Data[,COL]) & Data[,COL]!="" & Data$STFIPS==state & 
-                          (!is.na(Data$FIPS_1) | !is.na(Data$CITY_NAME_1))] 
-          # print(Data[rows,COL])
-          if(length(rows)>0){
-            
-            # end with county, or county and not county road/route ------
-            rows  <- Rows[!is.na(Data[,COL]) & Data[,COL]!="" & Data$STFIPS==state & 
-                            !is.na(Data[,"FIPS_1"])]
-            if(length(rows)>0){
-              localities <- data.frame(PATTERN = df.Counties[df.Counties$STFIPS_C == 
-                                                                state, "county"],
-                                       
-                                       REGEX   = TRUE, stringsAsFactors = FALSE)
-              notMatch   <- switch(f,
-                                   "LOCATION" = " (?!((road)|(rd[.]?)|(ro[.]?$)|(route)|(rt[e.]?))))",
-                                   "STREAM"   = " (?!((stream)|(str[.]?)|(f[or]?k[.]?$)|(route)|(creek))))",
-                                   "BRIDGE"   = "  (?!((bridge)|(br[.]?))))")
-              localities$PATTERN <- paste0("(",
-                                            localities$PATTERN,
-                                            "\\Z)|(",
-                                            localities$PATTERN,
-                                            " co([unty.]{0,4})\\Z)|(",
-                                            localities$PATTERN,
-                                            " co([unty.]{0,4},))|(",
-                                            localities$PATTERN,
-                                            " co([unty.]{0,4})",
-                                            notMatch)
-              
-              localities$LOC      <- paste0("(",df.Counties[df.Counties$STFIPS_C == 
-                                                              state, "county"],
-                                            " co([unty.]{0,4}))|(",
-                                            df.Counties[df.Counties$STFIPS_C == 
-                                                          state, "county"],
-                                            "\\Z)")
-              if(VERBOSE) print("removing '___ county' names (strict)")
-              Data[rows,COL] <- Feature.Detect(Data[rows,], 
-                                               localities, 
-                                               COL, 
-                                               COL, 
-                                               perl = TRUE,
-                                               useBytes = TRUE,
-                                               n.dup.cols = 1, 
-                                               DELETE = TRUE)
-            }
-            # print(Data[rows,COL])
-            # county of ----
-            rows  <- rows[grepl("\\<of\\>",Data[rows,COL])] 
-            if(length(rows)>0){
-              localities$PATTERN <- paste0("co[unty.]? of ",
-                                            df.Counties[df.Counties$STFIPS_C 
-                                                        == state, "county"],"\\>")
-              localities$LOC      <- localities$PATTERN
-              if(VERBOSE) print("removing 'county of ____' names (strict)")
-              Data[rows,COL] <- Feature.Detect(Data[rows,], 
-                                               localities, 
-                                               COL, 
-                                               COL, 
-                                               n.dup.cols = 1, 
-                                               DELETE = TRUE)
-            }
-            Data[,COL] <- sub("([,][ ]?)$","",Data[,COL])
-            print(Data[rows,COL])
-            
-            
-            # Those without a full match but explicit name, e.g. "liberty twp", which doesn't
-            # match the state-specific options of "north liberty", "new liberty", etc.
-            rows <- Rows[!is.na(Data[,COL]) & Data[,COL]!="" & Data$STFIPS==state & 
-                           !is.na(Data$CITY_NAME_1) & apply(sapply(
-                             unlist(ls.JurisKeys[c("city", "town", 
-                                                   "township", "village")]),
-                             function(l) grepl(l, Data[,COL])), MARGIN = 1, any)]
-            if(length(rows)>0){
-              if(VERBOSE) print("Cleaning up named cities that are not a full state match")
-              localities <- data.frame(PATTERN = as.vector(sapply(
-                unlist(ls.JurisKeys[c("city", "town", 
-                                      "township", "village")]),
-                function(l) paste0("(\\b[[:alpha:]]+\\b)(( \\b[[:alpha:]]+\\b)?)( \\b",l,"[.]?\\b)"))),
-                 REGEX = TRUE, stringsAsFactors = FALSE)
-              localities$LOC <- localities$PATTERN
-              Data[rows,COL] <- Feature.Detect(Data[rows,], 
-                                               localities,
-                                               COL, 
-                                               COL, 
-                                               perl = TRUE,
-                                               useBytes = TRUE,
-                                               n.dup.cols = 1, 
-                                               DELETE = TRUE)
-            }
-            
-            # there will still be some left behind because they are at the end of line
-            # but don't say "twp" or the like. Delete those as well.
-            # Data[,COL] <- gsub("(\\A[[:punct:]]+)|([[:punct:]]+\\Z)","",str_squish(gsub("(\\A[[:punct:]]+)|([[:punct:]]+\\Z)","",
-            #                                                                             str_squish(Data[,COL]), perl = T)))
-            # 
-            # rows <- Rows[!is.na(Data[,COL]) & Data[,COL]!="" & Data$STFIPS==state & 
-            #                !is.na(Data[,"ANSICODE_1"])]
-            # Data[rows,COL] <- gsub("(\\A[[:punct:]]+)|([[:punct:]]+\\Z)","",str_squish(gsub("(\\A[[:punct:]]+)|([[:punct:]]+\\Z)","",
-            #                                                                                 str_squish(Data[rows,COL]), perl = T)))
-            # 
-            # if(length(rows)>0){
-            #   print("trying to delete not full matches to city")
-            #   print(Data[rows,COL])
-            #   for(i in rows){
-            #     print(regmatches(Data[i,COL],regexpr("\\w+\\Z",Data[i,COL],
-            #                                          perl = TRUE)))
-            #   }
-            #   Data[rows,COL] <- sapply(rows, function(i)
-            #     ifelse(any(grepl(regmatches(Data[i,COL],regexpr("\\w+\\Z",Data[i,COL],
-            #                                                     perl = TRUE)),
-            #                      Data[i,grepl("CITY_NAME",colnames(Data))]),na.rm = T),
-            #            sub("\\w+\\Z","",Data[i,COL], perl = TRUE),
-            #            Data[i,COL]))
-            #   Data[rows,COL] <- gsub("(\\A[[:punct:]]+)|([[:punct:]]+\\Z)","",str_squish(gsub("(\\A[[:punct:]]+)|([[:punct:]]+\\Z)","",
-            #                                                                                   str_squish(Data[rows,COL]), perl = T)))
-            #   
-            # }
-            # 
-            # rows <- Rows[!is.na(Data[,COL]) & Data[,COL]!="" & Data$STFIPS==state & 
-            #                !is.na(Data[,"ANSICODE_1"])]
-            # if(length(rows)>0){
-            #   print("going for not full matches again")
-            #   print(Data[rows,COL])
-            #   Data[rows,COL] <- sapply(rows, function(i)
-            #     ifelse(any(grepl(regmatches(Data[i,COL],regexpr("\\w+\\Z",Data[i,COL],
-            #                                                     perl = TRUE)),
-            #                      Data[i,grepl("CITY_NAME",colnames(Data))]),na.rm = T),
-            #            sub("\\w+\\Z","",Data[i,COL], perl = TRUE),
-            #            Data[i,COL]))
-            # }
-          }
-          
-          # may be excess punctuation and spacing, clean up
-          Data[,COL] <- gsub("(\\A[[:punct:]]+)|([[:punct:]]+\\Z)","",str_squish(Data[,COL]), perl = T)
-        }
-      }
+        Data <- Find.Localities(f, DELETION = TRUE, VERBOSE = VERBOSE)
     }
       
     # now detecting feature name and type -----
+    }
   }
   # rm(Feature.Detect, envir = .GlobalEnv)
   return(Data) #---------

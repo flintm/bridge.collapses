@@ -181,7 +181,7 @@ if(REDUCE[["NBI"]]["States"]){
 if (RUN["CLEAN"]){
   source(file.path("Scripts","Process Input","Clean.Fields.R"))
   
-  FieldNames <- sapply(opts[["Fields"]][["Fail"]], function(i) ls.Fail.Ont[[i]][1],
+  FieldNames <- sapply(opts[["Fields"]][["Fail"]], function(i) ls.Fail.Ont[["Field"]][[i]][1],
                      USE.NAMES = TRUE)
   # FieldNames <- c(LOCATION = "LOCATION", ID = "ID")
   df.Fail.l <- df.Fail
@@ -201,29 +201,23 @@ if (RUN["CLEAN"]){
 }
 ```
 
-
-```{r echo = FALSE}
-print(df.Fail[df.Fail$ID %in% EXAMPLE_ID,
-              c("LOC","STREAM_UNDER", "ROUTE_UNDER",
-                "BIN_NUM","MATER","TYPE_STRUCT", "SUPPORT", "ITEM43A",
-                "ITEM43B")])
-```
-
 ```{R featureDetection, include = FALSE, eval=params$eval}
 if(RUN["FEATURE"]){
   source(file.path("Scripts","Process Input","Find.Features.R"))
   
-  Features <- sapply(opts[["Features"]][["Fail"]], 
-                     function(i) ls.Fail.Ont[[i]][1],
+  # Features <- opts[["Features"]][["Fail"]]
+  Features <- sapply(opts[["Features"]][["Fail"]],
+                     function(i) ls.Fail.Ont[["Clean"]][[i]][1],
                      USE.NAMES = TRUE)
-  Features <- sub("LOCATION","LOC",Features)
-  Features["STREAM"] <- "STREAM_UNDER"
+
+  # Features <- sub("LOCATION","LOC",Features)
+  # Features["STREAM"] <- "STREAM_UNDER"
   Features <- Features[-6]
-  state    <- "21"
+  state    <- "19"
   df.Fail  <- Find.Features(df.Fail.cl[df.Fail.cl$STFIPS==state,], 
                               Features,
                               VERBOSE = VERB)
-  IDs <- c("874","875","864")
+  IDs <- c("1302", "1303")
   df.Fail  <- Find.Features(df.Fail.cl[df.Fail.cl$ID %in% IDs,], 
                               Features,
                               VERBOSE = VERB)
