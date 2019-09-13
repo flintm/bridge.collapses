@@ -14,7 +14,6 @@ Find.Features <- function(Data,
   Features <- Features[Feat.Ord]
   FLAG  <- rep(FALSE, length(unique(Features)))
   names(FLAG) <- unique(Features)
-  print(Features)
   
   if(DATASET=="Fail"){
     n.cols.out <- c(COUNTY   = 3,
@@ -39,9 +38,6 @@ Find.Features <- function(Data,
     cols.out   <- ls.cols.out[[f]]
     names.out  <- unique(sub("_[[:digit:]]+","",cols.out))
     n.dup.cols <- n.cols.out[f]
-    # print(COL)
-    # print(cols.out)
-    # print(class(Data))
     Data[,cols.out] <- NA_character_
    
     # State-specific special processing from ontologies
@@ -79,8 +75,6 @@ Find.Features <- function(Data,
                  DELETION   = !(f %in% c("CITY","COUNTY")),
                  VERBOSE    = VERBOSE)
     if(f!="LOCATION"){
-      # print("Calling function:")
-      # print(Find.Fun)
       Data[,c(COL,cols.out)] <- do.call(Find.Fun, args, quote = TRUE)
       rm(Find.Fun)
     }
@@ -90,7 +84,6 @@ Find.Features <- function(Data,
         FLAG[COL] <- TRUE # only need to do this once per each original field
         Data[,COL] <- Find.Localities(Data,"CITY",COL,COL,1, DELETION = TRUE, VERBOSE = VERBOSE)
         Data[,COL] <- Find.Localities(Data,"COUNTY",COL,COL,1, DELETION = TRUE, VERBOSE = VERBOSE)
-        print("yay")
       }
     }
   }

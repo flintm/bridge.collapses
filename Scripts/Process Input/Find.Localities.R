@@ -79,7 +79,7 @@ Find.Localities <- function(Data,Feature,col.in,cols.out,n.dup.cols, DELETION = 
       print("DELETION RUN:")
       Data[,col.in] <- str_clout(Data[,col.in])
       rowsSt <- rowsSt[!is.na(Data[rowsSt,colnames(Data)[grepl(paste(Feature,"NAME",sep="_"),colnames(Data), fixed = T)][1]])]
-      # print(rowsSt)
+
       localities <- localities[!duplicated(localities$NAME),]
       localities$REGEX   <- TRUE
       jurisKeys <- unlist(ls.JurisKeys[jurisNames])
@@ -92,8 +92,7 @@ Find.Localities <- function(Data,Feature,col.in,cols.out,n.dup.cols, DELETION = 
           paste0("(\\b",l,"[.]? of ",localities$NAME,"\\b)"))
         localities$PATTERN <- apply(patterns, MARGIN = 1, paste0,collapse = "|")
         localities[,col.in]     <- localities$PATTERN
-        print("pre run-1")
-        print(nrow(Data))
+
         Data[rows,col.in] <- Feature.Detect(Data[rows,], 
                                          localities, 
                                          col.in, 
@@ -121,8 +120,7 @@ Find.Localities <- function(Data,Feature,col.in,cols.out,n.dup.cols, DELETION = 
         localities$PATTERN  <- apply(patterns, MARGIN = 1, paste0,collapse = "|")
         localities$PATTERN  <-  paste0("(", localities$PATTERN,")", notMatch)
         localities[,col.in] <- localities$PATTERN
-        print("pre run-2")
-        print(nrow(Data))
+
         Data[rows,col.in] <- Feature.Detect(Data[rows,], 
                                             localities, 
                                             col.in, 
@@ -144,8 +142,7 @@ Find.Localities <- function(Data,Feature,col.in,cols.out,n.dup.cols, DELETION = 
           paste0("(\\b",l,"[.]? ",localities$NAME,"\\b)"))
         localities$PATTERN <- apply(patterns, MARGIN = 1, paste0,collapse = "|")
         localities[,col.in]     <- localities$PATTERN
-        print("pre run-3")
-        print(nrow(Data))
+        
         Data[rows,col.in] <- Feature.Detect(Data[rows,], 
                                          localities, 
                                          col.in, 
@@ -166,8 +163,7 @@ Find.Localities <- function(Data,Feature,col.in,cols.out,n.dup.cols, DELETION = 
         patterns <- paste0("\\b",localities$NAME,"\\b")
         localities$PATTERN <-  paste0("(", patterns, ",)|(",patterns,"\\Z)")
         localities[,col.in]     <- localities$PATTERN
-        print("pre run-4")
-        print(nrow(Data))
+
         Data[rows,col.in] <- Feature.Detect(Data[rows,], 
                                          localities, 
                                          col.in, 
@@ -186,13 +182,18 @@ Find.Localities <- function(Data,Feature,col.in,cols.out,n.dup.cols, DELETION = 
                             Data[rowsSt,col.in],perl = TRUE)]
       if(length(rows) > 0){
         if(VERBOSE) print(paste0("(5) Deleting explicitly named ",tolower(Feature)," (non-strict)"))
+        notMatch   <- switch(Feature,
+                             "COUNTY" = "(?!(( road)|( rd[.]?)|( ro[.]?$)|( route)|( rt[e.]?)|( highway)))",
+                             "CITY" = "(?!(( road)|( rd[.]?)|( ro[.]?$)|( route)|( rt[e.]?)|( highway)))",
+                             "STREAM"   = "(?!(( stream)|( str[.]?)|( f[or]?k[.]?$)|( route)|( creek)))",
+                             "BRIDGE"   = "(?!(( bridge)|( br[.]?)))")
+        
         localities <- data.frame(PATTERN = as.vector(sapply(
           jurisKeys,
-          function(l) paste0("(\\b[[:alpha:]]+\\b)(( \\b[[:alpha:]]+\\b)?)( \\b",l,"[.]?\\b)"))),
+          function(l) paste0("(\\b[[:alpha:]]+\\b)(( \\b[[:alpha:]]+\\b)?)( \\b",l,"[.]?\\b)",notMatch))),
           REGEX = TRUE, stringsAsFactors = FALSE)
         localities[,col.in] <- localities$PATTERN
-        print("pre run-5")
-        print(nrow(Data))
+
         Data[rows,col.in] <- Feature.Detect(Data[rows,], 
                                          localities, 
                                          col.in, 
