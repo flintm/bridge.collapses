@@ -23,11 +23,8 @@ Feature.Detect <- function(Data,               # must contain col.in and cols.ou
     for(col in colnames(df.patterns)[!grepl("PATTERN",colnames(df.patterns)) & !grepl("REGEX",colnames(df.patterns))]){
       cols <- cols.out[grepl(col,cols.out) & cols.out!=col.in] # in case of more than one column available
       if(length(cols) > 0){
+        n.empty.cols <- sum(is.na(Data[i,cols]))
         # print(paste("cols are:",paste(cols, collapse = ", ")))
-        n.empty.cols <- sum(is.na(Data[i,cols])) # assumes filled in from left
-        if(n.empty.cols==0 & !DELETE){
-          stop("Insufficient empty fields.")
-        }
         # print(paste("empty cols:", n.empty.cols))
         if(!df.patterns[1,"REGEX"]){
           matches <- tolower(df.patterns[key.index[i,],col])
@@ -41,54 +38,50 @@ Feature.Detect <- function(Data,               # must contain col.in and cols.ou
                                                  perl = perl,
                                                  useBytes = useBytes)))
         }
-        # print(paste("     matches:",paste(matches,collapse = ", ")))
-        # print(length(matches))
+        un <- unique(matches)
+        # keep longest/fullest matches
+        # e.g., will keep "north ambrose" over "ambrose" if both contained
+        un <- un[!sapply(1:length(un), 
+                         function(i) any(grepl(
+                           paste0("([[:alpha:]] ",un[i],")|(",un[i]," [[:alpha:]])"),un[-i])))] 
+        
+        matches <- matches[matches %in% un]
         if(length(matches) > n.empty.cols){
-          # print("excess matches")
-          if(matches[1]==matches[2]) matches <- matches[1] # assumes all are duplicated
-          else if(grepl(matches[2],matches[1]) | grepl(matches[1],matches[2])) matches <- matches[which.max(nchar(matches))] # assumes longest substring
-          else if(length(matches) > n.empty.cols) stop("not enough fields provided to contain all matches")
+          stop(paste0("Need ", length(matches) - n.empty.cols," additional fields to contain all matches."))
         }
-        else{ # don't put in extraneous information, regardless
-          # print("non-excess matches")
-          if(length(matches) == n.empty.cols & n.empty.cols > 1){
-            if(matches[1]==matches[2]) matches <- matches[1] # assumes all are duplicated
-            else if(grepl(matches[2],matches[1]) | grepl(matches[1],matches[2])) matches <- matches[which.max(nchar(matches))] # assumes longest substring
-          }
-        }
-        matches <- c(matches, rep(NA_character_, n.empty.cols-length(matches)))
         if(n.empty.cols < n.dup.cols) matches <- c(Data[i,cols][!is.na(Data[i,cols]) & Data[i,cols]!=""], matches)
-        # print(paste("     matches consolidation:",paste(matches,collapse = "-")))
-        Data[i,cols] <- c(matches)
+        else matches <- c(matches, rep(NA_character_, n.empty.cols-length(matches)))
+
+        Data[i,cols] <- matches
         # print(paste(Data[i,cols], collapse = "-"))
       }
-      
       # delete from string
       if(DELETE){
-        if(length(patterns[key.index[i,]])==1){ p <- df.patterns[key.index[i,],col]
+        # print("In Deletion:")
+        if(length(patterns[key.index[i,]])==1){ 
+          # print("one pattern")
+          p <- df.patterns[key.index[i,],col]
         }
         else{
+          # print("multi-pattern")
           p <- as.character(df.patterns[key.index[i,],col]) # vectorize
           if(grepl(p[1],p[2],fixed = TRUE)|grepl(p[2],p[1], fixed = TRUE)){
             p <- p[which.max(nchar(p))]
           }
           else{
             p <- paste0("(",paste0(p, collapse=")|("),")")
-            }
+          }
         }
-        print(Data[i,col.in])
-        print(p)
+        # print(Data[i,col.in])
+        # print(p)
         Data[i,col.in] <- str_squish(gsub(p,"",Data[i,col.in],
                                           perl = perl,
                                           useBytes = useBytes))
         Data[i, col.in] <- sub("[,-]$","", Data[i, col.in])
-        print(paste("     after deletion:",Data[i, col.in]))
+        # print(paste("     after deletion:",Data[i, col.in]))
       }
     }
-    }
-  if(col.in!=cols.out[1]){
-    Data <- Data[,c(col.in,cols.out)]
   }
-  else Data <- Data[,col.in]
-  return(Data)
+  # Return correct set of fields
+  return(Data[,unique(c(col.in,cols.out))])
 }

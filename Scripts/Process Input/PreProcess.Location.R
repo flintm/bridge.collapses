@@ -21,6 +21,7 @@ PreProcess.Location <- function(Data,
       Data$TEMP <- str_squish(gsub("[\\&\\*]+"," ", gsub("'","",Data$TEMP)))
       Data$TEMP <- sub("co. rd.","co rd", Data$TEMP, fixed = TRUE)
       Data$TEMP <- sub("co.rd.","co rd", Data$TEMP, fixed = TRUE)
+      Data$TEMP <- sub("co. road","county road", Data$TEMP, fixed = TRUE)
       
       # Dataset-specific corrections
       if(VERBOSE) print("Implementing dataset-specific corrections for location.")

@@ -213,7 +213,7 @@ if(RUN["FEATURE"]){
   # Features <- sub("LOCATION","LOC",Features)
   # Features["STREAM"] <- "STREAM_UNDER"
   Features <- Features[-6]
-  state    <- "19"
+  state    <- "51"
   df.Fail  <- Find.Features(df.Fail.cl[df.Fail.cl$STFIPS==state,], 
                               Features,
                               VERBOSE = VERB)

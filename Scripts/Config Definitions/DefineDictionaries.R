@@ -143,7 +143,7 @@ require(rjson)
                        state    = c("state"),
                        town     = c("town", "towns","towne","twn"),
                        township = c("township", "twnshp","twnsp","twsp", "twp"),
-                       village  = c("village", "villlage"))
+                       village  = c("village"))
   save(ls.JurisKeys, file = file.path("Data","Input","Dictionaries","ls.JurisKeys.RData"))
   cat(toJSON(ls.JurisKeys), file = file.path("Data","Input","Dictionaries","JurisKeys.json"))
   
@@ -192,7 +192,8 @@ require(rjson)
   save(ls.CountyKeys, file = file.path("Data","Input","Dictionaries","ls.CountyKeys.RData"))
   cat(toJSON(ls.CountyKeys), file = file.path("Data","Input","Dictionaries","CountyKeys.json"))
   
-  ls.PlaceKeys <- list(new_york  = c("new york", "nyc"),
+  ls.PlaceKeys <- list(village   = c("village", "villlage"),
+                       new_york  = c("new york", "nyc"),
                        sulphur   = c("sulphur", "sulpher"),
                        prestonsburg = c("prestonsburg", "prestonburg"),
                        hoosick   = c("hoosick", "hoosic"),
