@@ -10,7 +10,7 @@ PlotT1T2corrRegress <- function(df,T1l,T2l,ls.corrs, TEXT = c("LRlog","LR","Rho"
   # data, ls.corrs
   
   require(ggplot2)
-  source(file.path(dirsGit$ScriptsPlot,"PlaceLogAnnotation.R"))
+  source(file.path("Plotting","PlaceAnnotation.R"))
 
   # SETUP PLOT -----------------
 TypeX <- labelsP$Data[sapply(levelsP$Data,grepl,T1l,ignore.case=TRUE)][1]
@@ -202,7 +202,7 @@ if (length(TEXT) >=1){
   INDENT <- rep(FALSE,nRows)
   if(ANNOTATE_LOC == "BR") INDENT[TEXT=="LRlog1"] <- TRUE
 
-  df.text <- PlaceLogAnnotation(limits[1],limits[2],nRows, ANNOTATE_LOC = ANNOTATE_LOC, AXES = AXES, INDENT = INDENT)
+  df.text <- PlaceAnnotation(limits[1],limits[2],nRows, ANNOTATE_LOC = ANNOTATE_LOC, AXES = AXES, INDENT = INDENT)
   text <- character()
   for (i in TEXT){
     text[i] <- switch(i,

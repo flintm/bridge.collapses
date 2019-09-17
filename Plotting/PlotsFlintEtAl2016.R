@@ -22,7 +22,7 @@ dirM     <- getwd()
 dirsGit <- list(dir         = dirM,
                 Scripts     = file.path(dirM,"Scripts"),
                 Data        = file.path(dirM,"Data"),
-                ScriptsPlot = file.path(dirM,"Scripts","Plotting"),
+                ScriptsPlot = file.path(dirM,"Plotting"),
                 Plots       = file.path(dirM,"Plots"))
 
 folders <- list.dirs(path = dirM, full.names = TRUE, recursive = TRUE)
@@ -222,7 +222,7 @@ OUTPUT_TYPE <- "DAILY-USGS-2x2-INDIV"
 SAVE        <- TRUE
 SIZE        <- c(7.5,7.5) # used if plotting all together
 Q_units     <- "m3s"
-source(file.path(dirsGit$ScriptsPlot,"PlotCorrsMakeGrid.R"))
+source(file.path(dirsGit$ScriptsPlot,"PlotCorrsMakeGrid_RAPID.R"))
 rm(OUTPUT_TYPE, SAVE, SIZE, Q_units,grp)
 
 # (6) Trends in peaks map---------------------------------------------------------------------------------------------

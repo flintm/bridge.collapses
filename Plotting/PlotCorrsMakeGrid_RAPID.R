@@ -5,7 +5,7 @@
 # A series of individual correlation plots are made and then put together in various configurations based
 # on OUTPUT_TYPE. The individual encodings are determined in the calls to PlotAllCorrs. In particular, the
 # following can be encoded for each plot:
-#     SCALE            = {"LOG", "LINEAR"} x-y scale of entire plot
+#     AXES            = {"LOG", "LINEAR"} x-y scale of entire plot
 #     TEXT             = {text.full, text.m, text.m.short} as defined below (~ line 25)
 #     ANNOTATE_LOC     = {"UL", "BR"} for upper-left, bottom-right
 #     SCALE_VAR        = variable to be used to determine area of circle (DRAIN_SQKM used in paper). NA for no encoding.
@@ -24,7 +24,7 @@
 # Note that OUTPUT_TYPEs can be defined--look at "Bases.R" to see which variables can be plotted against one another
 
 source(file.path(dirsGit$ScriptsPlot,"MakeGridPlot.R"))
-# load(file.path(dirsGit$Data,"df.Fail.NBI.Gage.RData"))
+load(file.path(dirsGit$Data,"df.Fail.NBI.Gage.Active.RData"))
 source(file.path(dirsGit$ScriptsPlot,"PlotAllCorrs_RAPID.R"))
 
 text.full <- c("LRlog","LR","Rho","Tau")
@@ -34,7 +34,7 @@ text.m.short <- c("m","Rho","Tau")
 CorrPlots <- list()
 
 scaleCorrectionFailIP <- sqrt(max(df.Fail.NBI.Gage[rowsToView[!is.na(df.Fail.NBI.Gage[rowsToView,"T_FAIL_IP_HECP_USGS"])],"DRAIN_SQKM"]))/sqrt(max(df.Fail.NBI.Gage[rowsToView,"DRAIN_SQKM"]))
-controls <- list(SCALE      = "LOG",
+controls <- list(AXES      = "LOG",
                  TEXT       = text.full,
                  LEGEND     = "NONE",
                  SHAPE_VAR  = "BOOL_KNOWN_FAIL_DATE",
@@ -45,60 +45,60 @@ controls <- list(SCALE      = "LOG",
 
 # CORRELATIONS PART 1: MAX VALUES AND CORRELATIONS ------------------------------
 source(file.path(dirsGit$ScriptsPlot,"PlotAllCorrs_RAPID.R"))
-source(file.path(dirsGit$Scripts,"CorrelationsFailMaxEvents.R"))
+source(file.path(dirsGit$Scripts,"Analyze Compare Results","CorrelationsFailMaxEvents.R"))
 ls.corrs.max <- CorrelationsFailMaxEvents(TYPES = c("MAXQ","USGS-TMAX","USGS-VICR-TMAX"), SAVE = FALSE)
 
 CorrPlots <- list()
 
-if (grepl("USGS",OUTPUT_TYPE)){
-  CorrPlots[["USGS.Max"]] <- PlotAllCorrs(df.Fail.NBI.Gage[rowsToView,], ls.corrs.max, TYPE = "MAXQ", TEXT = text.full, SAVE=FALSE, ONLY=NA, ANY=NA, NOT = "VIC",
-                                          ALPHA_VAR = "FAIL_IS_MAX", 
-                                          SCALE = "LOG", LEGEND = "NONE", SIZE = c(4,13), outputType = "PRINT",ANNOTATE_LOC = "BR",
-                                          SCALE_VAR = "DRAIN_SQKM", 
-                                          SCALE_CORRECTION = max(df.Fail.NBI.Gage[rowsToView[!is.na(df.Fail.NBI.Gage[rowsToView,"Q_MAX_P_USGS"])],"DRAIN_SQKM"])/max(df.Fail.NBI.Gage[rowsToView,"DRAIN_SQKM"]))
-  CorrPlots[["USGS.Tmax"]] <- PlotAllCorrs(df.Fail.NBI.Gage[rowsToView,], ls.corrs.max, TYPE = "USGS-TMAX",  SAVE=FALSE, ONLY="HECdHECp", ANY = NA,
-                                           TEXT = text.full,
-                                           ALPHA_VAR = "FAIL_IS_MAX", 
-                                           SCALE = "LOG", LEGEND = "NONE", SIZE = c(8.5,8.5), outputType = "PRINT",ANNOTATE_LOC = "BR",
-                                           SCALE_VAR = "DRAIN_SQKM", 
-                                           SCALE_CORRECTION = max(df.Fail.NBI.Gage[rowsToView[!is.na(df.Fail.NBI.Gage[rowsToView,"Q_MAX_P_USGS"])],"DRAIN_SQKM"])/max(df.Fail.NBI.Gage[rowsToView,"DRAIN_SQKM"]))
-}
+# if (grepl("USGS",OUTPUT_TYPE)){
+#   CorrPlots[["USGS.Max"]] <- PlotAllCorrs(df.Fail.NBI.Gage[rowsToView,], ls.corrs.max, TYPE = "MAXQ", TEXT = text.full, SAVE=FALSE, ONLY=NA, ANY=NA, NOT = "VIC",
+#                                           ALPHA_VAR = "FAIL_IS_MAX", 
+#                                           AXES = "LOG", LEGEND = "NONE", SIZE = c(4,13), outputType = "PRINT",ANNOTATE_LOC = "BR",
+#                                           SCALE_VAR = "DRAIN_SQKM", 
+#                                           SCALE_CORRECTION = max(df.Fail.NBI.Gage[rowsToView[!is.na(df.Fail.NBI.Gage[rowsToView,"Q_MAX_P_USGS"])],"DRAIN_SQKM"])/max(df.Fail.NBI.Gage[rowsToView,"DRAIN_SQKM"]))
+#   CorrPlots[["USGS.Tmax"]] <- PlotAllCorrs(df.Fail.NBI.Gage[rowsToView,], ls.corrs.max, TYPE = "USGS-TMAX",  SAVE=FALSE, ONLY="HECdHECp", ANY = NA,
+#                                            TEXT = text.full,
+#                                            ALPHA_VAR = "FAIL_IS_MAX", 
+#                                            AXES = "LOG", LEGEND = "NONE", SIZE = c(8.5,8.5), outputType = "PRINT",ANNOTATE_LOC = "BR",
+#                                            SCALE_VAR = "DRAIN_SQKM", 
+#                                            SCALE_CORRECTION = max(df.Fail.NBI.Gage[rowsToView[!is.na(df.Fail.NBI.Gage[rowsToView,"Q_MAX_P_USGS"])],"DRAIN_SQKM"])/max(df.Fail.NBI.Gage[rowsToView,"DRAIN_SQKM"]))
+# }
 
 if (grepl("VIC",OUTPUT_TYPE)){
   CorrPlots[["VIC.Max"]] <- PlotAllCorrs(df.Fail.NBI.Gage[rowsToAnalyzeVIC,], ls.corrs.max, TYPE = "MAXQ",  SAVE=FALSE, ONLY="VIC", ANY=NA,
                                          TEXT = text.full,
                                          ALPHA_VAR = "BOOL_NSE_D_DVICG_POS", 
-                                         SCALE = "LOG", LEGEND = "NONE", SIZE = c(4,13), outputType = "PRINT",ANNOTATE_LOC = "TL",
+                                         AXES = "LOG", LEGEND = "NONE", SIZE = c(4,13), outputType = "PRINT",ANNOTATE_LOC = "TL",
                                          SCALE_VAR = "DRAIN_SQKM", SCALE_CORRECTION = max(df.Fail.NBI.Gage[rowsToAnalyzeVIC,"DRAIN_SQKM"])/max(df.Fail.NBI.Gage[rowsToView,"DRAIN_SQKM"]))
   CorrPlots[["VIC.Tmax"]] <- PlotAllCorrs(df.Fail.NBI.Gage[rowsToAnalyzeVIC,], ls.corrs.max, TYPE = "USGS-VIC-TMAX",  SAVE=FALSE, ONLY=NA, ANY=c("HEC","PKFQ"),NOT = c("LP3","GEV"),
                                           TEXT = text.m.short, ALPHA_VAR = "BOOL_NSE_D_DVICG_POS", 
-                                          SCALE = "LOG", LEGEND = "NONE", SIZE = c(4,13), outputType = "PRINT",ANNOTATE_LOC = "TL",
+                                          AXES = "LOG", LEGEND = "NONE", SIZE = c(4,13), outputType = "PRINT",ANNOTATE_LOC = "TL",
                                           SCALE_VAR = "DRAIN_SQKM", SCALE_CORRECTION = max(df.Fail.NBI.Gage[rowsToAnalyzeVIC,"DRAIN_SQKM"])/max(df.Fail.NBI.Gage[rowsToView,"DRAIN_SQKM"]))                                     
   CorrPlots["VICR.Max"] <- PlotAllCorrs(df.Fail.NBI.Gage[rowsToAnalyzeVIC,], ls.corrs.max, TYPE = "MAXQ",  SAVE=FALSE, ONLY="VIC", ANY=NA,
                                         TEXT = text.full,
                                         ALPHA_VAR = "BOOL_NSE_D_DVICG_POS", 
-                                        SCALE = "LOG", LEGEND = "NONE", SIZE = c(4,13), outputType = "PRINT",ANNOTATE_LOC = "TL",
+                                        AXES = "LOG", LEGEND = "NONE", SIZE = c(4,13), outputType = "PRINT",ANNOTATE_LOC = "TL",
                                         SCALE_VAR = "DRAIN_SQKM", SCALE_CORRECTION = max(df.Fail.NBI.Gage[rowsToAnalyzeVIC,"DRAIN_SQKM"])/max(df.Fail.NBI.Gage[rowsToView,"DRAIN_SQKM"]))
   }
 
 if (grepl("NLDAS",OUTPUT_TYPE)){
   CorrPlots[["NLDAS.Max"]] <- PlotAllCorrs(df.Fail.NBI.Gage[rowsToAnalyzeNLDAS,], ls.corrs.max, TYPE = "MAXQ",  SAVE=FALSE, ONLY="NLDAS", ANY=NA,
                                            TEXT = text.full, ALPHA_VAR = "BOOL_NSE_D_DVICG_POS", 
-                                           SCALE = "LOG", LEGEND = "NONE", SIZE = c(4,13), outputType = "PRINT",ANNOTATE_LOC = "TL",
+                                           AXES = "LOG", LEGEND = "NONE", SIZE = c(4,13), outputType = "PRINT",ANNOTATE_LOC = "TL",
                                            SCALE_VAR = "DRAIN_SQKM", SCALE_CORRECTION = max(df.Fail.NBI.Gage[rowsToAnalyzeNLDAS,"DRAIN_SQKM"])/max(df.Fail.NBI.Gage[rowsToView,"DRAIN_SQKM"]))
   CorrPlots[["NLDAS.Tmax"]] <- PlotAllCorrs(df.Fail.NBI.Gage[rowsToAnalyzeNLDAS,], ls.corrs.max, TYPE = "USGS-NLDAS-TMAX",  SAVE=FALSE, ONLY=NA, ANY=c("HEC","PKFQ"),
                                             TEXT = text.m.short,ALPHA_VAR = "BOOL_NSE_D_DVICG_POS", 
-                                            SCALE = "LOG", LEGEND = "NONE", SIZE = c(4,13), outputType = "PRINT",ANNOTATE_LOC = "BL",
+                                            AXES = "LOG", LEGEND = "NONE", SIZE = c(4,13), outputType = "PRINT",ANNOTATE_LOC = "BL",
                                             SCALE_VAR = "DRAIN_SQKM", SCALE_CORRECTION = max(df.Fail.NBI.Gage[rowsToAnalyzeNLDAS,"DRAIN_SQKM"])/max(df.Fail.NBI.Gage[rowsToView,"DRAIN_SQKM"]))                                     
 }
 if (grepl("NLDAS",OUTPUT_TYPE) & grepl("VIC",OUTPUT_TYPE)){
   CorrPlots[["VIC.NLDAS.Max"]] <- PlotAllCorrs(df.Fail.NBI.Gage[rowsToAnalyzeVIC,], ls.corrs.max, TYPE = "MAXQ",  SAVE=FALSE, ONLY=c("VIC","NLDAS"), ANY=NA,
                                                TEXT = text.full,ALPHA_VAR = "BOOL_NSE_D_DVICG_POS", 
-                                               SCALE = "LOG", LEGEND = "NONE", SIZE = c(4,13), outputType = "PRINT",ANNOTATE_LOC = "BR",
+                                               AXES = "LOG", LEGEND = "NONE", SIZE = c(4,13), outputType = "PRINT",ANNOTATE_LOC = "BR",
                                                SCALE_VAR = "DRAIN_SQKM", SCALE_CORRECTION = max(df.Fail.NBI.Gage[rowsToAnalyzeVIC,"DRAIN_SQKM"])/max(df.Fail.NBI.Gage[rowsToView,"DRAIN_SQKM"]))
   CorrPlots[["VIC.NLDAS.Tmax"]] <- PlotAllCorrs(df.Fail.NBI.Gage[rowsToAnalyzeVIC,], ls.corrs.max, TYPE = "VIC-NLDAS-TMAX",  SAVE=FALSE, ONLY=NA, ANY=c("PKFQ","HEC"),
                                                 TEXT = text.m.short,ALPHA_VAR = "BOOL_NSE_D_DVICG_POS", 
-                                                SCALE = "LOG", LEGEND = "NONE", SIZE = c(4,13), outputType = "PRINT",ANNOTATE_LOC = "BR",
+                                                AXES = "LOG", LEGEND = "NONE", SIZE = c(4,13), outputType = "PRINT",ANNOTATE_LOC = "BR",
                                                 SCALE_VAR = "DRAIN_SQKM", SCALE_CORRECTION = max(df.Fail.NBI.Gage[rowsToAnalyzeVIC,"DRAIN_SQKM"])/max(df.Fail.NBI.Gage[rowsToView,"DRAIN_SQKM"]))
 }
 
@@ -110,90 +110,90 @@ ls.corrs.fail <- CorrelationsFailMaxEvents(df.Fail.NBI.Gage,SAVE = FALSE, TYPES 
 
 if (grepl("USGS",OUTPUT_TYPE)){
   CorrPlots[["USGS.Q.shape"]]      <- PlotAllCorrs(df.Fail.NBI.Gage[rowsToView,], ls.corrs.fail, TYPE = "FAILQ", ONLY=c("ip"), ANNOTATE_LOC = "BR",
-                                                   TEXT = controls$TEXT, ALPHA_VAR = controls$ALPHA_VAR, SHAPE_VAR = controls$SHAPE_VAR,
-                                                   SCALE = controls$SCALE, LEGEND = controls$LEGEND, SCALE_VAR = controls$SCALE_VAR, 
+                                                   TEXT = character(0), ALPHA_VAR = controls$ALPHA_VAR, SHAPE_VAR = controls$SHAPE_VAR,
+                                                   AXES = controls$AXES, LEGEND = controls$LEGEND, SCALE_VAR = controls$SCALE_VAR, 
                                                    SCALE_CORRECTION = scaleCorrectionFailIP)
   CorrPlots[["USGS.T.shape"]]      <- PlotAllCorrs(df.Fail.NBI.Gage[rowsToView,], ls.corrs.fail, TYPE = "USGS",  ONLY="HECdHECip", ANNOTATE_LOC = "BR",
-                                                   TEXT = controls$TEXT, ALPHA_VAR = controls$ALPHA_VAR, SHAPE_VAR = controls$SHAPE_VAR,
-                                                   SCALE = controls$SCALE, LEGEND = controls$LEGEND, SCALE_VAR = controls$SCALE_VAR, 
+                                                   TEXT = character(0), ALPHA_VAR = controls$ALPHA_VAR, SHAPE_VAR = controls$SHAPE_VAR,
+                                                   AXES = controls$AXES, LEGEND = controls$LEGEND, SCALE_VAR = controls$SCALE_VAR, 
                                                    SCALE_CORRECTION = scaleCorrectionFailIP)
   CorrPlots[["USGS.partd.shape"]]  <- PlotAllCorrs(df.Fail.NBI.Gage[rowsToView,], ls.corrs.fail, TYPE = "USGS",  ONLY="HECdPartInterpd", ANNOTATE_LOC = "TL",
                                                    TEXT = controls$TEXT, ALPHA_VAR = controls$ALPHA_VAR, SHAPE_VAR = controls$SHAPE_VAR,
-                                                   SCALE = controls$SCALE, LEGEND = controls$LEGEND, SCALE_VAR = controls$SCALE_VAR, 
+                                                   AXES = controls$AXES, LEGEND = controls$LEGEND, SCALE_VAR = controls$SCALE_VAR, 
                                                    SCALE_CORRECTION = 1)
   CorrPlots[["USGS.partip.shape"]] <- PlotAllCorrs(df.Fail.NBI.Gage[rowsToView,], ls.corrs.fail, TYPE = "USGS",  ONLY="HECipPartInterpip", ANNOTATE_LOC = "BR",
                                                    TEXT = controls$TEXT, ALPHA_VAR = controls$ALPHA_VAR, SHAPE_VAR = controls$SHAPE_VAR,
-                                                   SCALE = controls$SCALE, LEGEND = controls$LEGEND, SCALE_VAR = controls$SCALE_VAR, 
+                                                   AXES = controls$AXES, LEGEND = controls$LEGEND, SCALE_VAR = controls$SCALE_VAR, 
                                                    SCALE_CORRECTION = scaleCorrectionFailIP)
 }
 if (grepl("VIC",OUTPUT_TYPE)){
   CorrPlots[["VIC.Q"]] <- PlotAllCorrs(df.Fail.NBI.Gage[rowsToAnalyzeVIC,], ls.corrs.fail, TYPE = "FAILQ",  SAVE=FALSE, ONLY=c("VIC","PM2"), ANY=NA,NOT=NA,
                                        TEXT = text.full,ALPHA_VAR = "BOOL_NSE_D_DVICG_POS", 
-                                       SCALE = "LOG", LEGEND = "NONE", SIZE = c(4,4), outputType = "PRINT",ANNOTATE_LOC = "TL", 
+                                       AXES = "LOG", LEGEND = "NONE", SIZE = c(4,4), outputType = "PRINT",ANNOTATE_LOC = "TL", 
                                        SCALE_VAR = "DRAIN_SQKM", SCALE_CORRECTION = max(df.Fail.NBI.Gage[rowsToAnalyzeVIC,"DRAIN_SQKM"])/max(df.Fail.NBI.Gage[rowsToView,"DRAIN_SQKM"]))
   CorrPlots[["VIC.T"]] <- PlotAllCorrs(df.Fail.NBI.Gage[rowsToAnalyzeVIC,], ls.corrs.fail, TYPE = "USGS-VICG",  SAVE=FALSE, ONLY=c("PM2"), ANY=c("HEC","PKFQ"),NOT=c("LP3","GEV","[dpi]P3"),
                                        TEXT = text.full,ALPHA_VAR = "BOOL_NSE_D_DVICG_POS", 
-                                       SCALE = "LOG", LEGEND = "NONE", SIZE = c(12,8), outputType = "PRINT",ANNOTATE_LOC = "TL",
+                                       AXES = "LOG", LEGEND = "NONE", SIZE = c(12,8), outputType = "PRINT",ANNOTATE_LOC = "TL",
                                        SCALE_VAR = "DRAIN_SQKM", SCALE_CORRECTION = max(df.Fail.NBI.Gage[rowsToAnalyzeVIC,"DRAIN_SQKM"])/max(df.Fail.NBI.Gage[rowsToView,"DRAIN_SQKM"]))
   #   CorrPlots[["VIC.T.GB"]] <- PlotAllCorrs(df.Fail.NBI.Gage[rowsToAnalyzeVIC,], ls.corrs.fail, TYPE = "VICg-VICb",  SAVE=FALSE, ONLY=c("PM2"), ANY=c("HEC","PKFQ"),NOT=c("LP3","GEV","[dpi]P3"),
   #                                           TEXT = text.full,ALPHA_VAR = "BOOL_NSE_D_DVICG_POS", 
-  #                                   SCALE = "LOG", LEGEND = "NONE", SIZE = c(12,8), outputType = "PRINT",ANNOTATE_LOC = "TL",
+  #                                   AXES = "LOG", LEGEND = "NONE", SIZE = c(12,8), outputType = "PRINT",ANNOTATE_LOC = "TL",
   #                                   SCALE_VAR = "DRAIN_SQKM", SCALE_CORRECTION = max(df.Fail.NBI.Gage[rowsToAnalyzeVIC,"DRAIN_SQKM"])/max(df.Fail.NBI.Gage[rowsToView,"DRAIN_SQKM"]))
   
   CorrPlots[["VIC.T.PKFQ"]] <- PlotAllCorrs(df.Fail.NBI.Gage[rowsToAnalyzeVIC,], ls.corrs.fail, TYPE = "USGS-VICG",  SAVE=FALSE, ONLY=c("PKFQ","PM2"), ANY=NA,NOT=c("LP3","GEV","[dpi]P3"),
                                             TEXT = text.m.short, ALPHA_VAR = "BOOL_NSE_D_DVICG_POS", 
-                                            SCALE = "LOG", LEGEND = "NONE", SIZE = c(4,8.5), outputType = "PRINT",ANNOTATE_LOC = "TL",
+                                            AXES = "LOG", LEGEND = "NONE", SIZE = c(4,8.5), outputType = "PRINT",ANNOTATE_LOC = "TL",
                                             SCALE_VAR = "DRAIN_SQKM", SCALE_CORRECTION = max(df.Fail.NBI.Gage[rowsToAnalyzeVIC,"DRAIN_SQKM"])/max(df.Fail.NBI.Gage[rowsToView,"DRAIN_SQKM"]))
   CorrPlots[["VICR.T.PKFQ"]] <- PlotAllCorrs(df.Fail.NBI.Gage[rowsToAnalyzeVIC,], ls.corrs.fail, TYPE = "USGS-VICGRapid",  SAVE=FALSE,
                                        TEXT = text.full,ALPHA_VAR = "BOOL_NSE_D_DVICG_POS", 
-                                       SCALE = "LOG", LEGEND = "NONE", SIZE = c(12,8), outputType = "PRINT",ANNOTATE_LOC = "TL",
+                                       AXES = "LOG", LEGEND = "NONE", SIZE = c(12,8), outputType = "PRINT",ANNOTATE_LOC = "TL",
                                        SCALE_VAR = "DRAIN_SQKM", SCALE_CORRECTION = max(df.Fail.NBI.Gage[rowsToAnalyzeVIC,"DRAIN_SQKM"])/max(df.Fail.NBI.Gage[rowsToView,"DRAIN_SQKM"]))
   
   CorrPlots[["VIC.part"]] <- PlotAllCorrs(df.Fail.NBI.Gage[rowsToAnalyzeVIC,], ls.corrs.fail, TYPE = "USGS-PART-VICg-PART",  SAVE=FALSE, ONLY=c("VICG","PM2"), ANY=NA,NOT="VICB",
                                           TEXT = text.m.short, ALPHA_VAR = "BOOL_NSE_D_DVICG_POS", 
-                                          SCALE = "LOG", LEGEND = "NONE", SIZE = c(4,8.5), outputType = "PRINT",ANNOTATE_LOC = "TL",
+                                          AXES = "LOG", LEGEND = "NONE", SIZE = c(4,8.5), outputType = "PRINT",ANNOTATE_LOC = "TL",
                                           SCALE_VAR = "DRAIN_SQKM", SCALE_CORRECTION = max(df.Fail.NBI.Gage[rowsToAnalyzeVIC,"DRAIN_SQKM"])/max(df.Fail.NBI.Gage[rowsToView,"DRAIN_SQKM"]))
   CorrPlots[["VIC.best"]] <- PlotAllCorrs(df.Fail.NBI.Gage[rowsToAnalyzeVIC,], ls.corrs.fail, TYPE = "USGS-BEST-VICg",  SAVE=FALSE, ONLY=NA, ANY=NA,NOT=NA,
                                           TEXT = text.full,ALPHA_VAR = "BOOL_NSE_D_DVICG_POS", 
-                                          SCALE = "LOG", LEGEND = "NONE", SIZE = c(4,4), outputType = "PRINT", ANNOTATE_LOC = "TL",
+                                          AXES = "LOG", LEGEND = "NONE", SIZE = c(4,4), outputType = "PRINT", ANNOTATE_LOC = "TL",
                                           SCALE_VAR = "DRAIN_SQKM", SCALE_CORRECTION = max(df.Fail.NBI.Gage[rowsToAnalyzeVIC,"DRAIN_SQKM"])/max(df.Fail.NBI.Gage[rowsToView,"DRAIN_SQKM"]))
 }
 
 if (grepl("NLDAS",OUTPUT_TYPE)){
   CorrPlots[["NLDAS.Q"]] <- PlotAllCorrs(df.Fail.NBI.Gage[rowsToAnalyzeNLDAS,], ls.corrs.fail, TYPE = "FAILQ",  SAVE=FALSE, ONLY=c("NLDAS","PM2"), ANY=NA,NOT=NA,
                                          TEXT = text.full,ALPHA_VAR = "BOOL_NSE_D_DVICG_POS", 
-                                         SCALE = "LOG", LEGEND = "NONE", SIZE = c(4,4), outputType = "PRINT",ANNOTATE_LOC = "TL", 
+                                         AXES = "LOG", LEGEND = "NONE", SIZE = c(4,4), outputType = "PRINT",ANNOTATE_LOC = "TL", 
                                          SCALE_VAR = "DRAIN_SQKM", SCALE_CORRECTION = max(df.Fail.NBI.Gage[rowsToAnalyzeNLDAS,"DRAIN_SQKM"])/max(df.Fail.NBI.Gage[rowsToView,"DRAIN_SQKM"]))
   CorrPlots[["NLDAS.T"]] <- PlotAllCorrs(df.Fail.NBI.Gage[rowsToAnalyzeNLDAS,], ls.corrs.fail, TYPE = "USGS-NLDAS",  SAVE=FALSE, ONLY=c("PM2"), ANY=c("HEC","PKFQ"),NOT=c("Part","part"),
                                          TEXT = text.m.short,ALPHA_VAR = "BOOL_NSE_D_DVICG_POS", 
-                                         SCALE = "LOG", LEGEND = "NONE", SIZE = c(4,8.5), outputType = "PRINT",ANNOTATE_LOC = "TL",
+                                         AXES = "LOG", LEGEND = "NONE", SIZE = c(4,8.5), outputType = "PRINT",ANNOTATE_LOC = "TL",
                                          SCALE_VAR = "DRAIN_SQKM", SCALE_CORRECTION = max(df.Fail.NBI.Gage[rowsToAnalyzeNLDAS,"DRAIN_SQKM"])/max(df.Fail.NBI.Gage[rowsToView,"DRAIN_SQKM"]))
   CorrPlots[["NLDAS.T.GB"]] <- PlotAllCorrs(df.Fail.NBI.Gage[rowsToAnalyzeNLDAS,], ls.corrs.fail, TYPE = "NLDASg-NLDASb",  SAVE=FALSE, ONLY=c("PM2"), ANY=c("HEC","PKFQ"),NOT=c("LP3","GEV","[dpi]P3"),
                                             TEXT = text.full,ALPHA_VAR = "BOOL_NSE_D_DVICG_POS", 
-                                            SCALE = "LOG", LEGEND = "NONE", SIZE = c(12,8), outputType = "PRINT",ANNOTATE_LOC = "TL",
+                                            AXES = "LOG", LEGEND = "NONE", SIZE = c(12,8), outputType = "PRINT",ANNOTATE_LOC = "TL",
                                             SCALE_VAR = "DRAIN_SQKM", SCALE_CORRECTION = max(df.Fail.NBI.Gage[rowsToAnalyzeNLDAS,"DRAIN_SQKM"])/max(df.Fail.NBI.Gage[rowsToView,"DRAIN_SQKM"]))
   CorrPlots[["NLDAS.part"]] <- PlotAllCorrs(df.Fail.NBI.Gage[rowsToAnalyzeNLDAS,], ls.corrs.fail, TYPE = "USGS-NLDAS",  SAVE=FALSE, ONLY=c("NLDAS","PM2","g"), ANY=c("Part","part"),NOT=NA,
                                             TEXT = text.m.short,ALPHA_VAR = "BOOL_NSE_D_DVICG_POS", 
-                                            SCALE = "LOG", LEGEND = "NONE", SIZE = c(4,8.5), outputType = "PRINT",ANNOTATE_LOC = "TL",
+                                            AXES = "LOG", LEGEND = "NONE", SIZE = c(4,8.5), outputType = "PRINT",ANNOTATE_LOC = "TL",
                                             SCALE_VAR = "DRAIN_SQKM", SCALE_CORRECTION = max(df.Fail.NBI.Gage[rowsToAnalyzeNLDAS,"DRAIN_SQKM"])/max(df.Fail.NBI.Gage[rowsToView,"DRAIN_SQKM"]))
   CorrPlots[["NLDAS.best"]] <- PlotAllCorrs(df.Fail.NBI.Gage[rowsToAnalyzeNLDAS,], ls.corrs.fail, TYPE = "USGS-BEST-NLDAS",  SAVE=FALSE, ONLY=NA, ANY=NA,NOT=NA,
                                             TEXT = text.full,ALPHA_VAR = "BOOL_NSE_D_DVICG_POS", 
-                                            SCALE = "LOG", LEGEND = "NONE", SIZE = c(4,4), outputType = "PRINT",ANNOTATE_LOC = "TL",
+                                            AXES = "LOG", LEGEND = "NONE", SIZE = c(4,4), outputType = "PRINT",ANNOTATE_LOC = "TL",
                                             SCALE_VAR = "DRAIN_SQKM", SCALE_CORRECTION = max(df.Fail.NBI.Gage[rowsToAnalyzeNLDAS,"DRAIN_SQKM"])/max(df.Fail.NBI.Gage[rowsToView,"DRAIN_SQKM"]))
 }
 
 if (grepl("NLDAS",OUTPUT_TYPE) & grepl("VIC",OUTPUT_TYPE)){
   CorrPlots[["VIC.NLDAS.Q"]] <- PlotAllCorrs(df.Fail.NBI.Gage[rowsToAnalyzeVIC,], ls.corrs.fail, TYPE = "FAILQ",  SAVE=FALSE, ONLY=c("NLDAS","PM2","VIC"), ANY=NA,NOT=NA,
                                              TEXT = text.full, ALPHA_VAR = "BOOL_NSE_D_DVICG_POS", 
-                                             SCALE = "LOG", LEGEND = "NONE", SIZE = c(4,4), outputType = "PRINT",ANNOTATE_LOC = "TL", 
+                                             AXES = "LOG", LEGEND = "NONE", SIZE = c(4,4), outputType = "PRINT",ANNOTATE_LOC = "TL", 
                                              SCALE_VAR = "DRAIN_SQKM", SCALE_CORRECTION = max(df.Fail.NBI.Gage[rowsToAnalyzeVIC,"DRAIN_SQKM"])/max(df.Fail.NBI.Gage[rowsToView,"DRAIN_SQKM"]))
   CorrPlots[["VIC.NLDAS.T"]] <- PlotAllCorrs(df.Fail.NBI.Gage[rowsToAnalyzeVIC,], ls.corrs.fail, TYPE = "VIC-NLDAS",  SAVE=FALSE, ONLY=c("PM2"), ANY=c("HEC","PKFQ"),NOT=c("Part","part"),
                                              TEXT = text.m.short,ALPHA_VAR = "BOOL_NSE_D_DVICG_POS", 
-                                             SCALE = "LOG", LEGEND = "NONE", SIZE = c(4,8.5), outputType = "PRINT",ANNOTATE_LOC = "TR",
+                                             AXES = "LOG", LEGEND = "NONE", SIZE = c(4,8.5), outputType = "PRINT",ANNOTATE_LOC = "TR",
                                              SCALE_VAR = "DRAIN_SQKM", SCALE_CORRECTION = max(df.Fail.NBI.Gage[rowsToAnalyzeVIC,"DRAIN_SQKM"])/max(df.Fail.NBI.Gage[rowsToView,"DRAIN_SQKM"]))
   CorrPlots[["VIC.NLDAS.Part"]] <- PlotAllCorrs(df.Fail.NBI.Gage[rowsToAnalyzeVIC,], ls.corrs.fail, TYPE = "VIC-NLDAS",  SAVE=FALSE, ONLY=NA, ANY=c("Part","part"),NOT=c("HEC","PKFQ"),
                                                 TEXT = text.m.short,ALPHA_VAR = "BOOL_NSE_D_DVICG_POS", 
-                                                SCALE = "LOG", LEGEND = "NONE", SIZE = c(4,8.5), outputType = "PRINT",ANNOTATE_LOC = "BR",
+                                                AXES = "LOG", LEGEND = "NONE", SIZE = c(4,8.5), outputType = "PRINT",ANNOTATE_LOC = "BR",
                                                 SCALE_VAR = "DRAIN_SQKM", SCALE_CORRECTION = max(df.Fail.NBI.Gage[rowsToAnalyzeVIC,"DRAIN_SQKM"])/max(df.Fail.NBI.Gage[rowsToView,"DRAIN_SQKM"]))
 }
 

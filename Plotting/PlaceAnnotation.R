@@ -1,6 +1,6 @@
-PlaceAnnotation <- function(df,T1l,T2l,limits, breaks, ANNOTATE_LOC = "BR", SCALE = "LOG",VERBOSE=FALSE,outputType = "PRINT"){
+PlaceAnnotation <- function(df,T1l,T2l,limits, breaks, ANNOTATE_LOC = "BR", AXES = "LOG",VERBOSE=FALSE,outputType = "PRINT"){
 
-  if (SCALE == "LOG"){ 
+  if (AXES == "LOG"){ 
     if(ANNOTATE_LOC == "BR"){
       x <- ifelse(6*breaks[length(breaks)] < limits[2],6*breaks[length(breaks)], limits[2] - 0.0001*breaks[length(breaks)])
       if(VERBOSE==TRUE) print(paste("ratio of breaks:",breaks[length(breaks)]/breaks[1]))

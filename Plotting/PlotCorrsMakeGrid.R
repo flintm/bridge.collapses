@@ -24,7 +24,7 @@
 # Note that OUTPUT_TYPEs can be defined--look at "Bases.R" to see which variables can be plotted against one another
 
 source(file.path(dirsGit$ScriptsPlot,"MakeGridPlot.R"))
-load(file.path(dirsGit$Data,"df.Fail.NBI.Gage.RData"))
+load(file.path(dirsGit$Data,"df.Fail.NBI.Gage.Active.RData"))
 source(file.path(dirsGit$ScriptsPlot,"PlotAllCorrs.R"))
 
 text.full <- c("LRlog","LR","Rho","Tau")

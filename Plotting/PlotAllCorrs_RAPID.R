@@ -7,9 +7,9 @@ PlotAllCorrs  <- function(BridgesDataFrame, ls.corrs, TYPE = "USGS", SAVE = FALS
 require(ggplot2)
 # require(grid)
 require(gridExtra)
-source(file.path(dirsGit$Scripts,"Helper","Bases.R"))
-source(file.path(dirsGit$ScriptsPlot,"PlotT1T2corrRegress_RAPID.R"))
-source(file.path(dirsGit$ScriptsPlot,"SetupEncoding.R"))
+source(file.path("Scripts","Helper","Bases.R"))
+source(file.path("Plotting","PlotT1T2corrRegress_RAPID.R"))
+source(file.path("Plotting","SetupEncoding.R"))
 
   if(is.na(ALPHA_VAR)){
     ALPHA_VAR <- "ALPHA"
