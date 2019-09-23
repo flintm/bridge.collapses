@@ -20,11 +20,11 @@ Bases <- function(TYPE){
   if (TYPE == "USGS"){
     bases <- c("HECdHECi",                 "HECdHECp",               "HECiHECp",                    "HECdHECip",             
                "HECdPartInterpd",        "HECipPartInterpd",            "PartInterpdPartInterpip",         
-               "HECdPartInterpip",                                   "HECipPartInterpip",
+               "HECdPartInterpip",       "HECipPartInterpip",
                "PKFQdPKFQp",              "HECdPKFQd",              "HECipPKFQp")
     T1ls  <- c("T_FAIL_D_HECD_USGS",           "T_FAIL_D_HECD_USGS",         "T_FAIL_I_HECP_USGS",              "T_FAIL_D_HECD_USGS",            
                "T_FAIL_D_HECD_USGS",         "T_FAIL_IP_HECP_USGS",         "T_FAIL_D_PARTDUR_USGS",            
-               "T_FAIL_D_HECD_USGS",                                     "T_FAIL_IP_HECP_USGS",
+               "T_FAIL_D_HECD_USGS",       "T_FAIL_IP_HECP_USGS",
                "T_FAIL_D_PKFQD_USGS",          "T_FAIL_D_HECD_USGS",         "T_FAIL_IP_HECP_USGS")
     T2ls  <- c("T_FAIL_I_HECP_USGS",          "T_FAIL_P_HECP_USGS",        "T_FAIL_P_HECP_USGS",               "T_FAIL_IP_HECP_USGS",  
                "T_FAIL_D_PARTDUR_USGS",  "T_FAIL_D_PARTDUR_USGS",         "T_FAIL_IP_PARTDUR_USGS", 

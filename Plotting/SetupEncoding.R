@@ -20,12 +20,8 @@ penv$textP <- list()
 
 # COLLAPSE CAUSES, DATES, HURRICANES, DEGREE OF REGULATION, AND RATIOS OF DRAINAGE AREA ----------
 # Failure cause
-# red/blue/green/purple/orange intense 
-#e41a1c
-#377eb8
-#4daf4a
-#984ea3
-##ff7f00
+# red/blue/purple/orange intense 
+#e41a1c #377eb8 #984ea3 ##ff7f00
 penv$legendsP$Fail  <- "COLLAPSE CAUSE"
 penv$labelsP$Fail <- c("FLOOD","SCOUR","HURRICANE","OTHER")
 penv$colorsP$Fail <-  c(FLOOD = "#377eb8", SCOUR = "#e41a1c", HURRICANE = "#984ea3", OTHER = "#ff7f00")
@@ -48,7 +44,9 @@ penv$colorsP$Reg  <- c(COLLAPSE="white",FAIL="white",MAX="black",PARTIAL="white"
 penv$shapesP$Reg  <- c(REGULATED="R", UNREGULATED="U", UNKNOWN="N")
 penv$sizesP$Reg   <- c(PRINT = 2, PRES = 4, SHINY = 2, NOTE = 2)
 # Drainage Area ratios
-penv$legendsP$VICgRat <- "VIC DRAIN AREA /\n USGS DRAIN AREA"
+penv$legendsP$VICgRat  <- "VIC DRAIN AREA /\n USGS DRAIN AREA"
+penv$shapesP$VICgRat   <-  c(16, 1) # These have not been tested
+penv$alphasP$VICgRat   <-  c(0.4, 0.95) # These have not been tested
 # NSE
 penv$alphasP$NSE_D_DVICG <- c(0.4, 0.95)
 penv$legendsP$NSE_D_DVICG <- "NSE > 0"
@@ -58,6 +56,10 @@ penv$legendsP$INST <- "DAILY OR INST/PK DATA"
 # Fail and Max coincide
 penv$alphasP$FAIL_IS_MAX <- c(0.45, 0.95)
 penv$legendsP$FAIL_IS_MAX <- "FAIL AND MAX COINCIDE"
+# Number of daily mean peaks versus true peaks
+penv$alphasP$DailyMeanPeaksRat <- c(0.45, 0.95) # Not tested
+penv$shapesP$DailyMeanPeaksRat <- c(16, 1) # Not tested
+penv$legendsP$DailyMeanPeaksRat <- "NO. DAILY MEAN MAXES = NO. PEAKS"
 
 # POINT TYPE (COLLAPSE, MAX, ETC), INCL. CORRELATION PLOTS --------
 penv$legendsP$Qtype <- "DATA"

@@ -12,7 +12,8 @@ PlotT1T2corrRegress <- function(df,T1l,T2l,ls.corrs, TEXT = c("LRlog","LR","Rho"
   require(ggplot2)
   source(file.path("Plotting","PlaceAnnotation.R"))
 
-  # SETUP PLOT -----------------
+  ## SETUP PLOT -----------------
+  # Annotation text ------
 TypeX <- labelsP$Data[sapply(levelsP$Data,grepl,T1l,ignore.case=TRUE)][1]
 if(length(TypeX) == 0 | is.na(TypeX)) TypeX <- "USGS"
 TypeY <- labelsP$Data[sapply(levelsP$Data,grepl,T2l,ignore.case=TRUE)][1]
@@ -42,7 +43,7 @@ if (length(TEXT) >=1){
   else Kapprox <- FALSE
   Kzero <- ifelse(KendallTauPval < 5e-4,TRUE,FALSE)
 }
-print(df)
+
   model       <- lm(T2 ~ T1, data = df)
   LRslope     <- model$coefficients[2]
   LRintercept <- model$coefficients[1]
@@ -53,7 +54,7 @@ print(df)
   LRintercept.log <- model.log$coefficients[1]
   LRr2.log        <- summary(model.log)$r.squared
 
-  # data
+  # Data cleaning and plotting bounds/breaks ------
   inBoth   <- !is.na(df$T1) & !is.na(df$T2)
   roundVal <- 10
   limits   <- c(min(c(df$T1[inBoth]),df$T2[inBoth]),max(c(df$T1[inBoth],df$T2[inBoth])))
@@ -101,6 +102,20 @@ print(df)
     df3$SMALL <- FALSE
     df3[smallAreas,"SMALL"] <- TRUE
   }
+  
+  # Plot controls for shape, etc. ------
+  if(!is.na(SHAPE_VAR)){
+    shapes <- switch(SHAPE_VAR,
+                     BOOL_KNOWN_FAIL_DATE = shapesP$Date,
+                     BOOL_DAILY_MAX_RATIO = shapesP$DailyMeanPeaksRat
+                     ) 
+    shapes.leg <- switch(SHAPE_VAR,
+                         BOOL_KNOWN_FAIL_DATE = legendsP$Date,
+                         BOOL_DAILY_MAX_RATIO = legendsP$DailyMeanPeaksRat
+    ) 
+  }
+  
+  
 
 # MAKE PLOT ----------------
   p <- ggplot(df,aes(T1,T2)) 
@@ -108,10 +123,8 @@ print(df)
        geom_abline(intercept = 0, slope = 1, color = "gray", alpha = 0.5, size = 0.25)
  if(is.na(SHAPE_VAR)){
    p <- p + geom_point(aes(color = FAIL_CAUS_CODE, alpha = ALPHA_VAR, size = SCALE), shape = shapesP$Qtype[sapply(substr(names(shapesP$Qtype),1,3), function(i) any(grepl(i,T1l)))][1],fill="lightgray")
- }
- else {
+ }else{
    p <- p + geom_point(aes(color = FAIL_CAUS_CODE, alpha = ALPHA_VAR, size = SCALE, shape = SHAPE_VAR), stroke = 1.15)
-   
  }
        
 
@@ -138,14 +151,12 @@ else{
       geom_point(data = subset(df3, SMALL == FALSE & BOOL_REGULATION == "REGULATED"   & SHAPE_VAR == "KNOWN"),shape = "R",color="white",size = sizesP$Reg[outputType]) +
       geom_point(data = subset(df3, SMALL == FALSE & BOOL_REGULATION == "UNREGULATED" & SHAPE_VAR == "KNOWN"),shape = "U",color="white",size = sizesP$Reg[outputType]) +
       geom_point(data = subset(df3, SMALL == FALSE & BOOL_REGULATION == "UNKNOWN"     & SHAPE_VAR == "NOWN"),shape = "N",color="white",size = sizesP$Reg[outputType])
-  }
-  else{ # is SHAPE_VAR is NA
+  }else{ # is SHAPE_VAR is NA
     p <- p +
       geom_point(data = subset(df3, SMALL == FALSE & BOOL_REGULATION == "REGULATED"),shape = "R",color="white",size = sizesP$Reg[outputType]) +
       geom_point(data = subset(df3, SMALL == FALSE & BOOL_REGULATION == "UNREGULATED"),shape = "U",color="white",size = sizesP$Reg[outputType]) +
       geom_point(data = subset(df3, SMALL == FALSE & BOOL_REGULATION == "UNKNOWN"),shape = "N",color="white",size = sizesP$Reg[outputType])
   }
-    
 }
 p <- p +
   coord_equal()
@@ -161,9 +172,8 @@ if (AXES == "LOG" | T2l == "T_PARTIAL"){
 
 p <- p   +
   xlab(T1l) + ylab(T2l) +  
-  
   scale_color_manual(values = colorsP$Fail,     name = legendsP$Fail) #+
-if (!is.na(SHAPE_VAR)) p <- p + scale_shape_manual(values = shapesP$Date, name = legendsP$Date)
+if (!is.na(SHAPE_VAR)) p <- p + scale_shape_manual(values = shapes, name = shapes.leg)
 if (min(df$SCALE)!=max(df$SCALE)){ # if size scaling is used
   sizeLimits <- c(min(df[inBoth,"SCALE"]),max(df[inBoth,"SCALE"]))
   if(VERBOSE) print(sizeLimits)
