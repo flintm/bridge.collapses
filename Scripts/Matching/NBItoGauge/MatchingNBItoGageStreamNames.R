@@ -57,7 +57,7 @@ for (j in STFIPS){
   rm(savefile)
 }
 
-# now check stream name ---- SHASHANK
+# now check stream name ----
 goodMatches <- list()
 nBridgesGageWithin5 <- 0
 for (j in STFIPS){

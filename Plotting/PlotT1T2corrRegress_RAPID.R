@@ -3,9 +3,11 @@
 # major updating on 2015-09-09 to improve visualization
 
 PlotT1T2corrRegress <- function(df,T1l,T2l,ls.corrs, TEXT = c("LRlog","LR","Rho","Tau"), 
-                                ALPHA_VAR = "BOOL_KNOWN_FAIL_DATE", 
-                                AXES = "LINEAR", LEGEND = FALSE, outputType = "PRINT", ANNOTATE_LOC = "BR", dataType = "T",
-                                SCALE_CORRECTION = 1, JITTER = FALSE, VERBOSE = TRUE, SHAPE_VAR = NA){
+                                ALPHA_VAR = "BOOL_KNOWN_FAIL_DATE",
+                                AXES = "LINEAR", LEGEND = FALSE, outputType = "PRINT", 
+                                ANNOTATE_LOC = "BR", dataType = "T",
+                                SCALE_CORRECTION = 1, JITTER = FALSE, VERBOSE = TRUE, 
+                                SHAPE_VAR = "PEAKS_RATIO_10PCT"){
   # input data df, labels T1l and T2l and list of correlation and regression
   # data, ls.corrs
   

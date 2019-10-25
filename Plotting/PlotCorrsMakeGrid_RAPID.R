@@ -106,7 +106,7 @@ if (grepl("NLDAS",OUTPUT_TYPE) & grepl("VIC",OUTPUT_TYPE)){
 # source(file.path(dirsGit$Scripts,"CorrelationOfFailures.R"))
 # ls.corrs.fail <- CorrelationOfFailures(SAVE = FALSE)
 TYPE <- "USGS-VICGRapid"
-ls.corrs.fail <- CorrelationsFailMaxEvents(df.Fail.NBI.Gage,SAVE = FALSE, TYPES = TYPE)
+ls.corrs.fail <- CorrelationsFailMaxEvents(df.Fail.NBI.Gage[rowsToView,],SAVE = FALSE, TYPES = TYPE)
 
 if (grepl("USGS",OUTPUT_TYPE)){
   CorrPlots[["USGS.Q.shape"]]      <- PlotAllCorrs(df.Fail.NBI.Gage[rowsToView,], ls.corrs.fail, TYPE = "FAILQ", ONLY=c("ip"), ANNOTATE_LOC = "BR",

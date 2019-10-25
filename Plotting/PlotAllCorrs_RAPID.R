@@ -1,9 +1,11 @@
 # Make individual panels of correlations
 # Copyright Madeleine Flint, 2016
 
-PlotAllCorrs  <- function(BridgesDataFrame, ls.corrs, TYPE = "USGS", SAVE = FALSE, SCREEN = FALSE, TEXT = c("LRlog","LR","Rho","Tau"), ONLY = NULL, ANY=NULL, NOT=NULL,
-                          ALPHA_VAR = "BOOL_KNOWN_FAIL_DATE", AXES = "LINEAR", LEGEND = "NONE", ANNOTATE_LOC = "BR", SCALE_VAR = "DRAIN_SQKM", SHAPE_VAR = NA,
-                          outputType = "PRINT", SIZE = c(7,11), SCALE_CORRECTION = 1, JITTER = FALSE, Q_units = "m3s"){
+PlotAllCorrs  <- function(BridgesDataFrame, ls.corrs, TYPE = "USGS", SAVE = FALSE, SCREEN = FALSE, 
+                          TEXT = c("LRlog","LR","Rho","Tau"), ONLY = NULL, ANY=NULL, NOT=NULL,
+                          ALPHA_VAR = "BOOL_KNOWN_FAIL_DATE", AXES = "LINEAR", LEGEND = "NONE", 
+                          ANNOTATE_LOC = "BR", SCALE_VAR = "DRAIN_SQKM", SHAPE_VAR = NA, SCALE_CORRECTION = 1,
+                          outputType = "PRINT", SIZE = c(7,11), SIZE = c(7,11), JITTER = FALSE, Q_units = "m3s"){
 require(ggplot2)
 # require(grid)
 require(gridExtra)
@@ -22,6 +24,9 @@ source(file.path("Plotting","SetupEncoding.R"))
 if (ALPHA_VAR == "FAIL_IS_MAX"){
   BridgesDataFrame$FAIL_IS_MAX <- BridgesDataFrame$Q_FAIL_D_USGS == BridgesDataFrame$Q_MAX_D_USGS
 }
+  if(ALPHA_VAR = "BOOL_KNOWN_FAIL"){
+    
+  }
 
 ls.Bases  <- Bases(TYPE)
 # print(ls.Bases)
@@ -99,8 +104,15 @@ kgCfs          <- 0.035315*(1/3600)
       colnames(df)[c(1:2,4)] <- c("T1", "T2","ALPHA_VAR")
       if (!is.na(SHAPE_VAR)){
         df$SHAPE_VAR <- BridgesDataFrame[,SHAPE_VAR]
+      }else{
+        df$SHAPE_VAR <- NA
       }
-      df$SCALE <- ifelse(is.na(SCALE_VAR), 1, BridgesDataFrame[,SCALE_VAR])
+      if (!is.na(SCALE_VAR)){
+        df$SCALE <- BridgesDataFrame[,SCALE_VAR]
+      }else{
+        df$SCALE <- 1
+      }
+     
       if (LEGEND == "ALL" | (i == length(bases) & LEGEND == "LAST")) LEGEND_i <- TRUE
       else LEGEND_i <- FALSE
       
